@@ -4,6 +4,7 @@ import { Elysia } from "elysia";
 import userAuthRoutes from "./routes/user-auth";
 import vehicleRoutes from "./routes/vehicle-routes";
 import adminRoutes from "./routes/admin-routes";
+import userRoutes from "./routes/users";
 
 const app = new Elysia()
   .use(
@@ -36,7 +37,8 @@ const app = new Elysia()
   )
   .use(userAuthRoutes)
   .use(vehicleRoutes)
-  .use(adminRoutes);
+  .use(adminRoutes)
+  .use(userRoutes);
 
 app.onError(({ error, code }) => {
   if (code === "NOT_FOUND") return;
@@ -79,6 +81,7 @@ app.get("/", () => {
     description: "Backend API for PM Travel and Tourism vehicle management system",
     endpoints: {
       auth: "/api/v1/user-auth",
+      users: "/api/v1/users",
       vehicles: "/api/v1/vehicles",
       admin: "/api/v1/admins"
     }

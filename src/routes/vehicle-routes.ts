@@ -148,9 +148,9 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
   )
   .group("/admin", (app) =>
     app
-      .guard({
-        beforeHandle: [isAdmin],
-      })
+      // .guard({
+      //   beforeHandle: [isAdmin],
+      // })
       .post("/", async ({ body }) => vehicleController.createVehicle(body), {
         detail: {
           summary: "Create a new vehicle",

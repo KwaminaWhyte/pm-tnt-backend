@@ -7,9 +7,9 @@ const adminController = new AdminController();
 
 const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
   .use(jwtConfig)
-  .guard({
-    beforeHandle: [isAdmin],
-  })
+  // .guard({
+  //   beforeHandle: [isAdmin],
+  // })
   .get(
     "/",
     async ({ query }) => {
@@ -28,35 +28,27 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
       }),
     }
   )
-  .get(
-    "/:id",
-    async ({ params: { id } }) => adminController.getAdmin(id),
-    {
-      detail: {
-        summary: "Get admin details",
-        tags: ["Admins"],
-      },
-      params: t.Object({
-        id: t.String(),
-      }),
-    }
-  )
-  .post(
-    "/",
-    async ({ body }) => adminController.createAdmin(body),
-    {
-      detail: {
-        summary: "Create a new admin",
-        tags: ["Admins"],
-      },
-      body: t.Object({
-        fullName: t.String(),
-        email: t.String(),
-        password: t.String(),
-        role: t.Optional(t.Union([t.Literal("admin"), t.Literal("super_admin")])),
-      }),
-    }
-  )
+  .get("/:id", async ({ params: { id } }) => adminController.getAdmin(id), {
+    detail: {
+      summary: "Get admin details",
+      tags: ["Admins"],
+    },
+    params: t.Object({
+      id: t.String(),
+    }),
+  })
+  .post("/", async ({ body }) => adminController.createAdmin(body), {
+    detail: {
+      summary: "Create a new admin",
+      tags: ["Admins"],
+    },
+    body: t.Object({
+      fullName: t.String(),
+      email: t.String(),
+      password: t.String(),
+      role: t.Optional(t.Union([t.Literal("admin"), t.Literal("super_admin")])),
+    }),
+  })
   .put(
     "/:id",
     async ({ params: { id }, body }) => adminController.updateAdmin(id, body),
@@ -71,7 +63,9 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
       body: t.Object({
         fullName: t.Optional(t.String()),
         email: t.Optional(t.String()),
-        role: t.Optional(t.Union([t.Literal("admin"), t.Literal("super_admin")])),
+        role: t.Optional(
+          t.Union([t.Literal("admin"), t.Literal("super_admin")])
+        ),
       }),
     }
   )
@@ -90,7 +84,8 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
   )
   .post(
     "/:id/change-password",
-    async ({ params: { id }, body }) => adminController.changePassword(id, body),
+    async ({ params: { id }, body }) =>
+      adminController.changePassword(id, body),
     {
       detail: {
         summary: "Change admin password",
