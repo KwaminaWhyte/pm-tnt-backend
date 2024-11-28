@@ -1,6 +1,6 @@
-import { type Model, Schema } from 'mongoose';
-import mongoose from '~/utils/mongoose';
-import { VehicleInterface } from '~/utils/types';
+import { type Model, Schema } from "mongoose";
+import mongoose from "../mongoose";
+import { VehicleInterface } from "../utils/types";
 
 const schema = new Schema<VehicleInterface>(
   {
@@ -20,7 +20,7 @@ const schema = new Schema<VehicleInterface>(
     },
     ratings: [
       {
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         rating: { type: Number, min: 1, max: 5 },
         comment: { type: String },
         createdAt: { type: Date, default: Date.now },
@@ -31,14 +31,14 @@ const schema = new Schema<VehicleInterface>(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 let Vehicle: Model<VehicleInterface>;
 try {
-  Vehicle = mongoose.model<VehicleInterface>('vehicles');
+  Vehicle = mongoose.model<VehicleInterface>("vehicles");
 } catch (error) {
-  Vehicle = mongoose.model<VehicleInterface>('vehicles', schema);
+  Vehicle = mongoose.model<VehicleInterface>("vehicles", schema);
 }
 
 export default Vehicle;

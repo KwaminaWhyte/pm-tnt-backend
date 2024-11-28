@@ -1,24 +1,46 @@
 import { Schema } from "mongoose";
-import mongoose from "~/utils/mongoose";
-import { AdminInterface } from "~/utils/types";
+import mongoose from "../mongoose";
+
+export interface AdminInterface {
+  fullName: string;
+  email: string;
+  password: string;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
 const adminSchema = new Schema<AdminInterface>(
   {
-    firstName: String,
-    lastName: String,
-    password: {
+    fullName: {
       type: String,
-      required: true,
+      required: [true, "Full name is required"],
+      trim: true,
+      minlength: [2, "Full name must be at least 2 characters long"],
+      maxlength: [50, "Full name cannot exceed 50 characters"],
     },
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required"],
       unique: true,
-      match: [emailRegex, "Invalid email format"],
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: (value: string) => emailRegex.test(value),
+        message: "Please enter a valid email address",
+      },
     },
-    phone: {
+    password: {
       type: String,
+      required: [true, "Password is required"],
+      minlength: [6, "Password must be at least 6 characters long"],
+    },
+    role: {
+      type: String,
+      enum: ["admin", "super_admin"],
+      default: "admin",
     },
   },
   {
@@ -26,11 +48,6 @@ const adminSchema = new Schema<AdminInterface>(
   }
 );
 
-let Admin: mongoose.Model<AdminInterface>;
-try {
-  Admin = mongoose.model<AdminInterface>("admins");
-} catch (error) {
-  Admin = mongoose.model<AdminInterface>("admins", adminSchema);
-}
+const Admin = mongoose.model<AdminInterface>("Admin", adminSchema);
 
 export default Admin;

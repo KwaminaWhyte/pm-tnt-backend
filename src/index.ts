@@ -2,38 +2,41 @@ import cors from "@elysiajs/cors";
 import swagger from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 import userAuthRoutes from "./routes/user-auth";
+import vehicleRoutes from "./routes/vehicle-routes";
+import adminRoutes from "./routes/admin-routes";
 
-const app = new Elysia();
-
-app.use(
-  cors({
-    origin: "*",
-    methods: "*",
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false,
-  })
-);
-
-app.use(
-  swagger({
-    documentation: {
-      info: {
-        title: "PM Travel and Tourism API",
-        description: "This is the documentation for PM Travel and Tourism API",
-        version: "0.0.1",
-      },
-
-      components: {
-        securitySchemes: {
-          bearerAuth: {
-            type: "http",
-            scheme: "bearer",
+const app = new Elysia()
+  .use(
+    cors({
+      origin: "*",
+      methods: "*",
+      allowedHeaders: ["Content-Type", "Authorization"],
+      credentials: false,
+    })
+  )
+  .use(
+    swagger({
+      documentation: {
+        info: {
+          title: "PM Travel and Tourism API",
+          description:
+            "This is the documentation for PM Travel and Tourism API",
+          version: "0.0.1",
+        },
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: "http",
+              scheme: "bearer",
+            },
           },
         },
       },
-    },
-  })
-);
+    })
+  )
+  .use(userAuthRoutes)
+  .use(vehicleRoutes)
+  .use(adminRoutes);
 
 app.onError(({ error, code }) => {
   if (code === "NOT_FOUND") return;
@@ -69,11 +72,18 @@ app.onError(({ error, code }) => {
   return errorMessage;
 });
 
-app.get("/", ({ body }) => {
-  return { message: "Welcome to Adamus LV Checklist API" };
+app.get("/", () => {
+  return {
+    name: "PM Travel and Tourism API",
+    version: "0.0.1",
+    description: "Backend API for PM Travel and Tourism vehicle management system",
+    endpoints: {
+      auth: "/api/v1/user-auth",
+      vehicles: "/api/v1/vehicles",
+      admin: "/api/v1/admins"
+    }
+  };
 });
-
-app.group("/api/v1", (api) => api.use(userAuthRoutes));
 
 app.listen(1464);
 
