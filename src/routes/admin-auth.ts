@@ -15,7 +15,7 @@ const adminAuthRoutes = new Elysia({ prefix: "/api/v1/admin-auth" })
     detail: {
       tags: ["Authentication - Admin"],
       summary: "Login with email and password",
-      description: "Authenticate user using email and password credentials",
+      description: "Authenticate admin using email and password credentials",
       responses: {
         200: {
           description: "Successfully authenticated",
