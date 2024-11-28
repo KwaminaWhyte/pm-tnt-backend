@@ -1,8 +1,5 @@
-import Payment from '~/models/Payment';
-import type { PaymentInterface } from '../utils/types';
-import { createResponse, ApiResponse } from '~/utils/responseHelper';
-import Joi from 'joi';
-import UserController from './UserController';
+import Payment from "../models/Payment";
+import UserController from "./UserController";
 
 export default class PaymentController {
   private request: Request;
@@ -27,7 +24,9 @@ export default class PaymentController {
     page: number;
     searchTerm?: string;
     limit?: number;
-  }): Promise<ApiResponse<{ payments: PaymentInterface[]; totalPages: number }>> {
+  }): Promise<
+    ApiResponse<{ payments: PaymentInterface[]; totalPages: number }>
+  > {
     try {
       const skipCount = (page - 1) * limit;
 
@@ -38,10 +37,10 @@ export default class PaymentController {
             invoiceId: {
               $regex: new RegExp(
                 searchTerm
-                  .split(' ')
+                  .split(" ")
                   .map((term) => `(?=.*${term})`)
-                  .join(''),
-                'i',
+                  .join(""),
+                "i"
               ),
             },
           },
@@ -49,10 +48,10 @@ export default class PaymentController {
             checkoutId: {
               $regex: new RegExp(
                 searchTerm
-                  .split(' ')
+                  .split(" ")
                   .map((term) => `(?=.*${term})`)
-                  .join(''),
-                'i',
+                  .join(""),
+                "i"
               ),
             },
           },
@@ -63,18 +62,24 @@ export default class PaymentController {
         Payment.find(searchFilter)
           .skip(skipCount)
           .limit(limit)
-          .populate('user')
+          .populate("user")
           .sort({ createdAt: -1 })
           .exec(),
         Payment.countDocuments(searchFilter).exec(),
       ]);
 
       const totalPages = Math.ceil(totalPaymentsCount / limit);
-      return createResponse(true, 200, 'Payments retrieved successfully', { payments, totalPages });
+      return createResponse(true, 200, "Payments retrieved successfully", {
+        payments,
+        totalPages,
+      });
     } catch (error) {
-      console.error('Error fetching payments:', error);
-      return createResponse(false, 500, 'Error fetching payments', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
+      console.error("Error fetching payments:", error);
+      return createResponse(false, 500, "Error fetching payments", undefined, [
+        {
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        },
       ]);
     }
   }
@@ -90,7 +95,9 @@ export default class PaymentController {
     page: number;
     searchTerm?: string;
     limit?: number;
-  }): Promise<ApiResponse<{ payments: PaymentInterface[]; totalPages: number }>> {
+  }): Promise<
+    ApiResponse<{ payments: PaymentInterface[]; totalPages: number }>
+  > {
     try {
       const userController = new UserController(this.request);
       const userId = userController.getUserId();
@@ -104,10 +111,10 @@ export default class PaymentController {
             invoiceId: {
               $regex: new RegExp(
                 searchTerm
-                  .split(' ')
+                  .split(" ")
                   .map((term) => `(?=.*${term})`)
-                  .join(''),
-                'i',
+                  .join(""),
+                "i"
               ),
             },
           },
@@ -115,10 +122,10 @@ export default class PaymentController {
             checkoutId: {
               $regex: new RegExp(
                 searchTerm
-                  .split(' ')
+                  .split(" ")
                   .map((term) => `(?=.*${term})`)
-                  .join(''),
-                'i',
+                  .join(""),
+                "i"
               ),
             },
           },
@@ -135,12 +142,24 @@ export default class PaymentController {
       ]);
 
       const totalPages = Math.ceil(totalPaymentsCount / limit);
-      return createResponse(true, 200, 'Your payments retrieved successfully', { payments, totalPages });
+      return createResponse(true, 200, "Your payments retrieved successfully", {
+        payments,
+        totalPages,
+      });
     } catch (error) {
-      console.error('Error fetching user payments:', error);
-      return createResponse(false, 500, 'Error fetching your payments', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
-      ]);
+      console.error("Error fetching user payments:", error);
+      return createResponse(
+        false,
+        500,
+        "Error fetching your payments",
+        undefined,
+        [
+          {
+            message:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          },
+        ]
+      );
     }
   }
 
@@ -149,17 +168,25 @@ export default class PaymentController {
    */
   public async getPayment(id: string): Promise<ApiResponse<PaymentInterface>> {
     try {
-      const payment = await Payment.findById(id).populate('user');
+      const payment = await Payment.findById(id).populate("user");
 
       if (!payment) {
-        return createResponse(false, 404, 'Payment not found');
+        return createResponse(false, 404, "Payment not found");
       }
 
-      return createResponse(true, 200, 'Payment retrieved successfully', payment);
+      return createResponse(
+        true,
+        200,
+        "Payment retrieved successfully",
+        payment
+      );
     } catch (error) {
-      console.error('Error retrieving payment:', error);
-      return createResponse(false, 500, 'Error fetching payment', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
+      console.error("Error retrieving payment:", error);
+      return createResponse(false, 500, "Error fetching payment", undefined, [
+        {
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        },
       ]);
     }
   }
@@ -174,19 +201,28 @@ export default class PaymentController {
     userId: string;
   }): Promise<ApiResponse<PaymentInterface>> {
     const schema = Joi.object({
-      amount: Joi.number().positive().required().label('Amount'),
-      phone: Joi.string().required().label('Phone Number'),
-      invoiceId: Joi.string().required().label('Invoice ID'),
-      userId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required().label('User ID'),
+      amount: Joi.number().positive().required().label("Amount"),
+      phone: Joi.string().required().label("Phone Number"),
+      invoiceId: Joi.string().required().label("Invoice ID"),
+      userId: Joi.string()
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .required()
+        .label("User ID"),
     });
 
     try {
-      const { error, value } = schema.validate(paymentData, { abortEarly: false });
+      const { error, value } = schema.validate(paymentData, {
+        abortEarly: false,
+      });
 
       if (error) {
-        return createResponse(false, 400, 'Validation failed', undefined,
-          error.details.map(err => ({
-            field: err.path.join('.'),
+        return createResponse(
+          false,
+          400,
+          "Validation failed",
+          undefined,
+          error.details.map((err) => ({
+            field: err.path.join("."),
             message: err.message,
           }))
         );
@@ -197,41 +233,67 @@ export default class PaymentController {
         amount: value.amount,
         user: value.userId,
         phoneNumber: value.phone,
-        status: 'new',
+        status: "new",
       });
 
-      return createResponse(true, 201, 'Payment initialized successfully', payment);
+      return createResponse(
+        true,
+        201,
+        "Payment initialized successfully",
+        payment
+      );
     } catch (error) {
-      console.error('Error initializing payment:', error);
-      return createResponse(false, 500, 'Error initializing payment', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
-      ]);
+      console.error("Error initializing payment:", error);
+      return createResponse(
+        false,
+        500,
+        "Error initializing payment",
+        undefined,
+        [
+          {
+            message:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          },
+        ]
+      );
     }
   }
 
   /**
    * Process a payment
    */
-  public async processPayment(paymentId: string, checkoutData: {
-    checkoutId: string;
-    cardNumber?: string;
-    paymentChannel: string;
-    totalAmountCharged: number;
-  }): Promise<ApiResponse<PaymentInterface>> {
+  public async processPayment(
+    paymentId: string,
+    checkoutData: {
+      checkoutId: string;
+      cardNumber?: string;
+      paymentChannel: string;
+      totalAmountCharged: number;
+    }
+  ): Promise<ApiResponse<PaymentInterface>> {
     const schema = Joi.object({
-      checkoutId: Joi.string().required().label('Checkout ID'),
-      cardNumber: Joi.string().label('Card Number'),
-      paymentChannel: Joi.string().required().label('Payment Channel'),
-      totalAmountCharged: Joi.number().positive().required().label('Total Amount Charged'),
+      checkoutId: Joi.string().required().label("Checkout ID"),
+      cardNumber: Joi.string().label("Card Number"),
+      paymentChannel: Joi.string().required().label("Payment Channel"),
+      totalAmountCharged: Joi.number()
+        .positive()
+        .required()
+        .label("Total Amount Charged"),
     });
 
     try {
-      const { error, value } = schema.validate(checkoutData, { abortEarly: false });
+      const { error, value } = schema.validate(checkoutData, {
+        abortEarly: false,
+      });
 
       if (error) {
-        return createResponse(false, 400, 'Validation failed', undefined,
-          error.details.map(err => ({
-            field: err.path.join('.'),
+        return createResponse(
+          false,
+          400,
+          "Validation failed",
+          undefined,
+          error.details.map((err) => ({
+            field: err.path.join("."),
             message: err.message,
           }))
         );
@@ -240,11 +302,11 @@ export default class PaymentController {
       const payment = await Payment.findById(paymentId);
 
       if (!payment) {
-        return createResponse(false, 404, 'Payment not found');
+        return createResponse(false, 404, "Payment not found");
       }
 
-      if (payment.status === 'paid') {
-        return createResponse(false, 400, 'Payment has already been processed');
+      if (payment.status === "paid") {
+        return createResponse(false, 400, "Payment has already been processed");
       }
 
       const updated = await Payment.findByIdAndUpdate(
@@ -255,18 +317,26 @@ export default class PaymentController {
             cardNumber: value.cardNumber,
             paymentChannel: value.paymentChannel,
             totalAmountCharged: value.totalAmountCharged,
-            status: 'paid',
+            status: "paid",
             credited: true,
           },
         },
         { new: true, runValidators: true }
       );
 
-      return createResponse(true, 200, 'Payment processed successfully', updated);
+      return createResponse(
+        true,
+        200,
+        "Payment processed successfully",
+        updated
+      );
     } catch (error) {
-      console.error('Error processing payment:', error);
-      return createResponse(false, 500, 'Error processing payment', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
+      console.error("Error processing payment:", error);
+      return createResponse(false, 500, "Error processing payment", undefined, [
+        {
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        },
       ]);
     }
   }
@@ -277,28 +347,31 @@ export default class PaymentController {
   public async cancelPayment(id: string): Promise<ApiResponse<void>> {
     try {
       const payment = await Payment.findById(id);
-      
+
       if (!payment) {
-        return createResponse(false, 404, 'Payment not found');
+        return createResponse(false, 404, "Payment not found");
       }
 
-      if (payment.status === 'paid') {
-        return createResponse(false, 400, 'Cannot cancel a completed payment');
+      if (payment.status === "paid") {
+        return createResponse(false, 400, "Cannot cancel a completed payment");
       }
 
-      if (payment.status === 'cancelled') {
-        return createResponse(false, 400, 'Payment is already cancelled');
+      if (payment.status === "cancelled") {
+        return createResponse(false, 400, "Payment is already cancelled");
       }
 
       await Payment.findByIdAndUpdate(id, {
-        $set: { status: 'cancelled' }
+        $set: { status: "cancelled" },
       });
 
-      return createResponse(true, 200, 'Payment cancelled successfully');
+      return createResponse(true, 200, "Payment cancelled successfully");
     } catch (error) {
-      console.error('Error cancelling payment:', error);
-      return createResponse(false, 500, 'Error cancelling payment', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
+      console.error("Error cancelling payment:", error);
+      return createResponse(false, 500, "Error cancelling payment", undefined, [
+        {
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        },
       ]);
     }
   }

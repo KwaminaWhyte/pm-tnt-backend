@@ -1,7 +1,4 @@
-import Hotel from '~/models/Hotel';
-import { HotelInterface } from '~/utils/types';
-import { createResponse, ApiResponse } from '~/utils/responseHelper';
-import Joi from 'joi';
+import Hotel from "../models/Hotel";
 
 export default class HotelController {
   private request: Request;
@@ -32,18 +29,18 @@ export default class HotelController {
       const buildRegex = (term: string): RegExp =>
         new RegExp(
           term
-            .split(' ')
+            .split(" ")
             .map((word) => `(?=.*${word})`)
-            .join(''),
-          'i',
+            .join(""),
+          "i"
         );
 
       const searchFilter: Record<string, any> = {};
       if (searchTerm) {
         searchFilter.$or = [
           { name: buildRegex(searchTerm) },
-          { 'location.city': buildRegex(searchTerm) },
-          { 'location.country': buildRegex(searchTerm) },
+          { "location.city": buildRegex(searchTerm) },
+          { "location.country": buildRegex(searchTerm) },
         ];
       }
 
@@ -57,11 +54,17 @@ export default class HotelController {
       ]);
 
       const totalPages = Math.ceil(totalHotelsCount / limit);
-      return createResponse(true, 200, 'Hotels retrieved successfully', { hotels, totalPages });
+      return createResponse(true, 200, "Hotels retrieved successfully", {
+        hotels,
+        totalPages,
+      });
     } catch (error) {
-      console.error('Error fetching hotels:', error);
-      return createResponse(false, 500, 'Error fetching hotels', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
+      console.error("Error fetching hotels:", error);
+      return createResponse(false, 500, "Error fetching hotels", undefined, [
+        {
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        },
       ]);
     }
   }
@@ -74,14 +77,17 @@ export default class HotelController {
       const hotel = await Hotel.findById(id);
 
       if (!hotel) {
-        return createResponse(false, 404, 'Hotel not found');
+        return createResponse(false, 404, "Hotel not found");
       }
 
-      return createResponse(true, 200, 'Hotel retrieved successfully', hotel);
+      return createResponse(true, 200, "Hotel retrieved successfully", hotel);
     } catch (error) {
-      console.error('Error retrieving hotel:', error);
-      return createResponse(false, 500, 'Error fetching hotel', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
+      console.error("Error retrieving hotel:", error);
+      return createResponse(false, 500, "Error fetching hotel", undefined, [
+        {
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        },
       ]);
     }
   }
@@ -89,62 +95,96 @@ export default class HotelController {
   /**
    * Create a new hotel
    */
-  public async createHotel(hotelData: Partial<HotelInterface>): Promise<ApiResponse<HotelInterface>> {
+  public async createHotel(
+    hotelData: Partial<HotelInterface>
+  ): Promise<ApiResponse<HotelInterface>> {
     const schema = Joi.object({
-      name: Joi.string().required().label('Hotel Name'),
+      name: Joi.string().required().label("Hotel Name"),
       location: Joi.object({
-        address: Joi.string().required().label('Address'),
-        city: Joi.string().required().label('City'),
-        country: Joi.string().required().label('Country'),
+        address: Joi.string().required().label("Address"),
+        city: Joi.string().required().label("City"),
+        country: Joi.string().required().label("Country"),
         coordinates: Joi.object({
-          latitude: Joi.number().required().label('Latitude'),
-          longitude: Joi.number().required().label('Longitude'),
-        }).required().label('Coordinates'),
-      }).required().label('Location'),
-      description: Joi.string().label('Description'),
-      amenities: Joi.array().items(Joi.string()).label('Amenities'),
-      rooms: Joi.array().items(Joi.object({
-        roomType: Joi.string().required().label('Room Type'),
-        pricePerNight: Joi.number().positive().required().label('Price Per Night'),
-        capacity: Joi.number().integer().positive().required().label('Capacity'),
-        features: Joi.array().items(Joi.string()).label('Features'),
-        isAvailable: Joi.boolean().default(true).label('Availability'),
-      })).label('Rooms'),
-      images: Joi.array().items(Joi.string().uri()).label('Images'),
-      policies: Joi.string().label('Policies'),
+          latitude: Joi.number().required().label("Latitude"),
+          longitude: Joi.number().required().label("Longitude"),
+        })
+          .required()
+          .label("Coordinates"),
+      })
+        .required()
+        .label("Location"),
+      description: Joi.string().label("Description"),
+      amenities: Joi.array().items(Joi.string()).label("Amenities"),
+      rooms: Joi.array()
+        .items(
+          Joi.object({
+            roomType: Joi.string().required().label("Room Type"),
+            pricePerNight: Joi.number()
+              .positive()
+              .required()
+              .label("Price Per Night"),
+            capacity: Joi.number()
+              .integer()
+              .positive()
+              .required()
+              .label("Capacity"),
+            features: Joi.array().items(Joi.string()).label("Features"),
+            isAvailable: Joi.boolean().default(true).label("Availability"),
+          })
+        )
+        .label("Rooms"),
+      images: Joi.array().items(Joi.string().uri()).label("Images"),
+      policies: Joi.string().label("Policies"),
     });
 
     try {
-      const { error, value } = schema.validate(hotelData, { abortEarly: false });
+      const { error, value } = schema.validate(hotelData, {
+        abortEarly: false,
+      });
 
       if (error) {
-        return createResponse(false, 400, 'Validation failed', undefined,
-          error.details.map(err => ({
-            field: err.path.join('.'),
+        return createResponse(
+          false,
+          400,
+          "Validation failed",
+          undefined,
+          error.details.map((err) => ({
+            field: err.path.join("."),
             message: err.message,
           }))
         );
       }
 
-      const existingHotel = await Hotel.findOne({ 
+      const existingHotel = await Hotel.findOne({
         name: value.name,
-        'location.address': value.location.address 
+        "location.address": value.location.address,
       });
 
       if (existingHotel) {
-        return createResponse(false, 400, 'Hotel already exists', undefined, [
-          { field: 'name', message: 'A hotel with this name and address already exists' },
+        return createResponse(false, 400, "Hotel already exists", undefined, [
+          {
+            field: "name",
+            message: "A hotel with this name and address already exists",
+          },
         ]);
       }
 
       const hotel = new Hotel(value);
       const savedHotel = await hotel.save();
 
-      return createResponse(true, 201, 'Hotel created successfully', savedHotel);
+      return createResponse(
+        true,
+        201,
+        "Hotel created successfully",
+        savedHotel
+      );
     } catch (error) {
-      console.error('Error creating hotel:', error);
-      return createResponse(false, 500, 'Error creating hotel', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
+      console.error("Error creating hotel:", error);
+      return createResponse(false, 500, "Error creating hotel", undefined, [
+        {
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        },
       ]);
     }
   }
@@ -158,35 +198,52 @@ export default class HotelController {
   ): Promise<ApiResponse<HotelInterface>> {
     try {
       const schema = Joi.object({
-        name: Joi.string().label('Hotel Name'),
+        name: Joi.string().label("Hotel Name"),
         location: Joi.object({
-          address: Joi.string().label('Address'),
-          city: Joi.string().label('City'),
-          country: Joi.string().label('Country'),
+          address: Joi.string().label("Address"),
+          city: Joi.string().label("City"),
+          country: Joi.string().label("Country"),
           coordinates: Joi.object({
-            latitude: Joi.number().label('Latitude'),
-            longitude: Joi.number().label('Longitude'),
-          }).label('Coordinates'),
-        }).label('Location'),
-        description: Joi.string().label('Description'),
-        amenities: Joi.array().items(Joi.string()).label('Amenities'),
-        rooms: Joi.array().items(Joi.object({
-          roomType: Joi.string().required().label('Room Type'),
-          pricePerNight: Joi.number().positive().required().label('Price Per Night'),
-          capacity: Joi.number().integer().positive().required().label('Capacity'),
-          features: Joi.array().items(Joi.string()).label('Features'),
-          isAvailable: Joi.boolean().label('Availability'),
-        })).label('Rooms'),
-        images: Joi.array().items(Joi.string().uri()).label('Images'),
-        policies: Joi.string().label('Policies'),
+            latitude: Joi.number().label("Latitude"),
+            longitude: Joi.number().label("Longitude"),
+          }).label("Coordinates"),
+        }).label("Location"),
+        description: Joi.string().label("Description"),
+        amenities: Joi.array().items(Joi.string()).label("Amenities"),
+        rooms: Joi.array()
+          .items(
+            Joi.object({
+              roomType: Joi.string().required().label("Room Type"),
+              pricePerNight: Joi.number()
+                .positive()
+                .required()
+                .label("Price Per Night"),
+              capacity: Joi.number()
+                .integer()
+                .positive()
+                .required()
+                .label("Capacity"),
+              features: Joi.array().items(Joi.string()).label("Features"),
+              isAvailable: Joi.boolean().label("Availability"),
+            })
+          )
+          .label("Rooms"),
+        images: Joi.array().items(Joi.string().uri()).label("Images"),
+        policies: Joi.string().label("Policies"),
       });
 
-      const { error, value } = schema.validate(updateData, { abortEarly: false });
+      const { error, value } = schema.validate(updateData, {
+        abortEarly: false,
+      });
 
       if (error) {
-        return createResponse(false, 400, 'Validation failed', undefined,
-          error.details.map(err => ({
-            field: err.path.join('.'),
+        return createResponse(
+          false,
+          400,
+          "Validation failed",
+          undefined,
+          error.details.map((err) => ({
+            field: err.path.join("."),
             message: err.message,
           }))
         );
@@ -195,13 +252,16 @@ export default class HotelController {
       if (value.name) {
         const existingHotel = await Hotel.findOne({
           name: value.name,
-          'location.address': value.location?.address,
+          "location.address": value.location?.address,
           _id: { $ne: id },
         });
 
         if (existingHotel) {
-          return createResponse(false, 400, 'Hotel already exists', undefined, [
-            { field: 'name', message: 'A hotel with this name and address already exists' },
+          return createResponse(false, 400, "Hotel already exists", undefined, [
+            {
+              field: "name",
+              message: "A hotel with this name and address already exists",
+            },
           ]);
         }
       }
@@ -213,14 +273,17 @@ export default class HotelController {
       );
 
       if (!updated) {
-        return createResponse(false, 404, 'Hotel not found');
+        return createResponse(false, 404, "Hotel not found");
       }
 
-      return createResponse(true, 200, 'Hotel updated successfully', updated);
+      return createResponse(true, 200, "Hotel updated successfully", updated);
     } catch (error) {
-      console.error('Error updating hotel:', error);
-      return createResponse(false, 500, 'Error updating hotel', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
+      console.error("Error updating hotel:", error);
+      return createResponse(false, 500, "Error updating hotel", undefined, [
+        {
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        },
       ]);
     }
   }
@@ -231,16 +294,19 @@ export default class HotelController {
   public async deleteHotel(id: string): Promise<ApiResponse<void>> {
     try {
       const deleted = await Hotel.findByIdAndDelete(id);
-      
+
       if (!deleted) {
-        return createResponse(false, 404, 'Hotel not found');
+        return createResponse(false, 404, "Hotel not found");
       }
 
-      return createResponse(true, 200, 'Hotel deleted successfully');
+      return createResponse(true, 200, "Hotel deleted successfully");
     } catch (error) {
-      console.error('Error deleting hotel:', error);
-      return createResponse(false, 500, 'Error deleting hotel', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
+      console.error("Error deleting hotel:", error);
+      return createResponse(false, 500, "Error deleting hotel", undefined, [
+        {
+          message:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        },
       ]);
     }
   }

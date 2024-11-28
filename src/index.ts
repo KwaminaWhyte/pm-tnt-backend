@@ -2,9 +2,10 @@ import cors from "@elysiajs/cors";
 import swagger from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 import userAuthRoutes from "./routes/user-auth";
-import vehicleRoutes from "./routes/vehicle-routes";
-import adminRoutes from "./routes/admin-routes";
+import vehicleRoutes from "./routes/vehicle";
+import adminRoutes from "./routes/admin";
 import userRoutes from "./routes/users";
+import adminAuthRoutes from "./routes/admin-auth";
 
 const app = new Elysia()
   .use(
@@ -36,6 +37,7 @@ const app = new Elysia()
     })
   )
   .use(userAuthRoutes)
+  .use(adminAuthRoutes)
   .use(vehicleRoutes)
   .use(adminRoutes)
   .use(userRoutes);
@@ -78,13 +80,14 @@ app.get("/", () => {
   return {
     name: "PM Travel and Tourism API",
     version: "0.0.1",
-    description: "Backend API for PM Travel and Tourism vehicle management system",
+    description:
+      "Backend API for PM Travel and Tourism vehicle management system",
     endpoints: {
       auth: "/api/v1/user-auth",
       users: "/api/v1/users",
       vehicles: "/api/v1/vehicles",
-      admin: "/api/v1/admins"
-    }
+      admin: "/api/v1/admins",
+    },
   };
 });
 

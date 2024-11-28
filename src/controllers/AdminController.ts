@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import Admin, { AdminInterface } from "../models/Admin";
+import jwt from "jsonwebtoken";
 
 interface CreateAdminDTO {
   fullName: string;
@@ -21,6 +22,85 @@ interface ChangePasswordDTO {
 
 export default class AdminController {
   /**
+   * Generate JWT token for authenticated user
+   * @private
+   */
+  private async generateToken(userId: string): Promise<string> {
+    if (!process.env.JWT_SECRET) {
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Server configuration error",
+          errors: [
+            {
+              type: "ConfigurationError",
+              path: ["jwt"],
+              message: "JWT secret is not configured",
+            },
+          ],
+        })
+      );
+    }
+
+    return jwt.sign({ _id: userId }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+  }
+
+  /**
+   * Login admin
+   * @param param0
+   * @returns
+   */
+  public async login({ email, password }: { email: string; password: string }) {
+    const admin = await Admin.findOne({
+      email,
+    });
+
+    if (!admin) {
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Invalid Credentials",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["email"],
+              message: "Invalid Credentials",
+            },
+          ],
+        })
+      );
+    }
+
+    const valid = await bcrypt.compare(password, admin.password);
+
+    if (!valid) {
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Invalid Credentials",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["password"],
+              message: "Invalid Credentials",
+            },
+          ],
+        })
+      );
+    }
+
+    const token = await this.generateToken(admin._id);
+    const userData = await Admin.findById(admin._id).select("-password -otp");
+
+    return {
+      token,
+      user: userData,
+    };
+  }
+
+  /**
    * Get all admins with pagination and search
    */
   async getAdmins({
@@ -34,15 +114,19 @@ export default class AdminController {
   }) {
     try {
       if (page < 1 || limit < 1) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Invalid pagination parameters",
-          errors: [{
-            type: "ValidationError",
-            path: ["page", "limit"],
-            message: "Page and limit must be positive numbers"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Invalid pagination parameters",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["page", "limit"],
+                message: "Page and limit must be positive numbers",
+              },
+            ],
+          })
+        );
       }
 
       const filter: Record<string, any> = {};
@@ -65,15 +149,19 @@ export default class AdminController {
       const totalPages = Math.ceil(totalCount / limit);
 
       if (page > totalPages && totalCount > 0) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Page number exceeds available pages",
-          errors: [{
-            type: "ValidationError",
-            path: ["page"],
-            message: `Page should be between 1 and ${totalPages}`
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Page number exceeds available pages",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["page"],
+                message: `Page should be between 1 and ${totalPages}`,
+              },
+            ],
+          })
+        );
       }
 
       return {
@@ -89,15 +177,22 @@ export default class AdminController {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to retrieve admins",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to retrieve admins",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -110,15 +205,19 @@ export default class AdminController {
       const admin = await Admin.findById(id).select("-password");
 
       if (!admin) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Admin not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Admin not found"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Admin not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Admin not found",
+              },
+            ],
+          })
+        );
       }
 
       return { admin };
@@ -126,15 +225,22 @@ export default class AdminController {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to retrieve admin",
-        errors: [{
-          type: "ServerError",
-          path: ["id"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to retrieve admin",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["id"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -146,15 +252,19 @@ export default class AdminController {
     try {
       const existingAdmin = await Admin.findOne({ email: data.email });
       if (existingAdmin) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Email already exists",
-          errors: [{
-            type: "ValidationError",
-            path: ["email"],
-            message: "An admin with this email already exists"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Email already exists",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["email"],
+                message: "An admin with this email already exists",
+              },
+            ],
+          })
+        );
       }
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -174,15 +284,22 @@ export default class AdminController {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to create admin",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to create admin",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -199,15 +316,19 @@ export default class AdminController {
           _id: { $ne: id },
         });
         if (existingAdmin) {
-          throw new Error(JSON.stringify({
-            status: "error",
-            message: "Email already exists",
-            errors: [{
-              type: "ValidationError",
-              path: ["email"],
-              message: "An admin with this email already exists"
-            }]
-          }));
+          throw new Error(
+            JSON.stringify({
+              status: "error",
+              message: "Email already exists",
+              errors: [
+                {
+                  type: "ValidationError",
+                  path: ["email"],
+                  message: "An admin with this email already exists",
+                },
+              ],
+            })
+          );
         }
       }
 
@@ -218,15 +339,19 @@ export default class AdminController {
       ).select("-password");
 
       if (!admin) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Admin not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Admin not found"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Admin not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Admin not found",
+              },
+            ],
+          })
+        );
       }
 
       return {
@@ -237,15 +362,22 @@ export default class AdminController {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to update admin",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to update admin",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -258,15 +390,19 @@ export default class AdminController {
       const admin = await Admin.findByIdAndDelete(id);
 
       if (!admin) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Admin not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Admin not found"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Admin not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Admin not found",
+              },
+            ],
+          })
+        );
       }
 
       return {
@@ -276,15 +412,22 @@ export default class AdminController {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to delete admin",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to delete admin",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -298,15 +441,19 @@ export default class AdminController {
       const admin = await Admin.findById(id);
 
       if (!admin) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Admin not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Admin not found"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Admin not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Admin not found",
+              },
+            ],
+          })
+        );
       }
 
       const isValidPassword = await bcrypt.compare(
@@ -315,15 +462,19 @@ export default class AdminController {
       );
 
       if (!isValidPassword) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Invalid current password",
-          errors: [{
-            type: "ValidationError",
-            path: ["currentPassword"],
-            message: "Current password is incorrect"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Invalid current password",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["currentPassword"],
+                message: "Current password is incorrect",
+              },
+            ],
+          })
+        );
       }
 
       const hashedPassword = await bcrypt.hash(data.newPassword, 10);
@@ -338,15 +489,22 @@ export default class AdminController {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to change password",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to change password",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 }

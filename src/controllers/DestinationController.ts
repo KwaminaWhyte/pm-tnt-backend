@@ -1,7 +1,4 @@
-import Destination from '~/models/Destination';
-import { DestinationInterface } from '~/utils/types';
-import { createResponse, ApiResponse } from '~/utils/responseHelper';
-import Joi from 'joi';
+import Destination from "../models/Destination";
 
 export default class DestinationController {
   private request: Request;
@@ -26,15 +23,17 @@ export default class DestinationController {
     page: number;
     searchTerm?: string;
     limit?: number;
-  }): Promise<ApiResponse<{ destinations: DestinationInterface[]; totalPages: number }>> {
+  }): Promise<
+    ApiResponse<{ destinations: DestinationInterface[]; totalPages: number }>
+  > {
     try {
       const buildRegex = (term: string): RegExp =>
         new RegExp(
           term
-            .split(' ')
+            .split(" ")
             .map((word) => `(?=.*${word})`)
-            .join(''),
-          'i',
+            .join(""),
+          "i"
         );
 
       const searchFilter: Record<string, any> = {};
@@ -55,76 +54,137 @@ export default class DestinationController {
       ]);
 
       const totalPages = Math.ceil(totalDestinationsCount / limit);
-      return createResponse(true, 200, 'Destinations retrieved successfully', { destinations, totalPages });
+      return createResponse(true, 200, "Destinations retrieved successfully", {
+        destinations,
+        totalPages,
+      });
     } catch (error) {
-      console.error('Error fetching destinations:', error);
-      return createResponse(false, 500, 'Error fetching destinations', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
-      ]);
+      console.error("Error fetching destinations:", error);
+      return createResponse(
+        false,
+        500,
+        "Error fetching destinations",
+        undefined,
+        [
+          {
+            message:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          },
+        ]
+      );
     }
   }
 
   /**
    * Retrieve a single destination by ID
    */
-  public async getDestination(id: string): Promise<ApiResponse<DestinationInterface>> {
+  public async getDestination(
+    id: string
+  ): Promise<ApiResponse<DestinationInterface>> {
     try {
       const destination = await Destination.findById(id);
 
       if (!destination) {
-        return createResponse(false, 404, 'Destination not found');
+        return createResponse(false, 404, "Destination not found");
       }
 
-      return createResponse(true, 200, 'Destination retrieved successfully', destination);
+      return createResponse(
+        true,
+        200,
+        "Destination retrieved successfully",
+        destination
+      );
     } catch (error) {
-      console.error('Error retrieving destination:', error);
-      return createResponse(false, 500, 'Error fetching destination', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
-      ]);
+      console.error("Error retrieving destination:", error);
+      return createResponse(
+        false,
+        500,
+        "Error fetching destination",
+        undefined,
+        [
+          {
+            message:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          },
+        ]
+      );
     }
   }
 
   /**
    * Create a new destination
    */
-  public async createDestination(destinationData: Partial<DestinationInterface>): Promise<ApiResponse<DestinationInterface>> {
+  public async createDestination(
+    destinationData: Partial<DestinationInterface>
+  ): Promise<ApiResponse<DestinationInterface>> {
     const schema = Joi.object({
-      name: Joi.string().required().label('Name'),
-      price: Joi.number().positive().required().label('Price'),
-      discount: Joi.number().min(0).max(100).label('Discount'),
-      description: Joi.string().label('Description'),
-      images: Joi.array().items(Joi.string().uri()).label('Images'),
+      name: Joi.string().required().label("Name"),
+      price: Joi.number().positive().required().label("Price"),
+      discount: Joi.number().min(0).max(100).label("Discount"),
+      description: Joi.string().label("Description"),
+      images: Joi.array().items(Joi.string().uri()).label("Images"),
     });
 
     try {
-      const { error, value } = schema.validate(destinationData, { abortEarly: false });
+      const { error, value } = schema.validate(destinationData, {
+        abortEarly: false,
+      });
 
       if (error) {
-        return createResponse(false, 400, 'Validation failed', undefined,
-          error.details.map(err => ({
-            field: err.path.join('.'),
+        return createResponse(
+          false,
+          400,
+          "Validation failed",
+          undefined,
+          error.details.map((err) => ({
+            field: err.path.join("."),
             message: err.message,
           }))
         );
       }
 
-      const existingDestination = await Destination.findOne({ name: value.name });
+      const existingDestination = await Destination.findOne({
+        name: value.name,
+      });
 
       if (existingDestination) {
-        return createResponse(false, 400, 'Destination already exists', undefined, [
-          { field: 'name', message: 'A destination with this name already exists' },
-        ]);
+        return createResponse(
+          false,
+          400,
+          "Destination already exists",
+          undefined,
+          [
+            {
+              field: "name",
+              message: "A destination with this name already exists",
+            },
+          ]
+        );
       }
 
       const destination = new Destination(value);
       const savedDestination = await destination.save();
 
-      return createResponse(true, 201, 'Destination created successfully', savedDestination);
+      return createResponse(
+        true,
+        201,
+        "Destination created successfully",
+        savedDestination
+      );
     } catch (error) {
-      console.error('Error creating destination:', error);
-      return createResponse(false, 500, 'Error creating destination', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
-      ]);
+      console.error("Error creating destination:", error);
+      return createResponse(
+        false,
+        500,
+        "Error creating destination",
+        undefined,
+        [
+          {
+            message:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          },
+        ]
+      );
     }
   }
 
@@ -137,19 +197,25 @@ export default class DestinationController {
   ): Promise<ApiResponse<DestinationInterface>> {
     try {
       const schema = Joi.object({
-        name: Joi.string().label('Name'),
-        price: Joi.number().positive().label('Price'),
-        discount: Joi.number().min(0).max(100).label('Discount'),
-        description: Joi.string().label('Description'),
-        images: Joi.array().items(Joi.string().uri()).label('Images'),
+        name: Joi.string().label("Name"),
+        price: Joi.number().positive().label("Price"),
+        discount: Joi.number().min(0).max(100).label("Discount"),
+        description: Joi.string().label("Description"),
+        images: Joi.array().items(Joi.string().uri()).label("Images"),
       });
 
-      const { error, value } = schema.validate(updateData, { abortEarly: false });
+      const { error, value } = schema.validate(updateData, {
+        abortEarly: false,
+      });
 
       if (error) {
-        return createResponse(false, 400, 'Validation failed', undefined,
-          error.details.map(err => ({
-            field: err.path.join('.'),
+        return createResponse(
+          false,
+          400,
+          "Validation failed",
+          undefined,
+          error.details.map((err) => ({
+            field: err.path.join("."),
             message: err.message,
           }))
         );
@@ -162,9 +228,18 @@ export default class DestinationController {
         });
 
         if (existingDestination) {
-          return createResponse(false, 400, 'Destination already exists', undefined, [
-            { field: 'name', message: 'A destination with this name already exists' },
-          ]);
+          return createResponse(
+            false,
+            400,
+            "Destination already exists",
+            undefined,
+            [
+              {
+                field: "name",
+                message: "A destination with this name already exists",
+              },
+            ]
+          );
         }
       }
 
@@ -175,15 +250,29 @@ export default class DestinationController {
       );
 
       if (!updated) {
-        return createResponse(false, 404, 'Destination not found');
+        return createResponse(false, 404, "Destination not found");
       }
 
-      return createResponse(true, 200, 'Destination updated successfully', updated);
+      return createResponse(
+        true,
+        200,
+        "Destination updated successfully",
+        updated
+      );
     } catch (error) {
-      console.error('Error updating destination:', error);
-      return createResponse(false, 500, 'Error updating destination', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
-      ]);
+      console.error("Error updating destination:", error);
+      return createResponse(
+        false,
+        500,
+        "Error updating destination",
+        undefined,
+        [
+          {
+            message:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          },
+        ]
+      );
     }
   }
 
@@ -193,17 +282,26 @@ export default class DestinationController {
   public async deleteDestination(id: string): Promise<ApiResponse<void>> {
     try {
       const deleted = await Destination.findByIdAndDelete(id);
-      
+
       if (!deleted) {
-        return createResponse(false, 404, 'Destination not found');
+        return createResponse(false, 404, "Destination not found");
       }
 
-      return createResponse(true, 200, 'Destination deleted successfully');
+      return createResponse(true, 200, "Destination deleted successfully");
     } catch (error) {
-      console.error('Error deleting destination:', error);
-      return createResponse(false, 500, 'Error deleting destination', undefined, [
-        { message: error instanceof Error ? error.message : 'Unknown error occurred' },
-      ]);
+      console.error("Error deleting destination:", error);
+      return createResponse(
+        false,
+        500,
+        "Error deleting destination",
+        undefined,
+        [
+          {
+            message:
+              error instanceof Error ? error.message : "Unknown error occurred",
+          },
+        ]
+      );
     }
   }
 }

@@ -15,7 +15,7 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
       lastName: t.Optional(t.String()),
     }),
     detail: {
-      tags: ["Authentication"],
+      tags: ["Authentication - User"],
       summary: "Register new user",
       description: "Create a new user account",
     },
@@ -30,7 +30,7 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
         password: t.String({ minLength: 6 }),
       }),
       detail: {
-        tags: ["Authentication"],
+        tags: ["Authentication - User"],
         summary: "Login with email and password",
         description: "Authenticate user using email and password credentials",
         responses: {
@@ -99,7 +99,7 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
         phone: t.String({ pattern: "^\\+?[1-9]\\d{1,14}$" }),
       }),
       detail: {
-        tags: ["Authentication"],
+        tags: ["Authentication - User"],
         summary: "Request OTP for phone login",
         description: "Send OTP to the provided phone number for authentication",
         responses: {
@@ -178,7 +178,7 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
       otp: t.String({ minLength: 6, maxLength: 6 }),
     }),
     detail: {
-      tags: ["Authentication"],
+      tags: ["Authentication - User"],
       summary: "Verify OTP for phone login",
       description: "Verify the OTP sent to phone number and authenticate user",
       responses: {
