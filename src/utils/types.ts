@@ -23,6 +23,14 @@ interface LoginWithEmailDTO {
   password: string;
 }
 
+interface RegisterDTO {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
 interface LoginWithPhoneDTO {
   phone: string;
 }
@@ -88,8 +96,8 @@ interface VehicleSearchParams {
   capacity?: number;
   startDate?: Date;
   endDate?: Date;
-  sortBy?: 'pricePerDay' | 'capacity' | 'rating';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "pricePerDay" | "capacity" | "rating";
+  sortOrder?: "asc" | "desc";
 }
 
 interface VehicleRatingDTO {
@@ -107,5 +115,6 @@ export {
   CreateVehicleDTO,
   UpdateVehicleDTO,
   VehicleSearchParams,
-  VehicleRatingDTO
+  VehicleRatingDTO,
+  RegisterDTO,
 };

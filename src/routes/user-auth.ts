@@ -6,6 +6,21 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
   .use(jwtConfig)
   .decorate("controller", new UserController())
 
+  .post("/register", ({ body, controller }) => controller.register(body), {
+    body: t.Object({
+      email: t.String({ format: "email" }),
+      password: t.String({ minLength: 6 }),
+      phone: t.String({ pattern: "^\\+?[1-9]\\d{1,14}$" }),
+      firstName: t.String(),
+      lastName: t.Optional(t.String()),
+    }),
+    detail: {
+      tags: ["Authentication"],
+      summary: "Register new user",
+      description: "Create a new user account",
+    },
+  })
+
   .post(
     "/login/email",
     ({ body, controller }) => controller.loginWithEmail(body),

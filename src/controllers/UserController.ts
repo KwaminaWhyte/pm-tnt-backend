@@ -9,9 +9,64 @@ import {
   VerifyOtpDTO,
   UserSearchParams,
   UpdateUserDTO,
+  RegisterDTO,
 } from "../utils/types";
 
 export default class UserController {
+  /**
+   * Register a new user
+   * @throws {Error} 400 - Invalid input data
+   *
+   */
+  async register(data: RegisterDTO) {
+    const { email, password, firstName, lastName, phone } = data;
+
+    if (!email || !password) {
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Invalid input data",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["email", "password"],
+              message: "Email and password are required",
+            },
+          ],
+        })
+      );
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Email already exists",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["email"],
+              message: "An account with this email already exists",
+            },
+          ],
+        })
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({
+      firstName,
+      lastName,
+      phone,
+      email,
+      password: hashedPassword,
+    });
+    await user.save();
+
+    return user;
+  }
+
   /**
    * Authenticate user with email and password
    * @throws {Error} 401 - Invalid credentials
