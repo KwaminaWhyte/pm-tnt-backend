@@ -2,10 +2,11 @@ import cors from "@elysiajs/cors";
 import swagger from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 import userAuthRoutes from "./routes/user-auth";
-import vehicleRoutes from "./routes/vehicle";
-import adminRoutes from "./routes/admin";
-import userRoutes from "./routes/users";
+import vehiclesRoutes from "./routes/vehicles";
+import adminsRoutes from "./routes/admin";
+import usersRoutes from "./routes/users";
 import adminAuthRoutes from "./routes/admin-auth";
+import hotelsRoutes from "./routes/hotels";
 
 const app = new Elysia()
   .use(
@@ -38,9 +39,10 @@ const app = new Elysia()
   )
   .use(userAuthRoutes)
   .use(adminAuthRoutes)
-  .use(vehicleRoutes)
-  .use(adminRoutes)
-  .use(userRoutes);
+  .use(vehiclesRoutes)
+  .use(adminsRoutes)
+  .use(usersRoutes)
+  .use(hotelsRoutes);
 
 app.onError(({ error, code }) => {
   if (code === "NOT_FOUND") return;
@@ -91,7 +93,7 @@ app.get("/", () => {
   };
 });
 
-app.listen(1464);
+app.listen(process.env.PORT || 3000);
 
 console.log(
   `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`

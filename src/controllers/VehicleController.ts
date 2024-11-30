@@ -374,6 +374,102 @@ export default class VehicleController {
   }
 
   /**
+   * Check vehicle availability for specific dates
+   * @throws {Error} 404 - Vehicle not found
+   */
+  async checkAvailability(id: string, params: {
+    startDate: Date;
+    endDate: Date;
+    insuranceOption?: string;
+  }) {
+    try {
+      const vehicle = await Vehicle.findById(id);
+      
+      if (!vehicle) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Vehicle not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["id"],
+            message: "Vehicle not found"
+          }]
+        }));
+      }
+
+      // Check if dates are valid
+      const startDate = new Date(params.startDate);
+      const endDate = new Date(params.endDate);
+      
+      if (startDate >= endDate) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Invalid dates",
+          errors: [{
+            type: "ValidationError",
+            path: ["dates"],
+            message: "Start date must be before end date"
+          }]
+        }));
+      }
+
+      // Check vehicle availability using the model method
+      const isAvailable = vehicle.isAvailableForDates(startDate, endDate);
+
+      if (!isAvailable) {
+        return {
+          status: "success",
+          data: {
+            isAvailable: false,
+            message: "Vehicle is not available for the selected dates",
+            maintenanceStatus: vehicle.maintenanceStatus
+          }
+        };
+      }
+
+      // Calculate rental price
+      const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      const priceDetails = vehicle.calculateRentalPrice(days, params.insuranceOption);
+
+      return {
+        status: "success",
+        data: {
+          isAvailable: true,
+          vehicle: {
+            _id: vehicle._id,
+            make: vehicle.make,
+            model: vehicle.model,
+            vehicleType: vehicle.vehicleType,
+            capacity: vehicle.capacity,
+            features: vehicle.features,
+            location: vehicle.availability.location,
+            maintenanceStatus: vehicle.maintenanceStatus
+          },
+          rental: {
+            startDate,
+            endDate,
+            days,
+            ...priceDetails
+          }
+        }
+      };
+    } catch (error: any) {
+      if (error instanceof Error && error.message.includes("status")) {
+        throw error;
+      }
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to check vehicle availability",
+        errors: [{
+          type: "ServerError",
+          path: ["server"],
+          message: error instanceof Error ? error.message : "Unknown error occurred"
+        }]
+      }));
+    }
+  }
+
+  /**
    * Get vehicle statistics
    */
   async getVehicleStats() {

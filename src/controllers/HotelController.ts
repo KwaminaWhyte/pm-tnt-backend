@@ -1,313 +1,690 @@
+import { HotelInterface } from "../utils/types";
 import Hotel from "../models/Hotel";
+import Booking from "../models/Booking"; // Assuming you have a Booking model
 
 export default class HotelController {
-  private request: Request;
-  private path: string;
-
-  constructor(request: Request) {
-    const url = new URL(request.url);
-    const path = url.pathname + url.search;
-
-    this.request = request;
-    this.path = path;
-  }
-
   /**
    * Retrieve all hotels with pagination and filtering
+   * @throws {Error} 400 - Invalid search parameters
    */
-  public async getHotels({
-    page,
+  async getHotels({
+    page = 1,
     searchTerm,
     limit = 10,
+    isAvailable,
+    priceRange,
+    city,
+    country,
+    sortBy,
+    sortOrder,
+    roomType,
+    capacity
   }: {
-    page: number;
+    page?: number;
     searchTerm?: string;
     limit?: number;
-  }): Promise<ApiResponse<{ hotels: HotelInterface[]; totalPages: number }>> {
+    isAvailable?: boolean;
+    priceRange?: { min: number; max: number };
+    city?: string;
+    country?: string;
+    sortBy?: 'pricePerNight' | 'capacity' | 'rating';
+    sortOrder?: 'asc' | 'desc';
+    roomType?: string;
+    capacity?: number;
+  }) {
     try {
-      const skipCount = (page - 1) * limit;
-      const buildRegex = (term: string): RegExp =>
-        new RegExp(
-          term
-            .split(" ")
-            .map((word) => `(?=.*${word})`)
-            .join(""),
-          "i"
-        );
+      if (page < 1 || limit < 1) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Invalid pagination parameters",
+          errors: [{
+            type: "ValidationError",
+            path: ["page", "limit"],
+            message: "Page and limit must be positive numbers"
+          }]
+        }));
+      }
 
-      const searchFilter: Record<string, any> = {};
+      const filter: Record<string, any> = {};
+
       if (searchTerm) {
-        searchFilter.$or = [
-          { name: buildRegex(searchTerm) },
-          { "location.city": buildRegex(searchTerm) },
-          { "location.country": buildRegex(searchTerm) },
+        filter.$or = [
+          { name: { $regex: searchTerm, $options: 'i' } },
+          { "location.city": { $regex: searchTerm, $options: 'i' } },
+          { "location.country": { $regex: searchTerm, $options: 'i' } }
         ];
       }
 
-      const [hotels, totalHotelsCount] = await Promise.all([
-        Hotel.find(searchFilter)
+      if (isAvailable !== undefined) {
+        filter["rooms.isAvailable"] = isAvailable;
+      }
+
+      if (priceRange) {
+        filter["rooms.pricePerNight"] = {
+          $gte: priceRange.min,
+          $lte: priceRange.max
+        };
+      }
+
+      if (city) {
+        filter["location.city"] = { $regex: city, $options: 'i' };
+      }
+
+      if (country) {
+        filter["location.country"] = { $regex: country, $options: 'i' };
+      }
+
+      if (roomType) {
+        filter["rooms.roomType"] = { $regex: roomType, $options: 'i' };
+      }
+
+      if (capacity) {
+        filter["rooms.capacity"] = { $gte: capacity };
+      }
+
+      const sort: Record<string, 1 | -1> = {};
+      if (sortBy) {
+        sort[sortBy === 'pricePerNight' ? 'rooms.pricePerNight' : sortBy] = sortOrder === 'asc' ? 1 : -1;
+      } else {
+        sort.createdAt = -1;
+      }
+
+      const skipCount = (page - 1) * limit;
+      const [hotels, totalCount] = await Promise.all([
+        Hotel.find(filter)
+          .sort(sort)
           .skip(skipCount)
-          .limit(limit)
-          .sort({ createdAt: -1 })
-          .exec(),
-        Hotel.countDocuments(searchFilter).exec(),
+          .limit(limit),
+        Hotel.countDocuments(filter)
       ]);
 
-      const totalPages = Math.ceil(totalHotelsCount / limit);
-      return createResponse(true, 200, "Hotels retrieved successfully", {
-        hotels,
-        totalPages,
-      });
-    } catch (error) {
-      console.error("Error fetching hotels:", error);
-      return createResponse(false, 500, "Error fetching hotels", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+      return {
+        status: "success",
+        data: {
+          hotels,
+          totalPages: Math.ceil(totalCount / limit),
+          currentPage: page,
+          totalCount
+        }
+      };
+    } catch (error: any) {
+      if (error.message.startsWith('{')) {
+        throw error;
+      }
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to fetch hotels",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: error.message
+        }]
+      }));
     }
   }
 
   /**
-   * Retrieve a single hotel by ID
+   * Get hotel by ID
+   * @throws {Error} 404 - Hotel not found
    */
-  public async getHotel(id: string): Promise<ApiResponse<HotelInterface>> {
+  async getHotelById(id: string) {
     try {
       const hotel = await Hotel.findById(id);
-
       if (!hotel) {
-        return createResponse(false, 404, "Hotel not found");
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Hotel not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["id"],
+            message: "Hotel with the specified ID does not exist"
+          }]
+        }));
       }
 
-      return createResponse(true, 200, "Hotel retrieved successfully", hotel);
-    } catch (error) {
-      console.error("Error retrieving hotel:", error);
-      return createResponse(false, 500, "Error fetching hotel", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+      return {
+        status: "success",
+        data: hotel
+      };
+    } catch (error: any) {
+      if (error.message.startsWith('{')) {
+        throw error;
+      }
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to fetch hotel",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: error.message
+        }]
+      }));
     }
   }
 
   /**
    * Create a new hotel
+   * @throws {Error} 400 - Invalid hotel data
    */
-  public async createHotel(
-    hotelData: Partial<HotelInterface>
-  ): Promise<ApiResponse<HotelInterface>> {
-    const schema = Joi.object({
-      name: Joi.string().required().label("Hotel Name"),
-      location: Joi.object({
-        address: Joi.string().required().label("Address"),
-        city: Joi.string().required().label("City"),
-        country: Joi.string().required().label("Country"),
-        coordinates: Joi.object({
-          latitude: Joi.number().required().label("Latitude"),
-          longitude: Joi.number().required().label("Longitude"),
-        })
-          .required()
-          .label("Coordinates"),
-      })
-        .required()
-        .label("Location"),
-      description: Joi.string().label("Description"),
-      amenities: Joi.array().items(Joi.string()).label("Amenities"),
-      rooms: Joi.array()
-        .items(
-          Joi.object({
-            roomType: Joi.string().required().label("Room Type"),
-            pricePerNight: Joi.number()
-              .positive()
-              .required()
-              .label("Price Per Night"),
-            capacity: Joi.number()
-              .integer()
-              .positive()
-              .required()
-              .label("Capacity"),
-            features: Joi.array().items(Joi.string()).label("Features"),
-            isAvailable: Joi.boolean().default(true).label("Availability"),
-          })
-        )
-        .label("Rooms"),
-      images: Joi.array().items(Joi.string().uri()).label("Images"),
-      policies: Joi.string().label("Policies"),
-    });
-
+  async createHotel(hotelData: Partial<HotelInterface>) {
     try {
-      const { error, value } = schema.validate(hotelData, {
-        abortEarly: false,
-      });
+      const hotel = new Hotel(hotelData);
+      await hotel.save();
 
-      if (error) {
-        return createResponse(
-          false,
-          400,
-          "Validation failed",
-          undefined,
-          error.details.map((err) => ({
-            field: err.path.join("."),
-            message: err.message,
-          }))
-        );
-      }
-
-      const existingHotel = await Hotel.findOne({
-        name: value.name,
-        "location.address": value.location.address,
-      });
-
-      if (existingHotel) {
-        return createResponse(false, 400, "Hotel already exists", undefined, [
-          {
-            field: "name",
-            message: "A hotel with this name and address already exists",
-          },
-        ]);
-      }
-
-      const hotel = new Hotel(value);
-      const savedHotel = await hotel.save();
-
-      return createResponse(
-        true,
-        201,
-        "Hotel created successfully",
-        savedHotel
-      );
-    } catch (error) {
-      console.error("Error creating hotel:", error);
-      return createResponse(false, 500, "Error creating hotel", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+      return {
+        status: "success",
+        data: hotel
+      };
+    } catch (error: any) {
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to create hotel",
+        errors: [{
+          type: "ValidationError",
+          path: [],
+          message: error.message
+        }]
+      }));
     }
   }
 
   /**
-   * Update an existing hotel
+   * Update hotel by ID
+   * @throws {Error} 404 - Hotel not found
+   * @throws {Error} 400 - Invalid update data
    */
-  public async updateHotel(
-    id: string,
-    updateData: Partial<HotelInterface>
-  ): Promise<ApiResponse<HotelInterface>> {
+  async updateHotel(id: string, updateData: Partial<HotelInterface>) {
     try {
-      const schema = Joi.object({
-        name: Joi.string().label("Hotel Name"),
-        location: Joi.object({
-          address: Joi.string().label("Address"),
-          city: Joi.string().label("City"),
-          country: Joi.string().label("Country"),
-          coordinates: Joi.object({
-            latitude: Joi.number().label("Latitude"),
-            longitude: Joi.number().label("Longitude"),
-          }).label("Coordinates"),
-        }).label("Location"),
-        description: Joi.string().label("Description"),
-        amenities: Joi.array().items(Joi.string()).label("Amenities"),
-        rooms: Joi.array()
-          .items(
-            Joi.object({
-              roomType: Joi.string().required().label("Room Type"),
-              pricePerNight: Joi.number()
-                .positive()
-                .required()
-                .label("Price Per Night"),
-              capacity: Joi.number()
-                .integer()
-                .positive()
-                .required()
-                .label("Capacity"),
-              features: Joi.array().items(Joi.string()).label("Features"),
-              isAvailable: Joi.boolean().label("Availability"),
-            })
-          )
-          .label("Rooms"),
-        images: Joi.array().items(Joi.string().uri()).label("Images"),
-        policies: Joi.string().label("Policies"),
-      });
-
-      const { error, value } = schema.validate(updateData, {
-        abortEarly: false,
-      });
-
-      if (error) {
-        return createResponse(
-          false,
-          400,
-          "Validation failed",
-          undefined,
-          error.details.map((err) => ({
-            field: err.path.join("."),
-            message: err.message,
-          }))
-        );
-      }
-
-      if (value.name) {
-        const existingHotel = await Hotel.findOne({
-          name: value.name,
-          "location.address": value.location?.address,
-          _id: { $ne: id },
-        });
-
-        if (existingHotel) {
-          return createResponse(false, 400, "Hotel already exists", undefined, [
-            {
-              field: "name",
-              message: "A hotel with this name and address already exists",
-            },
-          ]);
-        }
-      }
-
-      const updated = await Hotel.findByIdAndUpdate(
+      const hotel = await Hotel.findByIdAndUpdate(
         id,
-        { $set: value },
+        { $set: updateData },
         { new: true, runValidators: true }
       );
 
-      if (!updated) {
-        return createResponse(false, 404, "Hotel not found");
+      if (!hotel) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Hotel not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["id"],
+            message: "Hotel with the specified ID does not exist"
+          }]
+        }));
       }
 
-      return createResponse(true, 200, "Hotel updated successfully", updated);
-    } catch (error) {
-      console.error("Error updating hotel:", error);
-      return createResponse(false, 500, "Error updating hotel", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+      return {
+        status: "success",
+        data: hotel
+      };
+    } catch (error: any) {
+      if (error.message.startsWith('{')) {
+        throw error;
+      }
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to update hotel",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: error.message
+        }]
+      }));
     }
   }
 
   /**
-   * Delete a hotel
+   * Delete hotel by ID
+   * @throws {Error} 404 - Hotel not found
    */
-  public async deleteHotel(id: string): Promise<ApiResponse<void>> {
+  async deleteHotel(id: string) {
     try {
-      const deleted = await Hotel.findByIdAndDelete(id);
-
-      if (!deleted) {
-        return createResponse(false, 404, "Hotel not found");
+      const hotel = await Hotel.findByIdAndDelete(id);
+      
+      if (!hotel) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Hotel not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["id"],
+            message: "Hotel with the specified ID does not exist"
+          }]
+        }));
       }
 
-      return createResponse(true, 200, "Hotel deleted successfully");
-    } catch (error) {
-      console.error("Error deleting hotel:", error);
-      return createResponse(false, 500, "Error deleting hotel", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+      return {
+        status: "success",
+        data: hotel
+      };
+    } catch (error: any) {
+      if (error.message.startsWith('{')) {
+        throw error;
+      }
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to delete hotel",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: error.message
+        }]
+      }));
+    }
+  }
+
+  /**
+   * Add rating to hotel
+   * @throws {Error} 404 - Hotel not found
+   * @throws {Error} 400 - Invalid rating data
+   */
+  async addRating(id: string, ratingData: { userId: string; rating: number; comment?: string }) {
+    try {
+      const hotel = await Hotel.findById(id);
+      
+      if (!hotel) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Hotel not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["id"],
+            message: "Hotel with the specified ID does not exist"
+          }]
+        }));
+      }
+
+      hotel.ratings.push({
+        ...ratingData,
+        createdAt: new Date()
+      });
+
+      await hotel.save();
+
+      return {
+        status: "success",
+        data: hotel
+      };
+    } catch (error: any) {
+      if (error.message.startsWith('{')) {
+        throw error;
+      }
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to add rating",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: error.message
+        }]
+      }));
+    }
+  }
+
+  /**
+   * Get room availability for a hotel
+   * @throws {Error} 404 - Hotel not found
+   */
+  async getRoomAvailability(id: string, params: {
+    checkIn: Date;
+    checkOut: Date;
+    guests: number;
+  }) {
+    try {
+      const hotel = await Hotel.findById(id);
+      if (!hotel) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Hotel not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["id"],
+            message: "Hotel with the specified ID does not exist"
+          }]
+        }));
+      }
+
+      // Check if dates are valid
+      const checkInDate = new Date(params.checkIn);
+      const checkOutDate = new Date(params.checkOut);
+      
+      if (checkInDate >= checkOutDate) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Invalid dates",
+          errors: [{
+            type: "ValidationError",
+            path: ["dates"],
+            message: "Check-in date must be before check-out date"
+          }]
+        }));
+      }
+
+      // Get existing bookings for this period
+      const existingBookings = await Booking.find({
+        hotelId: id,
+        $or: [
+          {
+            checkIn: { $lte: checkOutDate },
+            checkOut: { $gte: checkInDate }
+          }
+        ]
+      });
+
+      // Get booked room IDs for this period
+      const bookedRoomIds = existingBookings.map(booking => booking.roomId.toString());
+
+      // Filter available rooms based on capacity, maintenance status and existing bookings
+      const availableRooms = hotel.rooms.filter(room => 
+        room.isAvailable && 
+        room.maintenanceStatus === 'Available' &&
+        room.capacity >= params.guests &&
+        !bookedRoomIds.includes(room._id.toString())
+      );
+
+      // Calculate prices including seasonal adjustments
+      const roomsWithPrices = availableRooms.map(room => {
+        const basePrice = room.pricePerNight;
+        const totalNights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+        const seasonalPrice = hotel.getCurrentPrice(room.roomType, checkInDate);
+        
+        return {
+          ...room.toObject(),
+          calculatedPrice: {
+            basePrice,
+            seasonalPrice,
+            totalPrice: seasonalPrice * totalNights
+          }
+        };
+      });
+
+      return {
+        status: "success",
+        data: {
+          availableRooms: roomsWithPrices,
+          totalRooms: roomsWithPrices.length,
+          checkIn: checkInDate,
+          checkOut: checkOutDate,
+          nights: Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
+        }
+      };
+    } catch (error: any) {
+      if (error.message.startsWith('{')) {
+        throw error;
+      }
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to get room availability",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: error.message
+        }]
+      }));
+    }
+  }
+
+  /**
+   * Add user review to hotel
+   * @throws {Error} 404 - Hotel not found
+   * @throws {Error} 400 - Invalid review data
+   */
+  async addUserReview(id: string, reviewData: {
+    userId: string;
+    rating: number;
+    comment: string;
+  }) {
+    try {
+      const hotel = await Hotel.findById(id);
+      if (!hotel) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Hotel not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["id"],
+            message: "Hotel with the specified ID does not exist"
+          }]
+        }));
+      }
+
+      // Validate rating
+      if (reviewData.rating < 1 || reviewData.rating > 5) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Invalid rating",
+          errors: [{
+            type: "ValidationError",
+            path: ["rating"],
+            message: "Rating must be between 1 and 5"
+          }]
+        }));
+      }
+
+      hotel.ratings.push({
+        ...reviewData,
+        createdAt: new Date()
+      });
+
+      await hotel.save();
+
+      return {
+        status: "success",
+        data: hotel
+      };
+    } catch (error: any) {
+      if (error.message.startsWith('{')) {
+        throw error;
+      }
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to add review",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: error.message
+        }]
+      }));
+    }
+  }
+
+  /**
+   * Get nearby hotels based on coordinates
+   * @throws {Error} 400 - Invalid coordinates
+   */
+  async getNearbyHotels(params: {
+    latitude: number;
+    longitude: number;
+    radius?: number; // in kilometers
+    limit?: number;
+  }) {
+    try {
+      const radius = params.radius || 10; // Default 10km
+      const limit = params.limit || 10; // Default 10 results
+
+      // Use MongoDB's geospatial query
+      const hotels = await Hotel.find({
+        'location.coordinates': {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [params.longitude, params.latitude]
+            },
+            $maxDistance: radius * 1000 // Convert km to meters
+          }
+        }
+      }).limit(limit);
+
+      return {
+        status: "success",
+        data: hotels
+      };
+    } catch (error: any) {
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to find nearby hotels",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: error.message
+        }]
+      }));
+    }
+  }
+
+  /**
+   * Toggle hotel favorite status for a user
+   * @throws {Error} 404 - Hotel not found
+   */
+  async toggleFavorite(hotelId: string, userId: string) {
+    try {
+      const hotel = await Hotel.findById(hotelId);
+      if (!hotel) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Hotel not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["id"],
+            message: "Hotel with the specified ID does not exist"
+          }]
+        }));
+      }
+
+      // Note: This assumes we have a favorites array in the hotel model
+      const favoriteIndex = hotel.favorites?.indexOf(userId) ?? -1;
+      if (favoriteIndex === -1) {
+        hotel.favorites = [...(hotel.favorites || []), userId];
+      } else {
+        hotel.favorites = hotel.favorites?.filter(id => id !== userId);
+      }
+
+      await hotel.save();
+
+      return {
+        status: "success",
+        data: {
+          isFavorite: favoriteIndex === -1,
+          hotel
+        }
+      };
+    } catch (error: any) {
+      if (error.message.startsWith('{')) {
+        throw error;
+      }
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to toggle favorite",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: error.message
+        }]
+      }));
+    }
+  }
+
+  /**
+   * Book a room in the hotel
+   * @throws {Error} 404 - Hotel not found
+   * @throws {Error} 400 - Invalid booking data
+   */
+  async bookRoom(hotelId: string, bookingData: {
+    userId: string;
+    roomId: string;
+    checkIn: Date;
+    checkOut: Date;
+    guests: number;
+  }) {
+    try {
+      const hotel = await Hotel.findById(hotelId);
+      if (!hotel) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Hotel not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["id"],
+            message: "Hotel with the specified ID does not exist"
+          }]
+        }));
+      }
+
+      const room = hotel.rooms.find(r => r._id.toString() === bookingData.roomId);
+      if (!room) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Room not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["roomId"],
+            message: "Room with the specified ID does not exist"
+          }]
+        }));
+      }
+
+      if (!room.isAvailable) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Room not available",
+          errors: [{
+            type: "ValidationError",
+            path: ["roomId"],
+            message: "The selected room is not available"
+          }]
+        }));
+      }
+
+      if (room.capacity < bookingData.guests) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Room capacity exceeded",
+          errors: [{
+            type: "ValidationError",
+            path: ["guests"],
+            message: `Room capacity is ${room.capacity} guests`
+          }]
+        }));
+      }
+
+      // Create booking (assuming we have a Booking model)
+      const booking = new Booking({
+        hotelId,
+        roomId: bookingData.roomId,
+        userId: bookingData.userId,
+        checkIn: bookingData.checkIn,
+        checkOut: bookingData.checkOut,
+        guests: bookingData.guests,
+        status: 'confirmed',
+        totalPrice: room.pricePerNight * Math.ceil((bookingData.checkOut.getTime() - bookingData.checkIn.getTime()) / (1000 * 60 * 60 * 24))
+      });
+
+      await booking.save();
+
+      // Update room availability
+      room.isAvailable = false;
+      await hotel.save();
+
+      return {
+        status: "success",
+        data: {
+          booking,
+          room
+        }
+      };
+    } catch (error: any) {
+      if (error.message.startsWith('{')) {
+        throw error;
+      }
+      throw new Error(JSON.stringify({
+        status: "error",
+        message: "Failed to book room",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: error.message
+        }]
+      }));
     }
   }
 }

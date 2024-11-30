@@ -2,47 +2,56 @@ import { Elysia, t } from "elysia";
 import { jwtConfig } from "../utils/jwt.config";
 import VehicleController from "../controllers/VehicleController";
 import { isAdmin } from "../middleware/auth";
+import BookingController from "../controllers/BookingController";
 
 const vehicleController = new VehicleController();
 
 const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
-  // .use(jwtConfig)
-  // .derive(async ({ headers, jwt_auth }) => {
-  //   const auth = headers["authorization"];
-  //   const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  .use(jwtConfig)
+  .derive(async ({ headers, jwt_auth }) => {
+    const auth = headers["authorization"];
+    const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
 
-  //   if (!token) {
-  //     throw new Error(JSON.stringify({
-  //       status: "error",
-  //       message: "Unauthorized",
-  //       errors: [{
-  //         type: "AuthError",
-  //         path: ["authorization"],
-  //         message: "Token is missing"
-  //       }]
-  //     }));
-  //   }
+    if (!token) {
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Token is missing",
+            },
+          ],
+        })
+      );
+    }
 
-  //   try {
-  //     const userId = await jwt_auth.verify(token);
-  //     return { userId };
-  //   } catch (error) {
-  //     throw new Error(JSON.stringify({
-  //       status: "error",
-  //       message: "Unauthorized",
-  //       errors: [{
-  //         type: "AuthError",
-  //         path: ["authorization"],
-  //         message: "Invalid or expired token"
-  //       }]
-  //     }));
-  //   }
-  // })
-  // .guard({
-  //   detail: {
-  //     description: "Require user to be logged in",
-  //   },
-  // })
+    try {
+      const userId = await jwt_auth.verify(token);
+      return { userId };
+    } catch (error) {
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Invalid or expired token",
+            },
+          ],
+        })
+      );
+    }
+  })
+  .guard({
+    detail: {
+      description: "Require user to be logged in",
+    },
+  })
   .group("/public", (app) =>
     app
       .get(
@@ -143,6 +152,97 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
             rating: t.Number({ minimum: 1, maximum: 5 }),
             comment: t.Optional(t.String()),
           }),
+        }
+      )
+      .get(
+        "/:id/availability",
+        async ({ params: { id }, query }) =>
+          vehicleController.checkAvailability(id, {
+            startDate: new Date(query.startDate as string),
+            endDate: new Date(query.endDate as string),
+            insuranceOption: query.insuranceOption as string
+          }),
+        {
+          detail: {
+            summary: "Check vehicle availability",
+            tags: ["Vehicles - Public"],
+          },
+          params: t.Object({
+            id: t.String(),
+          }),
+          query: t.Object({
+            startDate: t.String(),
+            endDate: t.String(),
+            insuranceOption: t.Optional(t.String()),
+          }),
+        }
+      )
+      .post(
+        "/:id/book",
+        async ({ params: { id }, body, userId }) => {
+          const bookingController = new BookingController({ url: "", userId });
+          return bookingController.createBooking({
+            vehicleId: id,
+            userId,
+            startDate: new Date(body.startDate),
+            endDate: new Date(body.endDate),
+            totalPrice: body.totalPrice,
+            bookingDetails: {
+              pickupLocation: body.pickupLocation,
+              dropoffLocation: body.dropoffLocation,
+              driverDetails: body.driverDetails,
+            }
+          });
+        },
+        {
+          detail: {
+            summary: "Book a vehicle",
+            tags: ["Vehicles - Public"],
+          },
+          params: t.Object({
+            id: t.String(),
+          }),
+          body: t.Object({
+            startDate: t.String(),
+            endDate: t.String(),
+            totalPrice: t.Number(),
+            pickupLocation: t.Object({
+              city: t.String(),
+              country: t.String(),
+              coordinates: t.Optional(t.Object({
+                latitude: t.Number(),
+                longitude: t.Number()
+              }))
+            }),
+            dropoffLocation: t.Object({
+              city: t.String(),
+              country: t.String(),
+              coordinates: t.Optional(t.Object({
+                latitude: t.Number(),
+                longitude: t.Number()
+              }))
+            }),
+            driverDetails: t.Optional(t.Object({
+              licenseNumber: t.String(),
+              expiryDate: t.String()
+            })),
+            insuranceOption: t.Optional(t.String())
+          }),
+        }
+      )
+      .get(
+        "/bookings/history",
+        async ({ userId }) => {
+          const bookingController = new BookingController({ url: "", userId });
+          return bookingController.getMyBookings({
+            type: "vehicle"
+          });
+        },
+        {
+          detail: {
+            summary: "Get vehicle booking history",
+            tags: ["Vehicles - Public"],
+          }
         }
       )
   )

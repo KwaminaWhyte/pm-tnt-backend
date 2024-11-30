@@ -1,4 +1,15 @@
+import { Request } from "elysia";
+import { getUserId } from "../utils/helpers";
+import { type ApiResponse } from "../utils/types";
 import Booking from "../models/Booking";
+import Hotel from "../models/Hotel";
+import Vehicle from "../models/Vehicle";
+import {
+  BookingInterface,
+  BookingSearchParams,
+  CreateBookingDTO,
+  UpdateBookingDTO,
+} from "../utils/types";
 
 export default class BookingController {
   private request: Request;
@@ -17,150 +28,138 @@ export default class BookingController {
   /**
    * Retrieve all bookings with pagination and filtering
    */
-  public async getBookings({
-    page,
-    searchTerm,
-    limit = 10,
-  }: {
-    page: number;
-    searchTerm?: string;
-    limit?: number;
-  }): Promise<
-    ApiResponse<{ bookings: BookingInterface[]; totalPages: number }>
-  > {
+  public async getBookings(
+    params: BookingSearchParams
+  ): Promise<{ bookings: BookingInterface[]; totalPages: number }> {
     try {
-      const skipCount = (page - 1) * limit;
+      const {
+        page = 1,
+        limit = 10,
+        status,
+        paymentStatus,
+        startDate,
+        endDate,
+        sortBy = "bookingDate",
+        sortOrder = "desc",
+      } = params;
 
-      const buildRegex = (term: string): RegExp =>
-        new RegExp(
-          term
-            .split(" ")
-            .map((word) => `(?=.*${word})`)
-            .join(""),
-          "i"
-        );
-
-      const searchFilter: Record<string, any> = {};
-      if (searchTerm) {
-        searchFilter.$or = [
-          { name: buildRegex(searchTerm) },
-          { description: buildRegex(searchTerm) },
-        ];
+      if (page < 1 || limit < 1) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Invalid pagination parameters",
+          errors: [{
+            type: "ValidationError",
+            path: ["page", "limit"],
+            message: "Page and limit must be positive numbers"
+          }]
+        }));
       }
 
+      const skipCount = (page - 1) * limit;
+      const filter: Record<string, any> = {};
+
+      if (status) filter.status = status;
+      if (paymentStatus) filter.paymentStatus = paymentStatus;
+      if (startDate) filter.startDate = { $gte: new Date(startDate) };
+      if (endDate) filter.endDate = { $lte: new Date(endDate) };
+
+      const sortOptions: Record<string, 1 | -1> = {
+        [sortBy]: sortOrder === "asc" ? 1 : -1,
+      };
+
       const [bookings, totalBookingsCount] = await Promise.all([
-        Booking.find(searchFilter)
+        Booking.find(filter)
           .skip(skipCount)
           .limit(limit)
-          .sort({ createdAt: -1 })
+          .sort(sortOptions)
+          .populate("user", "firstName lastName email phone")
+          .populate("hotel", "name city country")
+          .populate("vehicle", "make model vehicleType")
           .exec(),
-        Booking.countDocuments(searchFilter).exec(),
+        Booking.countDocuments(filter).exec(),
       ]);
 
       const totalPages = Math.ceil(totalBookingsCount / limit);
-      return createResponse(true, 200, "Bookings retrieved successfully", {
+
+      return {
         bookings,
         totalPages,
-      });
+        currentPage: page,
+        totalBookings: totalBookingsCount,
+      };
     } catch (error) {
       console.error("Error fetching bookings:", error);
-      return createResponse(false, 500, "Error fetching bookings", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+      throw error;
     }
   }
 
   /**
    * Retrieve bookings for the current user
    */
-  public async getMyBookings({
-    page,
-    searchTerm,
-    limit = 10,
-  }: {
-    page: number;
-    searchTerm?: string;
-    limit?: number;
-  }): Promise<
-    ApiResponse<{ bookings: BookingInterface[]; totalPages: number }>
-  > {
+  public async getMyBookings(
+    params: BookingSearchParams
+  ): Promise<{ bookings: BookingInterface[]; totalPages: number }> {
     try {
-      const buildRegex = (term: string): RegExp =>
-        new RegExp(
-          term
-            .split(" ")
-            .map((word) => `(?=.*${word})`)
-            .join(""),
-          "i"
-        );
+      const {
+        page = 1,
+        limit = 10,
+        status,
+        paymentStatus,
+        startDate,
+        endDate,
+        type,
+        sortBy = "bookingDate",
+        sortOrder = "desc",
+      } = params;
 
-      const searchFilter: Record<string, any> = { user: this.userId };
-      if (searchTerm) {
-        searchFilter.$or = [
-          { name: buildRegex(searchTerm) },
-          { description: buildRegex(searchTerm) },
-        ];
+      if (page < 1 || limit < 1) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Invalid pagination parameters",
+          errors: [{
+            type: "ValidationError",
+            path: ["page", "limit"],
+            message: "Page and limit must be positive numbers"
+          }]
+        }));
       }
 
+      const skipCount = (page - 1) * limit;
+      const filter: Record<string, any> = { user: this.userId };
+
+      if (status) filter.status = status;
+      if (paymentStatus) filter.paymentStatus = paymentStatus;
+      if (startDate) filter.startDate = { $gte: new Date(startDate) };
+      if (endDate) filter.endDate = { $lte: new Date(endDate) };
+      if (type === "hotel") filter.hotel = { $exists: true };
+      if (type === "vehicle") filter.vehicle = { $exists: true };
+
+      const sortOptions: Record<string, 1 | -1> = {
+        [sortBy]: sortOrder === "asc" ? 1 : -1,
+      };
+
       const [bookings, totalBookingsCount] = await Promise.all([
-        Booking.find(searchFilter)
-          .skip((page - 1) * limit)
+        Booking.find(filter)
+          .skip(skipCount)
           .limit(limit)
-          .sort({ createdAt: -1 })
+          .sort(sortOptions)
+          .populate("hotel", "name city country")
+          .populate("vehicle", "make model vehicleType")
           .exec(),
-        Booking.countDocuments(searchFilter).exec(),
+        Booking.countDocuments(filter).exec(),
       ]);
 
       const totalPages = Math.ceil(totalBookingsCount / limit);
-      return createResponse(true, 200, "Your bookings retrieved successfully", {
+
+      return {
         bookings,
         totalPages,
-      });
+        currentPage: page,
+        totalBookings: totalBookingsCount,
+      };
     } catch (error) {
       console.error("Error fetching user bookings:", error);
-      return createResponse(
-        false,
-        500,
-        "Error fetching your bookings",
-        undefined,
-        [
-          {
-            message:
-              error instanceof Error ? error.message : "Unknown error occurred",
-          },
-        ]
-      );
-    }
-  }
-
-  /**
-   * Retrieve a single booking by ID
-   */
-  public async getBooking(id: string): Promise<ApiResponse<BookingInterface>> {
-    try {
-      const booking = await Booking.findById(id);
-
-      if (!booking) {
-        return createResponse(false, 404, "Booking not found");
-      }
-
-      return createResponse(
-        true,
-        200,
-        "Booking retrieved successfully",
-        booking
-      );
-    } catch (error) {
-      console.error("Error retrieving booking:", error);
-      return createResponse(false, 500, "Error fetching booking", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+      throw error;
     }
   }
 
@@ -168,182 +167,245 @@ export default class BookingController {
    * Create a new booking
    */
   public async createBooking(
-    bookingData: Partial<BookingInterface>
-  ): Promise<ApiResponse<BookingInterface>> {
-    const schema = Joi.object({
-      hotel: Joi.string()
-        .regex(/^[0-9a-fA-F]{24}$/)
-        .label("Hotel ID"),
-      vehicle: Joi.string()
-        .regex(/^[0-9a-fA-F]{24}$/)
-        .label("Vehicle ID"),
-      travelPackage: Joi.string()
-        .regex(/^[0-9a-fA-F]{24}$/)
-        .label("Package ID"),
-      startDate: Joi.date().greater("now").required().label("Start Date"),
-      endDate: Joi.date()
-        .greater(Joi.ref("startDate"))
-        .required()
-        .label("End Date"),
-      totalPrice: Joi.number().positive().required().label("Total Price"),
-      status: Joi.string()
-        .valid("Pending", "Confirmed", "Cancelled")
-        .default("Pending")
-        .label("Status"),
-      paymentStatus: Joi.string()
-        .valid("Paid", "Unpaid")
-        .default("Unpaid")
-        .label("Payment Status"),
-    })
-      .or("hotel", "vehicle", "travelPackage")
-      .label("Booking");
-
+    data: CreateBookingDTO
+  ): Promise<BookingInterface> {
     try {
-      const { error, value } = schema.validate(bookingData, {
-        abortEarly: false,
-      });
+      const {
+        hotelId,
+        vehicleId,
+        packageId,
+        startDate,
+        endDate,
+        totalPrice,
+        bookingDetails,
+      } = data;
 
-      if (error) {
-        return createResponse(
-          false,
-          400,
-          "Validation failed",
-          undefined,
-          error.details.map((err) => ({
-            field: err.path.join("."),
-            message: err.message,
-          }))
-        );
+      if (!hotelId && !vehicleId && !packageId) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Missing service selection",
+          errors: [{
+            type: "ValidationError",
+            path: ["service"],
+            message: "At least one service (hotel, vehicle, or package) must be booked"
+          }]
+        }));
+      }
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (start >= end) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Invalid date range",
+          errors: [{
+            type: "ValidationError",
+            path: ["startDate", "endDate"],
+            message: "End date must be after start date"
+          }]
+        }));
+      }
+
+      if (hotelId) {
+        const hotel = await Hotel.findById(hotelId);
+        if (!hotel) {
+          throw new Error(JSON.stringify({
+            status: "error",
+            message: "Hotel not found",
+            errors: [{
+              type: "NotFoundError",
+              path: ["hotelId"],
+              message: "Invalid hotel ID"
+            }]
+          }));
+        }
+      }
+
+      if (vehicleId) {
+        const vehicle = await Vehicle.findById(vehicleId);
+        if (!vehicle) {
+          throw new Error(JSON.stringify({
+            status: "error",
+            message: "Vehicle not found",
+            errors: [{
+              type: "NotFoundError",
+              path: ["vehicleId"],
+              message: "Invalid vehicle ID"
+            }]
+          }));
+        }
+
+        const isAvailable = vehicle.isAvailableForDates(start, end);
+        if (!isAvailable) {
+          throw new Error(JSON.stringify({
+            status: "error",
+            message: "Vehicle not available",
+            errors: [{
+              type: "ValidationError",
+              path: ["vehicleId"],
+              message: "Vehicle is not available for the selected dates"
+            }]
+          }));
+        }
       }
 
       const booking = new Booking({
-        ...value,
         user: this.userId,
+        hotel: hotelId,
+        vehicle: vehicleId,
+        travelPackage: packageId,
+        startDate: start,
+        endDate: end,
+        totalPrice,
+        bookingDetails,
         bookingDate: new Date(),
+        status: "Pending",
+        paymentStatus: "Unpaid",
       });
 
-      const savedBooking = await booking.save();
-      return createResponse(
-        true,
-        201,
-        "Booking created successfully",
-        savedBooking
-      );
+      await booking.save();
+
+      const populatedBooking = await Booking.findById(booking._id)
+        .populate("hotel", "name city country")
+        .populate("vehicle", "make model vehicleType")
+        .exec();
+
+      return populatedBooking;
     } catch (error) {
       console.error("Error creating booking:", error);
-      return createResponse(false, 500, "Error creating booking", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+      throw error;
     }
   }
 
   /**
-   * Update an existing booking
+   * Update a booking
    */
   public async updateBooking(
-    id: string,
-    updateData: Partial<BookingInterface>
-  ): Promise<ApiResponse<BookingInterface>> {
+    bookingId: string,
+    data: UpdateBookingDTO
+  ): Promise<BookingInterface> {
     try {
-      const schema = Joi.object({
-        startDate: Joi.date().greater("now").label("Start Date"),
-        endDate: Joi.date().greater(Joi.ref("startDate")).label("End Date"),
-        status: Joi.string()
-          .valid("Pending", "Confirmed", "Cancelled")
-          .label("Status"),
-        paymentStatus: Joi.string()
-          .valid("Paid", "Unpaid")
-          .label("Payment Status"),
-      });
-
-      const { error, value } = schema.validate(updateData, {
-        abortEarly: false,
-      });
-
-      if (error) {
-        return createResponse(
-          false,
-          400,
-          "Validation failed",
-          undefined,
-          error.details.map((err) => ({
-            field: err.path.join("."),
-            message: err.message,
-          }))
-        );
-      }
-
-      const booking = await Booking.findById(id);
+      const booking = await Booking.findById(bookingId);
 
       if (!booking) {
-        return createResponse(false, 404, "Booking not found");
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Booking not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["bookingId"],
+            message: "Invalid booking ID"
+          }]
+        }));
       }
 
       if (booking.user.toString() !== this.userId) {
-        return createResponse(
-          false,
-          403,
-          "You are not authorized to update this booking"
-        );
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Unauthorized",
+          errors: [{
+            type: "AuthError",
+            path: ["authorization"],
+            message: "Access denied"
+          }]
+        }));
       }
 
-      const updated = await Booking.findByIdAndUpdate(
-        id,
-        { $set: value },
-        { new: true, runValidators: true }
-      );
+      if (data.startDate && data.endDate) {
+        const start = new Date(data.startDate);
+        const end = new Date(data.endDate);
+        if (start >= end) {
+          throw new Error(JSON.stringify({
+            status: "error",
+            message: "Invalid date range",
+            errors: [{
+              type: "ValidationError",
+              path: ["startDate", "endDate"],
+              message: "End date must be after start date"
+            }]
+          }));
+        }
+      }
 
-      return createResponse(true, 200, "Booking updated successfully", updated);
+      const updatedBooking = await Booking.findByIdAndUpdate(
+        bookingId,
+        { $set: data },
+        { new: true }
+      )
+        .populate("hotel", "name city country")
+        .populate("vehicle", "make model vehicleType")
+        .exec();
+
+      return updatedBooking;
     } catch (error) {
       console.error("Error updating booking:", error);
-      return createResponse(false, 500, "Error updating booking", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+      throw error;
     }
   }
 
   /**
    * Cancel a booking
    */
-  public async cancelBooking(id: string): Promise<ApiResponse<void>> {
+  public async cancelBooking(
+    bookingId: string
+  ): Promise<BookingInterface> {
     try {
-      const booking = await Booking.findById(id);
+      const booking = await Booking.findById(bookingId);
 
       if (!booking) {
-        return createResponse(false, 404, "Booking not found");
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Booking not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["bookingId"],
+            message: "Invalid booking ID"
+          }]
+        }));
       }
 
       if (booking.user.toString() !== this.userId) {
-        return createResponse(
-          false,
-          403,
-          "You are not authorized to cancel this booking"
-        );
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Unauthorized",
+          errors: [{
+            type: "AuthError",
+            path: ["authorization"],
+            message: "Access denied"
+          }]
+        }));
       }
 
-      if (booking.status === "Cancelled") {
-        return createResponse(false, 400, "Booking is already cancelled");
+      const now = new Date();
+      const startDate = new Date(booking.startDate);
+      const hoursUntilStart =
+        (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+      if (hoursUntilStart < 24) {
+        throw new Error(JSON.stringify({
+          status: "error",
+          message: "Cancellation window expired",
+          errors: [{
+            type: "ValidationError",
+            path: ["startDate"],
+            message: "Cannot cancel booking less than 24 hours before start time"
+          }]
+        }));
       }
 
-      await Booking.findByIdAndUpdate(id, {
-        $set: { status: "Cancelled" },
-      });
+      const updatedBooking = await Booking.findByIdAndUpdate(
+        bookingId,
+        { $set: { status: "Cancelled" } },
+        { new: true }
+      )
+        .populate("hotel", "name city country")
+        .populate("vehicle", "make model vehicleType")
+        .exec();
 
-      return createResponse(true, 200, "Booking cancelled successfully");
+      return updatedBooking;
     } catch (error) {
       console.error("Error cancelling booking:", error);
-      return createResponse(false, 500, "Error cancelling booking", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+      throw error;
     }
   }
 }
