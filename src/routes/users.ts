@@ -5,7 +5,6 @@ import UserController from "../controllers/UserController";
 const userController = new UserController();
 
 const userRoutes = new Elysia({ prefix: "/api/v1/users" })
-  .use(jwtConfig)
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;

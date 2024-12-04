@@ -1,7 +1,6 @@
 import { Elysia, t } from "elysia";
 import { jwtConfig } from "../utils/jwt.config";
 import HotelController from "../controllers/HotelController";
-import { isAdmin } from "../middleware/auth";
 
 const hotelController = new HotelController();
 
@@ -10,7 +9,6 @@ const hotelController = new HotelController();
  * Base path: /api/v1/hotels
  */
 const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
-  .use(jwtConfig)
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -111,7 +109,8 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
       }),
       detail: {
         summary: "Get all hotels",
-        description: "Retrieve a list of hotels with optional filtering and pagination",
+        description:
+          "Retrieve a list of hotels with optional filtering and pagination",
         tags: ["Hotels"],
         responses: {
           200: {
@@ -149,7 +148,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
           description: "Unauthorized - Invalid or missing token",
         },
       },
-    }
+    },
   })
   /**
    * Get room availability for a hotel
@@ -160,33 +159,37 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
    * @param {number} guests - Number of guests
    * @returns {Promise<{ availableRooms: Room[], totalRooms: number }>}
    */
-  .get("/:id/availability", ({ params: { id }, query }) => 
-    hotelController.getRoomAvailability(id, {
-      checkIn: new Date(query.checkIn as string),
-      checkOut: new Date(query.checkOut as string),
-      guests: Number(query.guests)
-    }), {
+  .get(
+    "/:id/availability",
+    ({ params: { id }, query }) =>
+      hotelController.getRoomAvailability(id, {
+        checkIn: new Date(query.checkIn as string),
+        checkOut: new Date(query.checkOut as string),
+        guests: Number(query.guests),
+      }),
+    {
       query: t.Object({
         checkIn: t.String(),
         checkOut: t.String(),
-        guests: t.String()
+        guests: t.String(),
       }),
       detail: {
         summary: "Get room availability",
-        description: "Check room availability for specific dates and number of guests",
+        description:
+          "Check room availability for specific dates and number of guests",
         tags: ["Hotels", "Rooms"],
         responses: {
           200: {
-            description: "Room availability retrieved successfully"
+            description: "Room availability retrieved successfully",
           },
           400: {
-            description: "Invalid query parameters"
+            description: "Invalid query parameters",
           },
           404: {
-            description: "Hotel not found"
-          }
-        }
-      }
+            description: "Hotel not found",
+          },
+        },
+      },
     }
   )
   /**
@@ -198,32 +201,36 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
    * @param {number} limit - Maximum number of results (optional)
    * @returns {Promise<Hotel[]>}
    */
-  .get("/nearby", ({ query }) => 
-    hotelController.getNearbyHotels({
-      latitude: Number(query.latitude),
-      longitude: Number(query.longitude),
-      radius: query.radius ? Number(query.radius) : undefined,
-      limit: query.limit ? Number(query.limit) : undefined
-    }), {
+  .get(
+    "/nearby",
+    ({ query }) =>
+      hotelController.getNearbyHotels({
+        latitude: Number(query.latitude),
+        longitude: Number(query.longitude),
+        radius: query.radius ? Number(query.radius) : undefined,
+        limit: query.limit ? Number(query.limit) : undefined,
+      }),
+    {
       query: t.Object({
         latitude: t.String(),
         longitude: t.String(),
         radius: t.Optional(t.String()),
-        limit: t.Optional(t.String())
+        limit: t.Optional(t.String()),
       }),
       detail: {
         summary: "Get nearby hotels",
-        description: "Find hotels within a specified radius of given coordinates",
+        description:
+          "Find hotels within a specified radius of given coordinates",
         tags: ["Hotels", "Search"],
         responses: {
           200: {
-            description: "Nearby hotels retrieved successfully"
+            description: "Nearby hotels retrieved successfully",
           },
           400: {
-            description: "Invalid coordinates"
-          }
-        }
-      }
+            description: "Invalid coordinates",
+          },
+        },
+      },
     }
   )
   /**
@@ -233,15 +240,18 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
    * @param {Object} body - Review data
    * @returns {Promise<Hotel>}
    */
-  .post("/:id/reviews", ({ params: { id }, body, userId }) => 
-    hotelController.addUserReview(id, {
-      userId,
-      rating: body.rating,
-      comment: body.comment
-    }), {
+  .post(
+    "/:id/reviews",
+    ({ params: { id }, body, userId }) =>
+      hotelController.addUserReview(id, {
+        userId,
+        rating: body.rating,
+        comment: body.comment,
+      }),
+    {
       body: t.Object({
         rating: t.Number({ minimum: 1, maximum: 5 }),
-        comment: t.String()
+        comment: t.String(),
       }),
       detail: {
         summary: "Add hotel review",
@@ -249,16 +259,16 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
         tags: ["Hotels", "Reviews"],
         responses: {
           200: {
-            description: "Review added successfully"
+            description: "Review added successfully",
           },
           400: {
-            description: "Invalid review data"
+            description: "Invalid review data",
           },
           404: {
-            description: "Hotel not found"
-          }
-        }
-      }
+            description: "Hotel not found",
+          },
+        },
+      },
     }
   )
   /**
@@ -267,21 +277,23 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
    * @param {string} id - Hotel ID
    * @returns {Promise<{ isFavorite: boolean, hotel: Hotel }>}
    */
-  .post("/:id/favorite", ({ params: { id }, userId }) => 
-    hotelController.toggleFavorite(id, userId), {
+  .post(
+    "/:id/favorite",
+    ({ params: { id }, userId }) => hotelController.toggleFavorite(id, userId),
+    {
       detail: {
         summary: "Toggle favorite",
         description: "Toggle favorite status of a hotel for the current user",
         tags: ["Hotels", "User Preferences"],
         responses: {
           200: {
-            description: "Favorite status toggled successfully"
+            description: "Favorite status toggled successfully",
           },
           404: {
-            description: "Hotel not found"
-          }
-        }
-      }
+            description: "Hotel not found",
+          },
+        },
+      },
     }
   )
   /**
@@ -291,19 +303,22 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
    * @param {Object} body - Booking data
    * @returns {Promise<{ booking: Booking, room: Room }>}
    */
-  .post("/:id/book", ({ params: { id }, body, userId }) => 
-    hotelController.bookRoom(id, {
-      userId,
-      roomId: body.roomId,
-      checkIn: new Date(body.checkIn),
-      checkOut: new Date(body.checkOut),
-      guests: body.guests
-    }), {
+  .post(
+    "/:id/book",
+    ({ params: { id }, body, userId }) =>
+      hotelController.bookRoom(id, {
+        userId,
+        roomId: body.roomId,
+        checkIn: new Date(body.checkIn),
+        checkOut: new Date(body.checkOut),
+        guests: body.guests,
+      }),
+    {
       body: t.Object({
         roomId: t.String(),
         checkIn: t.String(),
         checkOut: t.String(),
-        guests: t.Number()
+        guests: t.Number(),
       }),
       detail: {
         summary: "Book room",
@@ -311,16 +326,16 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
         tags: ["Hotels", "Bookings"],
         responses: {
           200: {
-            description: "Room booked successfully"
+            description: "Room booked successfully",
           },
           400: {
-            description: "Invalid booking data or room not available"
+            description: "Invalid booking data or room not available",
           },
           404: {
-            description: "Hotel or room not found"
-          }
-        }
-      }
+            description: "Hotel or room not found",
+          },
+        },
+      },
     }
   )
   .group("/admin", (app) =>

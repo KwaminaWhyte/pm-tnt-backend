@@ -3,7 +3,6 @@ import UserController from "../controllers/UserController";
 import { jwtConfig } from "../utils/jwt.config";
 
 const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
-  .use(jwtConfig)
   .decorate("controller", new UserController())
 
   .post("/register", ({ body, controller }) => controller.register(body), {

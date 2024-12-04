@@ -7,6 +7,7 @@ import adminsRoutes from "./routes/admin";
 import usersRoutes from "./routes/users";
 import adminAuthRoutes from "./routes/admin-auth";
 import hotelsRoutes from "./routes/hotels";
+import { jwtConfig } from "./utils/jwt.config";
 
 const app = new Elysia()
   .use(
@@ -37,6 +38,7 @@ const app = new Elysia()
       },
     })
   )
+  .use(jwtConfig)
   .use(userAuthRoutes)
   .use(adminAuthRoutes)
   .use(vehiclesRoutes)

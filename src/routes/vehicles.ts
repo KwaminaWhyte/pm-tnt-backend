@@ -1,13 +1,11 @@
 import { Elysia, t } from "elysia";
 import { jwtConfig } from "../utils/jwt.config";
 import VehicleController from "../controllers/VehicleController";
-import { isAdmin } from "../middleware/auth";
 import BookingController from "../controllers/BookingController";
 
 const vehicleController = new VehicleController();
 
 const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
-  .use(jwtConfig)
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -160,7 +158,7 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
           vehicleController.checkAvailability(id, {
             startDate: new Date(query.startDate as string),
             endDate: new Date(query.endDate as string),
-            insuranceOption: query.insuranceOption as string
+            insuranceOption: query.insuranceOption as string,
           }),
         {
           detail: {
@@ -191,7 +189,7 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
               pickupLocation: body.pickupLocation,
               dropoffLocation: body.dropoffLocation,
               driverDetails: body.driverDetails,
-            }
+            },
           });
         },
         {
@@ -209,24 +207,30 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
             pickupLocation: t.Object({
               city: t.String(),
               country: t.String(),
-              coordinates: t.Optional(t.Object({
-                latitude: t.Number(),
-                longitude: t.Number()
-              }))
+              coordinates: t.Optional(
+                t.Object({
+                  latitude: t.Number(),
+                  longitude: t.Number(),
+                })
+              ),
             }),
             dropoffLocation: t.Object({
               city: t.String(),
               country: t.String(),
-              coordinates: t.Optional(t.Object({
-                latitude: t.Number(),
-                longitude: t.Number()
-              }))
+              coordinates: t.Optional(
+                t.Object({
+                  latitude: t.Number(),
+                  longitude: t.Number(),
+                })
+              ),
             }),
-            driverDetails: t.Optional(t.Object({
-              licenseNumber: t.String(),
-              expiryDate: t.String()
-            })),
-            insuranceOption: t.Optional(t.String())
+            driverDetails: t.Optional(
+              t.Object({
+                licenseNumber: t.String(),
+                expiryDate: t.String(),
+              })
+            ),
+            insuranceOption: t.Optional(t.String()),
           }),
         }
       )
@@ -235,14 +239,14 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
         async ({ userId }) => {
           const bookingController = new BookingController({ url: "", userId });
           return bookingController.getMyBookings({
-            type: "vehicle"
+            type: "vehicle",
           });
         },
         {
           detail: {
             summary: "Get vehicle booking history",
             tags: ["Vehicles - Public"],
-          }
+          },
         }
       )
   )

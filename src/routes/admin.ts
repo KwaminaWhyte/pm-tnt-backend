@@ -1,12 +1,10 @@
 import { Elysia, t } from "elysia";
 import { jwtConfig } from "../utils/jwt.config";
 import AdminController from "../controllers/AdminController";
-import { isAdmin } from "../middleware/auth";
 
 const adminController = new AdminController();
 
 const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
-  .use(jwtConfig)
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
