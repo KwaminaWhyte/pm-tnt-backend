@@ -97,7 +97,7 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
         firstName: t.Optional(t.String()),
         lastName: t.Optional(t.String()),
         email: t.Optional(t.String({ format: "email" })),
-        phone: t.Optional(t.String({ pattern: "^\\+?[1-9]\\d{1,14}$" })),
+        phone: t.Optional(t.String({ pattern: "^\\+?[0-9]\\d{1,14}$" })),
       }),
       detail: {
         tags: ["Users"],

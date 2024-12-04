@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema<UserInterface>(
     },
     password: {
       type: String,
-      required: function(this: any) {
+      required: function (this: any) {
         return Boolean(this.email); // Password required only if email exists
       },
     },
@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema<UserInterface>(
       type: String,
       required: true,
       unique: true,
-      match: [/^\+?[1-9]\d{1,14}$/, "Invalid phone number format"],
+      match: [/^\+?[0-9]\d{1,14}$/, "Invalid phone number format"],
     },
     otp: {
       code: String,

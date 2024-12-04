@@ -71,7 +71,7 @@ export default class UserController {
    * @throws {Error} 401 - Invalid credentials
    * @throws {Error} 400 - Invalid input data
    */
-  async loginWithEmail(data: LoginWithEmailDTO) {
+  async loginWithEmail(data: LoginWithEmailDTO, jwt_auth?: any) {
     const { email, password } = data;
 
     if (!email || !password) {
@@ -82,7 +82,6 @@ export default class UserController {
           errors: [
             {
               type: "ValidationError",
-              path: ["email", "password"],
               message: "Email and password are required",
             },
           ],
@@ -91,45 +90,51 @@ export default class UserController {
     }
 
     const user = await User.findOne({ email });
-    if (!user || !user.password) {
+
+    if (!user) {
       throw new Error(
         JSON.stringify({
           status: "error",
-          message: "Authentication failed",
+          message: "User not found",
           errors: [
             {
               type: "AuthenticationError",
-              path: ["credentials"],
-              message: "Invalid email or password",
+              message: "Invalid credentials",
             },
           ],
         })
       );
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
       throw new Error(
         JSON.stringify({
           status: "error",
-          message: "Authentication failed",
+          message: "Invalid credentials",
           errors: [
             {
               type: "AuthenticationError",
-              path: ["credentials"],
-              message: "Invalid email or password",
+              message: "Incorrect password",
             },
           ],
         })
       );
     }
 
-    const token = await this.generateToken(user._id);
-    const userData = await User.findById(user._id).select("-password -otp");
+    // Optional: Generate JWT token if jwt_auth is provided
+    let token = null;
+    if (jwt_auth) {
+      token = await jwt_auth.sign({
+        id: user.id,
+        email: user.email,
+      });
+    }
 
     return {
+      user,
       token,
-      user: userData,
     };
   }
 
@@ -139,8 +144,8 @@ export default class UserController {
    * @throws {Error} 400 - Invalid phone number
    * @throws {Error} 500 - SMS service error
    */
-  async loginWithPhone(data: LoginWithPhoneDTO) {
-    const { phone } = data;
+  async requestOTP(phone: string) {
+    console.log(phone);
 
     if (!phone) {
       throw new Error(
@@ -191,9 +196,12 @@ export default class UserController {
 
     try {
       await sendSMS({
-        smsText: `Your verification code is ${otp} - Adamus IT`,
+        smsText: `Your verification code is ${otp} - PMTnT`,
         recipient: phone,
       });
+      return {
+        message: "OTP sent successfully",
+      };
     } catch (error) {
       throw new Error(
         JSON.stringify({
@@ -209,10 +217,6 @@ export default class UserController {
         })
       );
     }
-
-    return {
-      message: "OTP sent successfully",
-    };
   }
 
   /**
@@ -220,7 +224,7 @@ export default class UserController {
    * @throws {Error} 401 - Invalid or expired OTP
    * @throws {Error} 404 - User not found
    */
-  async verifyOtp(data: VerifyOtpDTO) {
+  async verifyOtp(data: VerifyOtpDTO, jwt_auth?: any) {
     const { phone, otp } = data;
 
     if (!phone || !otp) {
@@ -269,8 +273,8 @@ export default class UserController {
       }
     );
 
-    const token = await this.generateToken(user._id);
-    const userData = await User.findById(user._id).select("-password -otp");
+    const token = await jwt_auth.sign({ id: user.id });
+    const userData = await User.findById(user.id).select("-password -otp");
 
     return {
       token,

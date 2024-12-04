@@ -2,14 +2,14 @@ import { Elysia, t } from "elysia";
 import UserController from "../controllers/UserController";
 import { jwtConfig } from "../utils/jwt.config";
 
-const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
-  .decorate("controller", new UserController())
+const userController = new UserController();
 
-  .post("/register", ({ body, controller }) => controller.register(body), {
+const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
+  .post("/register", ({ body }) => userController.register(body), {
     body: t.Object({
       email: t.String({ format: "email" }),
       password: t.String({ minLength: 6 }),
-      phone: t.String({ pattern: "^\\+?[1-9]\\d{1,14}$" }),
+      phone: t.String({ pattern: "^\\+?[0-9]\\d{1,14}$" }),
       firstName: t.String(),
       lastName: t.Optional(t.String()),
     }),
@@ -22,7 +22,8 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
 
   .post(
     "/login/email",
-    ({ body, controller }) => controller.loginWithEmail(body),
+    async ({ body, jwt_auth }) =>
+      await userController.loginWithEmail(body, jwt_auth),
     {
       body: t.Object({
         email: t.String({ format: "email" }),
@@ -92,10 +93,10 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
 
   .post(
     "/login/phone",
-    ({ body, controller }) => controller.loginWithPhone(body),
+    async ({ body: { phone } }) => await userController.requestOTP(phone),
     {
       body: t.Object({
-        phone: t.String({ pattern: "^\\+?[1-9]\\d{1,14}$" }),
+        phone: t.String({ pattern: "^\\+?[0-9]\\d{1,14}$" }),
       }),
       detail: {
         tags: ["Authentication - User"],
@@ -171,70 +172,75 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
     }
   )
 
-  .post("/verify-otp", ({ body, controller }) => controller.verifyOtp(body), {
-    body: t.Object({
-      phone: t.String({ pattern: "^\\+?[1-9]\\d{1,14}$" }),
-      otp: t.String({ minLength: 6, maxLength: 6 }),
-    }),
-    detail: {
-      tags: ["Authentication - User"],
-      summary: "Verify OTP for phone login",
-      description: "Verify the OTP sent to phone number and authenticate user",
-      responses: {
-        200: {
-          description: "OTP verified successfully",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                token: t.String(),
-                user: t.Object({
-                  id: t.String(),
-                  phone: t.String(),
-                  firstName: t.String(),
-                  lastName: t.Optional(t.String()),
+  .post(
+    "/verify-otp",
+    ({ body, jwt_auth }) => userController.verifyOtp(body, jwt_auth),
+    {
+      body: t.Object({
+        phone: t.String({ pattern: "^\\+?[0-9]\\d{1,14}$" }),
+        otp: t.String({ minLength: 6, maxLength: 6 }),
+      }),
+      detail: {
+        tags: ["Authentication - User"],
+        summary: "Verify OTP for phone login",
+        description:
+          "Verify the OTP sent to phone number and authenticate user",
+        responses: {
+          200: {
+            description: "OTP verified successfully",
+            content: {
+              "application/json": {
+                schema: t.Object({
+                  token: t.String(),
+                  user: t.Object({
+                    id: t.String(),
+                    phone: t.String(),
+                    firstName: t.String(),
+                    lastName: t.Optional(t.String()),
+                  }),
                 }),
-              }),
+              },
             },
           },
-        },
-        400: {
-          description: "Invalid input data",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                status: t.Literal("error"),
-                message: t.String(),
-                errors: t.Array(
-                  t.Object({
-                    type: t.String(),
-                    path: t.Array(t.String()),
-                    message: t.String(),
-                  })
-                ),
-              }),
+          400: {
+            description: "Invalid input data",
+            content: {
+              "application/json": {
+                schema: t.Object({
+                  status: t.Literal("error"),
+                  message: t.String(),
+                  errors: t.Array(
+                    t.Object({
+                      type: t.String(),
+                      path: t.Array(t.String()),
+                      message: t.String(),
+                    })
+                  ),
+                }),
+              },
             },
           },
-        },
-        401: {
-          description: "Invalid or expired OTP",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                status: t.Literal("error"),
-                message: t.String(),
-                errors: t.Array(
-                  t.Object({
-                    type: t.String(),
-                    path: t.Array(t.String()),
-                    message: t.String(),
-                  })
-                ),
-              }),
+          401: {
+            description: "Invalid or expired OTP",
+            content: {
+              "application/json": {
+                schema: t.Object({
+                  status: t.Literal("error"),
+                  message: t.String(),
+                  errors: t.Array(
+                    t.Object({
+                      type: t.String(),
+                      path: t.Array(t.String()),
+                      message: t.String(),
+                    })
+                  ),
+                }),
+              },
             },
           },
         },
       },
-    },
-  });
+    }
+  );
 
 export default authRoutes;
