@@ -7,9 +7,50 @@ const adminController = new AdminController();
 
 const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
   .use(jwtConfig)
-  // .guard({
-  //   beforeHandle: [isAdmin],
-  // })
+  .derive(async ({ headers, jwt_auth }) => {
+    const auth = headers["authorization"];
+    const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+    if (!token) {
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Token is missing",
+            },
+          ],
+        })
+      );
+    }
+
+    try {
+      const userId = await jwt_auth.verify(token);
+      return { userId };
+    } catch (error) {
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Invalid or expired token",
+            },
+          ],
+        })
+      );
+    }
+  })
+  .guard({
+    detail: {
+      description: "Require user to be logged in",
+    },
+  })
   .get(
     "/",
     async ({ query }) => {
@@ -28,6 +69,12 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
       }),
     }
   )
+  .get("/me", async ({ userId }) => adminController.getAdmin(userId), {
+    detail: {
+      summary: "Get current admin profile",
+      tags: ["Admins"],
+    },
+  })
   .get("/:id", async ({ params: { id } }) => adminController.getAdmin(id), {
     detail: {
       summary: "Get admin details",
