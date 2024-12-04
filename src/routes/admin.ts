@@ -9,7 +9,6 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
-    console.log(token);
 
     if (!token) {
       throw new Error(
@@ -28,10 +27,8 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
     }
 
     try {
-      const userId = (await jwt_auth.verify(token)).valueOf();
-      console.log({ userId });
-
-      return { userId };
+      const data = await jwt_auth.verify(token);
+      return { userId: data?.id };
     } catch (error) {
       throw new Error(
         JSON.stringify({

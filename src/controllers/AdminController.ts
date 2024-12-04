@@ -68,8 +68,9 @@ export default class AdminController {
     }
 
     // const token = await this.generateToken(admin._id);
-    const token = await jwt_auth.sign(admin._id);
-    const userData = await Admin.findById(admin._id).select("-password -otp");
+
+    const token = await jwt_auth.sign({ id: admin.id });
+    const userData = await Admin.findById(admin.id).select("-password -otp");
 
     return {
       token,
@@ -178,12 +179,10 @@ export default class AdminController {
    * @throws {Error} 404 - Admin not found
    */
   async getAdmin(id: string) {
-    console.log(id);
-
     try {
-      const admin = await Admin.findById(id).select("-password");
+      const user = await Admin.findById(id).select("-password");
 
-      if (!admin) {
+      if (!user) {
         throw new Error(
           JSON.stringify({
             status: "error",
@@ -199,7 +198,7 @@ export default class AdminController {
         );
       }
 
-      return { admin };
+      return { user };
     } catch (error) {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;

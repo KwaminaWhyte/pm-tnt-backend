@@ -527,32 +527,6 @@ export default class UserController {
   }
 
   /**
-   * Generate JWT token for authenticated user
-   * @private
-   */
-  private async generateToken(userId: string): Promise<string> {
-    if (!process.env.JWT_SECRET) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Server configuration error",
-          errors: [
-            {
-              type: "ConfigurationError",
-              path: ["jwt"],
-              message: "JWT secret is not configured",
-            },
-          ],
-        })
-      );
-    }
-
-    return jwt.sign({ _id: userId }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-  }
-
-  /**
    * Get users with pagination and search
    * @throws {Error} 400 - Invalid search parameters
    */
@@ -560,7 +534,6 @@ export default class UserController {
     page = 1,
     searchTerm,
     limit = 10,
-    department,
     status,
   }: UserSearchParams) {
     try {
@@ -593,7 +566,6 @@ export default class UserController {
 
       const filters = {
         ...searchFilter,
-        ...(department && { department }),
         ...(status && { status }),
       };
 

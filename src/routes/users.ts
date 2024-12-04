@@ -26,8 +26,8 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
     }
 
     try {
-      const userId = await jwt_auth.verify(token);
-      return { userId };
+      const data = await jwt_auth.verify(token);
+      return { userId: data?.id };
     } catch (error) {
       throw new Error(
         JSON.stringify({
@@ -91,7 +91,7 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
   })
   .put(
     "/me",
-    async ({ userId, body }) => userController.updateProfile(userId, body),
+    async ({ userId, body }) => userController.updateUserProfile(userId, body),
     {
       body: t.Object({
         firstName: t.Optional(t.String()),
@@ -136,6 +136,69 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
                     })
                   ),
                 }),
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized - Invalid or missing token",
+            content: {
+              "application/json": {
+                schema: t.Object({
+                  status: t.Literal("error"),
+                  message: t.String(),
+                  errors: t.Array(
+                    t.Object({
+                      type: t.String(),
+                      path: t.Array(t.String()),
+                      message: t.String(),
+                    })
+                  ),
+                }),
+              },
+            },
+          },
+        },
+      },
+    }
+  )
+  .get(
+    "/",
+    async ({ query }) =>
+      await userController.getUsers({
+        page: query?.page ? parseInt(query.page as string) : 1,
+        limit: query?.limit ? parseInt(query.limit as string) : 10,
+        searchTerm: query?.searchTerm as string,
+        status: query?.status as string,
+      }),
+    {
+      query: t.Object({
+        page: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
+        searchTerm: t.Optional(t.String()),
+        status: t.Optional(t.String()),
+      }),
+      detail: {
+        tags: ["Users"],
+        summary: "Get all users with pagination and search parameters",
+        description:
+          "Retrieve a list of all users with pagination and search parameters",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: "Users retrieved successfully",
+            content: {
+              "application/json": {
+                schema: t.Array(
+                  t.Object({
+                    id: t.String(),
+                    email: t.String(),
+                    firstName: t.String(),
+                    lastName: t.Optional(t.String()),
+                    phone: t.Optional(t.String()),
+                    createdAt: t.String(),
+                    updatedAt: t.String(),
+                  })
+                ),
               },
             },
           },
