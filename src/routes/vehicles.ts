@@ -27,8 +27,8 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
     }
 
     try {
-      const userId = await jwt_auth.verify(token);
-      return { userId };
+      const data = await jwt_auth.verify(token);
+      return { userId: data?.id };
     } catch (error) {
       throw new Error(
         JSON.stringify({
@@ -107,7 +107,11 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
             minPrice: t.Optional(t.Number()),
             maxPrice: t.Optional(t.Number()),
             capacity: t.Optional(t.Number()),
-            isAvailable: t.Optional(t.Boolean()),
+            isAvailable: t.Optional(
+              t.Boolean({
+                default: true,
+              })
+            ),
             sortBy: t.Optional(
               t.Union([
                 t.Literal("pricePerDay"),

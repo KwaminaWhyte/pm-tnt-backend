@@ -1,4 +1,9 @@
-import { VehicleInterface, CreateVehicleDTO, UpdateVehicleDTO, VehicleRatingDTO } from "../utils/types";
+import {
+  VehicleInterface,
+  CreateVehicleDTO,
+  UpdateVehicleDTO,
+  VehicleRatingDTO,
+} from "../utils/types";
 import Vehicle from "../models/Vehicle";
 
 export default class VehicleController {
@@ -17,7 +22,7 @@ export default class VehicleController {
     country,
     capacity,
     sortBy,
-    sortOrder
+    sortOrder,
   }: {
     page?: number;
     searchTerm?: string;
@@ -28,31 +33,36 @@ export default class VehicleController {
     city?: string;
     country?: string;
     capacity?: number;
-    sortBy?: 'pricePerDay' | 'capacity' | 'rating';
-    sortOrder?: 'asc' | 'desc';
+    sortBy?: "pricePerDay" | "capacity" | "rating";
+    sortOrder?: "asc" | "desc";
   }) {
     try {
       if (page < 1 || limit < 1) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Invalid pagination parameters",
-          errors: [{
-            type: "ValidationError",
-            path: ["page", "limit"],
-            message: "Page and limit must be positive numbers"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Invalid pagination parameters",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["page", "limit"],
+                message: "Page and limit must be positive numbers",
+              },
+            ],
+          })
+        );
       }
 
       const filter: Record<string, any> = {};
 
       if (searchTerm) {
         filter.$or = [
-          { vehicleType: { $regex: searchTerm, $options: 'i' } },
-          { make: { $regex: searchTerm, $options: 'i' } },
-          { model: { $regex: searchTerm, $options: 'i' } }
+          { vehicleType: { $regex: searchTerm, $options: "i" } },
+          { make: { $regex: searchTerm, $options: "i" } },
+          { model: { $regex: searchTerm, $options: "i" } },
         ];
       }
+      console.log(isAvailable);
 
       if (isAvailable !== undefined) {
         filter["availability.isAvailable"] = isAvailable;
@@ -61,7 +71,7 @@ export default class VehicleController {
       if (priceRange) {
         filter.pricePerDay = {
           $gte: priceRange.min,
-          $lte: priceRange.max
+          $lte: priceRange.max,
         };
       }
 
@@ -83,7 +93,7 @@ export default class VehicleController {
 
       const sortOptions: Record<string, 1 | -1> = {};
       if (sortBy) {
-        sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+        sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1;
       } else {
         sortOptions.createdAt = -1;
       }
@@ -93,21 +103,25 @@ export default class VehicleController {
           .skip((page - 1) * limit)
           .limit(limit)
           .sort(sortOptions),
-        Vehicle.countDocuments(filter)
+        Vehicle.countDocuments(filter),
       ]);
 
       const totalPages = Math.ceil(totalCount / limit);
 
       if (page > totalPages && totalCount > 0) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Page number exceeds available pages",
-          errors: [{
-            type: "ValidationError",
-            path: ["page"],
-            message: `Page should be between 1 and ${totalPages}`
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Page number exceeds available pages",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["page"],
+                message: `Page should be between 1 and ${totalPages}`,
+              },
+            ],
+          })
+        );
       }
 
       return {
@@ -116,22 +130,29 @@ export default class VehicleController {
           currentPage: page,
           totalPages,
           totalItems: totalCount,
-          itemsPerPage: limit
-        }
+          itemsPerPage: limit,
+        },
       };
     } catch (error) {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to retrieve vehicles",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to retrieve vehicles",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -144,15 +165,19 @@ export default class VehicleController {
       const vehicle = await Vehicle.findById(id);
 
       if (!vehicle) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Vehicle not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Vehicle not found"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Vehicle not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Vehicle not found",
+              },
+            ],
+          })
+        );
       }
 
       return { vehicle };
@@ -160,15 +185,22 @@ export default class VehicleController {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to retrieve vehicle",
-        errors: [{
-          type: "ServerError",
-          path: ["id"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to retrieve vehicle",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["id"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -184,29 +216,36 @@ export default class VehicleController {
           isAvailable: true,
           location: {
             city: data.city,
-            country: data.country
-          }
-        }
+            country: data.country,
+          },
+        },
       });
 
       const savedVehicle = await vehicle.save();
       return {
         message: "Vehicle created successfully",
-        vehicle: savedVehicle
+        vehicle: savedVehicle,
       };
     } catch (error) {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to create vehicle",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to create vehicle",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -220,52 +259,66 @@ export default class VehicleController {
       const vehicle = await Vehicle.findById(id);
 
       if (!vehicle) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Vehicle not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Vehicle not found"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Vehicle not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Vehicle not found",
+              },
+            ],
+          })
+        );
       }
 
-      const locationUpdate = data.city || data.country ? {
-        "availability.location": {
-          city: data.city || vehicle.availability.location.city,
-          country: data.country || vehicle.availability.location.country
-        }
-      } : {};
+      const locationUpdate =
+        data.city || data.country
+          ? {
+              "availability.location": {
+                city: data.city || vehicle.availability.location.city,
+                country: data.country || vehicle.availability.location.country,
+              },
+            }
+          : {};
 
       const updatedVehicle = await Vehicle.findByIdAndUpdate(
         id,
         {
           $set: {
             ...data,
-            ...locationUpdate
-          }
+            ...locationUpdate,
+          },
         },
         { new: true }
       );
 
       return {
         message: "Vehicle updated successfully",
-        vehicle: updatedVehicle
+        vehicle: updatedVehicle,
       };
     } catch (error) {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to update vehicle",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to update vehicle",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -278,33 +331,44 @@ export default class VehicleController {
       const vehicle = await Vehicle.findByIdAndDelete(id);
 
       if (!vehicle) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Vehicle not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Vehicle not found"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Vehicle not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Vehicle not found",
+              },
+            ],
+          })
+        );
       }
 
       return {
-        message: "Vehicle deleted successfully"
+        message: "Vehicle deleted successfully",
       };
     } catch (error) {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to delete vehicle",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to delete vehicle",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -316,17 +380,21 @@ export default class VehicleController {
   async rateVehicle(id: string, data: VehicleRatingDTO, userId: string) {
     try {
       const vehicle = await Vehicle.findById(id);
-      
+
       if (!vehicle) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Vehicle not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Vehicle not found"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Vehicle not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Vehicle not found",
+              },
+            ],
+          })
+        );
       }
 
       const existingRatingIndex = vehicle.ratings?.findIndex(
@@ -339,7 +407,7 @@ export default class VehicleController {
           userId,
           rating: data.rating,
           comment: data.comment,
-          createdAt: new Date()
+          createdAt: new Date(),
         };
       } else {
         if (!vehicle.ratings) vehicle.ratings = [];
@@ -347,7 +415,7 @@ export default class VehicleController {
           userId,
           rating: data.rating,
           comment: data.comment,
-          createdAt: new Date()
+          createdAt: new Date(),
         });
       }
 
@@ -355,21 +423,28 @@ export default class VehicleController {
 
       return {
         message: "Rating submitted successfully",
-        vehicle
+        vehicle,
       };
     } catch (error) {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to submit rating",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to submit rating",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -377,40 +452,51 @@ export default class VehicleController {
    * Check vehicle availability for specific dates
    * @throws {Error} 404 - Vehicle not found
    */
-  async checkAvailability(id: string, params: {
-    startDate: Date;
-    endDate: Date;
-    insuranceOption?: string;
-  }) {
+  async checkAvailability(
+    id: string,
+    params: {
+      startDate: Date;
+      endDate: Date;
+      insuranceOption?: string;
+    }
+  ) {
     try {
       const vehicle = await Vehicle.findById(id);
-      
+
       if (!vehicle) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Vehicle not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Vehicle not found"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Vehicle not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Vehicle not found",
+              },
+            ],
+          })
+        );
       }
 
       // Check if dates are valid
       const startDate = new Date(params.startDate);
       const endDate = new Date(params.endDate);
-      
+
       if (startDate >= endDate) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Invalid dates",
-          errors: [{
-            type: "ValidationError",
-            path: ["dates"],
-            message: "Start date must be before end date"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            status: "error",
+            message: "Invalid dates",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["dates"],
+                message: "Start date must be before end date",
+              },
+            ],
+          })
+        );
       }
 
       // Check vehicle availability using the model method
@@ -422,14 +508,19 @@ export default class VehicleController {
           data: {
             isAvailable: false,
             message: "Vehicle is not available for the selected dates",
-            maintenanceStatus: vehicle.maintenanceStatus
-          }
+            maintenanceStatus: vehicle.maintenanceStatus,
+          },
         };
       }
 
       // Calculate rental price
-      const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      const priceDetails = vehicle.calculateRentalPrice(days, params.insuranceOption);
+      const days = Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const priceDetails = vehicle.calculateRentalPrice(
+        days,
+        params.insuranceOption
+      );
 
       return {
         status: "success",
@@ -443,29 +534,36 @@ export default class VehicleController {
             capacity: vehicle.capacity,
             features: vehicle.features,
             location: vehicle.availability.location,
-            maintenanceStatus: vehicle.maintenanceStatus
+            maintenanceStatus: vehicle.maintenanceStatus,
           },
           rental: {
             startDate,
             endDate,
             days,
-            ...priceDetails
-          }
-        }
+            ...priceDetails,
+          },
+        },
       };
     } catch (error: any) {
       if (error instanceof Error && error.message.includes("status")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to check vehicle availability",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to check vehicle availability",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -480,32 +578,32 @@ export default class VehicleController {
         totalRatings,
         averageRating,
         vehiclesByType,
-        vehiclesByLocation
+        vehiclesByLocation,
       ] = await Promise.all([
         Vehicle.countDocuments(),
         Vehicle.countDocuments({ "availability.isAvailable": true }),
         Vehicle.aggregate([
           { $unwind: "$ratings" },
-          { $group: { _id: null, count: { $sum: 1 } } }
+          { $group: { _id: null, count: { $sum: 1 } } },
         ]),
         Vehicle.aggregate([
           { $unwind: "$ratings" },
-          { $group: { _id: null, avgRating: { $avg: "$ratings.rating" } } }
+          { $group: { _id: null, avgRating: { $avg: "$ratings.rating" } } },
         ]),
         Vehicle.aggregate([
-          { $group: { _id: "$vehicleType", count: { $sum: 1 } } }
+          { $group: { _id: "$vehicleType", count: { $sum: 1 } } },
         ]),
         Vehicle.aggregate([
           {
             $group: {
               _id: {
                 city: "$availability.location.city",
-                country: "$availability.location.country"
+                country: "$availability.location.country",
               },
-              count: { $sum: 1 }
-            }
-          }
-        ])
+              count: { $sum: 1 },
+            },
+          },
+        ]),
       ]);
 
       return {
@@ -513,25 +611,38 @@ export default class VehicleController {
         availableVehicles,
         totalRatings: totalRatings[0]?.count || 0,
         averageRating: averageRating[0]?.avgRating || 0,
-        vehiclesByType: vehiclesByType.reduce((acc, curr) => ({
-          ...acc,
-          [curr._id]: curr.count
-        }), {}),
-        vehiclesByLocation: vehiclesByLocation.reduce((acc, curr) => ({
-          ...acc,
-          [`${curr._id.city}, ${curr._id.country}`]: curr.count
-        }), {})
+        vehiclesByType: vehiclesByType.reduce(
+          (acc, curr) => ({
+            ...acc,
+            [curr._id]: curr.count,
+          }),
+          {}
+        ),
+        vehiclesByLocation: vehiclesByLocation.reduce(
+          (acc, curr) => ({
+            ...acc,
+            [`${curr._id.city}, ${curr._id.country}`]: curr.count,
+          }),
+          {}
+        ),
       };
     } catch (error) {
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to retrieve statistics",
-        errors: [{
-          type: "ServerError",
-          path: ["server"],
-          message: error instanceof Error ? error.message : "Unknown error occurred"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          status: "error",
+          message: "Failed to retrieve statistics",
+          errors: [
+            {
+              type: "ServerError",
+              path: ["server"],
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            },
+          ],
+        })
+      );
     }
   }
 }
