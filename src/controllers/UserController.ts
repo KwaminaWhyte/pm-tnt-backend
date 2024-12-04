@@ -2,7 +2,6 @@ import User from "../models/User";
 import generateOTP from "../utils/generateOtp";
 import sendSMS from "../utils/sendSMS";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import {
   LoginWithEmailDTO,
   LoginWithPhoneDTO,

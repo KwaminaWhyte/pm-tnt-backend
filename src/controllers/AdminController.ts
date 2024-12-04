@@ -1,7 +1,5 @@
 import bcrypt from "bcryptjs";
 import Admin, { AdminInterface } from "../models/Admin";
-import jwt from "jsonwebtoken";
-import { jwtConfig } from "../utils/jwt.config";
 
 interface CreateAdminDTO {
   fullName: string;
@@ -22,32 +20,6 @@ interface ChangePasswordDTO {
 }
 
 export default class AdminController {
-  /**
-   * Generate JWT token for authenticated user
-   * @private
-   */
-  private async generateToken(userId: string): Promise<string> {
-    if (!process.env.JWT_SECRET) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Server configuration error",
-          errors: [
-            {
-              type: "ConfigurationError",
-              path: ["jwt"],
-              message: "JWT secret is not configured",
-            },
-          ],
-        })
-      );
-    }
-
-    return jwt.sign({ _id: userId }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-  }
-
   /**
    * Login admin
    * @param param0
