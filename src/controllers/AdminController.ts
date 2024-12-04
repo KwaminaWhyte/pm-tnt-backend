@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import Admin, { AdminInterface } from "../models/Admin";
 import jwt from "jsonwebtoken";
+import { jwtConfig } from "../utils/jwt.config";
 
 interface CreateAdminDTO {
   fullName: string;
@@ -52,7 +53,10 @@ export default class AdminController {
    * @param param0
    * @returns
    */
-  public async login({ email, password }: { email: string; password: string }) {
+  public async login(
+    { email, password }: { email: string; password: string },
+    jwt_auth: any
+  ) {
     const admin = await Admin.findOne({
       email,
     });
@@ -91,7 +95,8 @@ export default class AdminController {
       );
     }
 
-    const token = await this.generateToken(admin._id);
+    // const token = await this.generateToken(admin._id);
+    const token = await jwt_auth.sign(admin._id);
     const userData = await Admin.findById(admin._id).select("-password -otp");
 
     return {
