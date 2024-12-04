@@ -5,6 +5,7 @@ import AdminController from "../controllers/AdminController";
 const adminController = new AdminController();
 
 const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
+  .use(jwtConfig)
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -27,7 +28,7 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
     }
 
     try {
-      const userId = await jwt_auth.verify(token);
+      const userId = (await jwt_auth.verify(token)).valueOf();
       console.log({ userId });
 
       return { userId };
