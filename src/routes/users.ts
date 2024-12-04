@@ -27,6 +27,7 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
 
     try {
       const data = await jwt_auth.verify(token);
+
       return { userId: data?.id };
     } catch (error) {
       throw new Error(
@@ -226,7 +227,8 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
   )
   .put(
     "/me/password",
-    async ({ userId, body }) => userController.changePassword(userId, body),
+    async ({ userId, body: { currentPassword, newPassword } }) =>
+      userController.changePassword({ userId, currentPassword, newPassword }),
     {
       body: t.Object({
         currentPassword: t.String({ minLength: 6 }),
