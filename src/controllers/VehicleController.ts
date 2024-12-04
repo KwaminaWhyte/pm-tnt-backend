@@ -523,25 +523,22 @@ export default class VehicleController {
       );
 
       return {
-        status: "success",
-        data: {
-          isAvailable: true,
-          vehicle: {
-            _id: vehicle._id,
-            make: vehicle.make,
-            model: vehicle.model,
-            vehicleType: vehicle.vehicleType,
-            capacity: vehicle.capacity,
-            features: vehicle.features,
-            location: vehicle.availability.location,
-            maintenanceStatus: vehicle.maintenanceStatus,
-          },
-          rental: {
-            startDate,
-            endDate,
-            days,
-            ...priceDetails,
-          },
+        isAvailable: true,
+        vehicle: {
+          _id: vehicle._id,
+          make: vehicle.make,
+          model: vehicle.model,
+          vehicleType: vehicle.vehicleType,
+          capacity: vehicle.capacity,
+          features: vehicle.features,
+          location: vehicle.availability.location,
+          maintenanceStatus: vehicle.maintenanceStatus,
+        },
+        rental: {
+          startDate,
+          endDate,
+          days,
+          ...priceDetails,
         },
       };
     } catch (error: any) {
