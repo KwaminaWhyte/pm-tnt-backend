@@ -69,7 +69,7 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
       }),
     }
   )
-  .get("/me", async ({ userId }) => adminController.getAdmin(userId), {
+  .get("/me", async ({ userId }) => await adminController.getAdmin(userId), {
     detail: {
       summary: "Get current admin profile",
       tags: ["Admins"],

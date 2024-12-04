@@ -178,6 +178,8 @@ export default class AdminController {
    * @throws {Error} 404 - Admin not found
    */
   async getAdmin(id: string) {
+    console.log(id);
+
     try {
       const admin = await Admin.findById(id).select("-password");
 
