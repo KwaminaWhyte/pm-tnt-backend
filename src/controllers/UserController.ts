@@ -92,6 +92,17 @@ export default class UserController {
     const user = await User.findOne({ email });
 
     if (!user) {
+      console.log({
+        status: "error",
+        message: "User not found",
+        errors: [
+          {
+            type: "AuthenticationError",
+            message: "Invalid credentials",
+          },
+        ],
+      });
+
       throw new Error(
         JSON.stringify({
           status: "error",
@@ -109,6 +120,17 @@ export default class UserController {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
+      console.log({
+        status: "error",
+        message: "Invalid credentials",
+        errors: [
+          {
+            type: "AuthenticationError",
+            message: "Incorrect password",
+          },
+        ],
+      });
+
       throw new Error(
         JSON.stringify({
           status: "error",
