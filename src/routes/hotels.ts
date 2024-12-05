@@ -51,23 +51,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
       description: "Require user to be logged in",
     },
   })
-  /**
-   * Get all hotels with filtering and pagination
-   * @route GET /api/v1/hotels
-   * @param {number} page - Page number for pagination (default: 1)
-   * @param {string} searchTerm - Search term for filtering hotels by name, city, or country
-   * @param {number} limit - Number of hotels per page (default: 10)
-   * @param {boolean} isAvailable - Filter by room availability
-   * @param {number} minPrice - Minimum price for filtering
-   * @param {number} maxPrice - Maximum price for filtering
-   * @param {string} city - Filter by city
-   * @param {string} country - Filter by country
-   * @param {string} sortBy - Sort by field (pricePerNight, capacity, rating)
-   * @param {string} sortOrder - Sort order (asc, desc)
-   * @param {string} roomType - Filter by room type
-   * @param {number} capacity - Filter by minimum room capacity
-   * @returns {Promise<{ hotels: Hotel[], totalPages: number, currentPage: number, totalCount: number }>}
-   */
+
   .get(
     "/",
     ({ query }) =>
@@ -124,12 +108,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
       },
     }
   )
-  /**
-   * Get hotel by ID
-   * @route GET /api/v1/hotels/:id
-   * @param {string} id - Hotel ID
-   * @returns {Promise<Hotel>}
-   */
+
   .get("/:id", ({ params: { id } }) => hotelController.getHotelById(id), {
     detail: {
       summary: "Get hotel by ID",
@@ -148,15 +127,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
       },
     },
   })
-  /**
-   * Get room availability for a hotel
-   * @route GET /api/v1/hotels/:id/availability
-   * @param {string} id - Hotel ID
-   * @param {string} checkIn - Check-in date (YYYY-MM-DD)
-   * @param {string} checkOut - Check-out date (YYYY-MM-DD)
-   * @param {number} guests - Number of guests
-   * @returns {Promise<{ availableRooms: Room[], totalRooms: number }>}
-   */
+
   .get(
     "/:id/availability",
     ({ params: { id }, query }) =>
@@ -190,15 +161,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
       },
     }
   )
-  /**
-   * Get nearby hotels
-   * @route GET /api/v1/hotels/nearby
-   * @param {number} latitude - Latitude coordinate
-   * @param {number} longitude - Longitude coordinate
-   * @param {number} radius - Search radius in kilometers (optional)
-   * @param {number} limit - Maximum number of results (optional)
-   * @returns {Promise<Hotel[]>}
-   */
+
   .get(
     "/nearby",
     ({ query }) =>
@@ -231,13 +194,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
       },
     }
   )
-  /**
-   * Add a review to a hotel
-   * @route POST /api/v1/hotels/:id/reviews
-   * @param {string} id - Hotel ID
-   * @param {Object} body - Review data
-   * @returns {Promise<Hotel>}
-   */
+
   .post(
     "/:id/reviews",
     ({ params: { id }, body, userId }) =>
@@ -269,12 +226,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
       },
     }
   )
-  /**
-   * Toggle hotel favorite status
-   * @route POST /api/v1/hotels/:id/favorite
-   * @param {string} id - Hotel ID
-   * @returns {Promise<{ isFavorite: boolean, hotel: Hotel }>}
-   */
+
   .post(
     "/:id/favorite",
     ({ params: { id }, userId }) => hotelController.toggleFavorite(id, userId),
@@ -294,13 +246,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
       },
     }
   )
-  /**
-   * Book a room in a hotel
-   * @route POST /api/v1/hotels/:id/book
-   * @param {string} id - Hotel ID
-   * @param {Object} body - Booking data
-   * @returns {Promise<{ booking: Booking, room: Room }>}
-   */
+
   .post(
     "/:id/book",
     ({ params: { id }, body, userId }) =>
@@ -336,17 +282,9 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
       },
     }
   )
+
   .group("/admin", (app) =>
     app
-      // .guard({
-      //   beforeHandle: [isAdmin],
-      // })
-      /**
-       * Create a new hotel
-       * @route POST /api/v1/hotels/admin
-       * @param {Object} body - Hotel data
-       * @returns {Promise<Hotel>}
-       */
       .post("/", ({ body }) => hotelController.createHotel(body), {
         body: t.Object({
           name: t.String(),
@@ -378,11 +316,13 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
               capacity: t.Number(),
               features: t.Array(t.String()),
               isAvailable: t.Optional(t.Boolean()),
-              maintenanceStatus: t.Optional(t.Union([
-                t.Literal('Available'),
-                t.Literal('Cleaning'),
-                t.Literal('Maintenance')
-              ])),
+              maintenanceStatus: t.Optional(
+                t.Union([
+                  t.Literal("Available"),
+                  t.Literal("Cleaning"),
+                  t.Literal("Maintenance"),
+                ])
+              ),
               images: t.Optional(t.Array(t.String())),
             })
           ),
@@ -394,13 +334,15 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
             payment: t.String(),
             houseRules: t.Array(t.String()),
           }),
-          seasonalPrices: t.Optional(t.Array(
-            t.Object({
-              startDate: t.String(),
-              endDate: t.String(),
-              multiplier: t.Number({ minimum: 0 }),
-            })
-          )),
+          seasonalPrices: t.Optional(
+            t.Array(
+              t.Object({
+                startDate: t.String(),
+                endDate: t.String(),
+                multiplier: t.Number({ minimum: 0 }),
+              })
+            )
+          ),
         }),
         detail: {
           summary: "Create hotel",
@@ -422,60 +364,58 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
           },
         },
       })
-      /**
-       * Update hotel by ID
-       * @route PUT /api/v1/hotels/admin/:id
-       * @param {string} id - Hotel ID
-       * @param {Object} body - Updated hotel data
-       * @returns {Promise<Hotel>}
-       */
+
       .put(
         "/:id",
         ({ params: { id }, body }) => hotelController.updateHotel(id, body),
         {
-          body: t.Object({
-            name: t.Optional(t.String()),
-            description: t.Optional(t.String()),
-            location: t.Optional(
-              t.Object({
-                city: t.String(),
-                country: t.String(),
-                address: t.String(),
-                coordinates: t.Object({
-                  latitude: t.Number(),
-                  longitude: t.Number(),
-                }),
-              })
-            ),
-            contactInfo: t.Optional(t.Object({
-              phone: t.String(),
-              email: t.String(),
-              website: t.Optional(t.String()),
-            })),
-            starRating: t.Optional(t.Number({ minimum: 1, maximum: 5 })),
-            amenities: t.Optional(t.Array(t.String())),
-            checkInTime: t.Optional(t.String()),
-            checkOutTime: t.Optional(t.String()),
-            rooms: t.Optional(
-              t.Array(
-                t.Object({
-                  roomType: t.String(),
-                  pricePerNight: t.Number(),
-                  capacity: t.Number(),
-                  features: t.Array(t.String()),
-                  isAvailable: t.Optional(t.Boolean()),
-                  maintenanceStatus: t.Optional(t.Union([
-                    t.Literal('Available'),
-                    t.Literal('Cleaning'),
-                    t.Literal('Maintenance')
-                  ])),
-                  images: t.Optional(t.Array(t.String())),
-                })
-              )
-            ),
-            images: t.Optional(t.Array(t.String())),
-            policies: t.Optional(t.String()),
-          }),
+          // body: t.Object({
+          //   name: t.Optional(t.String()),
+          //   description: t.Optional(t.String()),
+          //   location: t.Optional(
+          //     t.Object({
+          //       city: t.String(),
+          //       country: t.String(),
+          //       address: t.String(),
+          //       coordinates: t.Object({
+          //         latitude: t.Number(),
+          //         longitude: t.Number(),
+          //       }),
+          //     })
+          //   ),
+          //   contactInfo: t.Optional(
+          //     t.Object({
+          //       phone: t.String(),
+          //       email: t.String(),
+          //       website: t.Optional(t.String()),
+          //     })
+          //   ),
+          //   starRating: t.Optional(t.Number({ minimum: 1, maximum: 5 })),
+          //   amenities: t.Optional(t.Array(t.String())),
+          //   checkInTime: t.Optional(t.String()),
+          //   checkOutTime: t.Optional(t.String()),
+          //   rooms: t.Optional(
+          //     t.Array(
+          //       t.Object({
+          //         roomType: t.String(),
+          //         pricePerNight: t.Number(),
+          //         capacity: t.Number(),
+          //         features: t.Array(t.String()),
+          //         isAvailable: t.Optional(t.Boolean()),
+          //         maintenanceStatus: t.Optional(
+          //           t.Union([
+          //             t.Literal("Available"),
+          //             t.Literal("Cleaning"),
+          //             t.Literal("Maintenance"),
+          //           ])
+          //         ),
+          //         images: t.Optional(t.Array(t.String())),
+          //       })
+          //     )
+          //   ),
+          //   images: t.Optional(t.Array(t.String())),
+          //   policies: t.Optional(t.String()),
+          // }),
           detail: {
             summary: "Update hotel",
             description: "Update an existing hotel by ID (Admin only)",
@@ -500,12 +440,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
           },
         }
       )
-      /**
-       * Delete hotel by ID
-       * @route DELETE /api/v1/hotels/admin/:id
-       * @param {string} id - Hotel ID
-       * @returns {Promise<Hotel>}
-       */
+
       .delete("/:id", ({ params: { id } }) => hotelController.deleteHotel(id), {
         detail: {
           summary: "Delete hotel",
@@ -527,13 +462,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
           },
         },
       })
-      /**
-       * Add rating to hotel
-       * @route POST /api/v1/hotels/admin/:id/ratings
-       * @param {string} id - Hotel ID
-       * @param {Object} body - Rating data
-       * @returns {Promise<Hotel>}
-       */
+
       .post(
         "/:id/ratings",
         ({ params: { id }, body }) => hotelController.addRating(id, body),
