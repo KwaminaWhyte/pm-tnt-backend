@@ -10,6 +10,7 @@ import {
   UpdateUserDTO,
   RegisterDTO,
 } from "../utils/types";
+import { error } from "elysia";
 
 export default class UserController {
   /**
@@ -104,7 +105,7 @@ export default class UserController {
           },
         ],
       });
-
+      return error(401, "User not found");
       return new Error(
         JSON.stringify({
           status: "error",
