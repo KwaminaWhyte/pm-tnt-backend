@@ -360,7 +360,15 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
               longitude: t.Number(),
             }),
           }),
+          contactInfo: t.Object({
+            phone: t.String(),
+            email: t.String(),
+            website: t.Optional(t.String()),
+          }),
+          starRating: t.Number({ minimum: 1, maximum: 5 }),
           amenities: t.Array(t.String()),
+          checkInTime: t.String(),
+          checkOutTime: t.String(),
           rooms: t.Array(
             t.Object({
               roomNumber: t.String(),
@@ -370,6 +378,12 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
               capacity: t.Number(),
               features: t.Array(t.String()),
               isAvailable: t.Optional(t.Boolean()),
+              maintenanceStatus: t.Optional(t.Union([
+                t.Literal('Available'),
+                t.Literal('Cleaning'),
+                t.Literal('Maintenance')
+              ])),
+              images: t.Optional(t.Array(t.String())),
             })
           ),
           images: t.Array(t.String()),
@@ -380,6 +394,13 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
             payment: t.String(),
             houseRules: t.Array(t.String()),
           }),
+          seasonalPrices: t.Optional(t.Array(
+            t.Object({
+              startDate: t.String(),
+              endDate: t.String(),
+              multiplier: t.Number({ minimum: 0 }),
+            })
+          )),
         }),
         detail: {
           summary: "Create hotel",
@@ -426,7 +447,15 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
                 }),
               })
             ),
+            contactInfo: t.Optional(t.Object({
+              phone: t.String(),
+              email: t.String(),
+              website: t.Optional(t.String()),
+            })),
+            starRating: t.Optional(t.Number({ minimum: 1, maximum: 5 })),
             amenities: t.Optional(t.Array(t.String())),
+            checkInTime: t.Optional(t.String()),
+            checkOutTime: t.Optional(t.String()),
             rooms: t.Optional(
               t.Array(
                 t.Object({
@@ -435,6 +464,12 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
                   capacity: t.Number(),
                   features: t.Array(t.String()),
                   isAvailable: t.Optional(t.Boolean()),
+                  maintenanceStatus: t.Optional(t.Union([
+                    t.Literal('Available'),
+                    t.Literal('Cleaning'),
+                    t.Literal('Maintenance')
+                  ])),
+                  images: t.Optional(t.Array(t.String())),
                 })
               )
             ),
