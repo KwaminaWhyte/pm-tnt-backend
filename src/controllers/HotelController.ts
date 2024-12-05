@@ -184,14 +184,14 @@ export default class HotelController {
         status: "success",
         data: hotel,
       };
-    } catch (error: any) {
+    } catch (err: any) {
       return error(400, {
         message: "Failed to create hotel",
         errors: [
           {
             type: "ValidationError",
             path: [],
-            message: error.message,
+            message: err.message,
           },
         ],
       });
