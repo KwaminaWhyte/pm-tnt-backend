@@ -13,7 +13,6 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
     if (!token) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Unauthorized",
           errors: [
             {
@@ -32,7 +31,6 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
     } catch (error) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Unauthorized",
           errors: [
             {

@@ -13,7 +13,6 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
     if (!token) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Unauthorized",
           errors: [
             {
@@ -32,7 +31,6 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
     } catch (error) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Unauthorized",
           errors: [
             {

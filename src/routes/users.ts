@@ -12,7 +12,6 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
     if (!token) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Unauthorized",
           errors: [
             {
@@ -32,7 +31,6 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
     } catch (error) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Unauthorized",
           errors: [
             {

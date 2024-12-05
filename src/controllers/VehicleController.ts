@@ -40,7 +40,6 @@ export default class VehicleController {
       if (page < 1 || limit < 1) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Invalid pagination parameters",
             errors: [
               {
@@ -111,7 +110,6 @@ export default class VehicleController {
       if (page > totalPages && totalCount > 0) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Page number exceeds available pages",
             errors: [
               {
@@ -139,7 +137,6 @@ export default class VehicleController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to retrieve vehicles",
           errors: [
             {
@@ -167,7 +164,6 @@ export default class VehicleController {
       if (!vehicle) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Vehicle not found",
             errors: [
               {
@@ -187,7 +183,6 @@ export default class VehicleController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to retrieve vehicle",
           errors: [
             {
@@ -232,7 +227,6 @@ export default class VehicleController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to create vehicle",
           errors: [
             {
@@ -261,7 +255,6 @@ export default class VehicleController {
       if (!vehicle) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Vehicle not found",
             errors: [
               {
@@ -305,7 +298,6 @@ export default class VehicleController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to update vehicle",
           errors: [
             {
@@ -333,7 +325,6 @@ export default class VehicleController {
       if (!vehicle) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Vehicle not found",
             errors: [
               {
@@ -355,7 +346,6 @@ export default class VehicleController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to delete vehicle",
           errors: [
             {
@@ -384,7 +374,6 @@ export default class VehicleController {
       if (!vehicle) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Vehicle not found",
             errors: [
               {
@@ -431,7 +420,6 @@ export default class VehicleController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to submit rating",
           errors: [
             {
@@ -466,7 +454,6 @@ export default class VehicleController {
       if (!vehicle) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Vehicle not found",
             errors: [
               {
@@ -486,7 +473,6 @@ export default class VehicleController {
       if (startDate >= endDate) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Invalid dates",
             errors: [
               {
@@ -547,7 +533,6 @@ export default class VehicleController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to check vehicle availability",
           errors: [
             {
@@ -626,7 +611,6 @@ export default class VehicleController {
     } catch (error) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to retrieve statistics",
           errors: [
             {

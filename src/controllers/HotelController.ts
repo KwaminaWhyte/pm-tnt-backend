@@ -1,6 +1,7 @@
 import { HotelInterface } from "../utils/types";
 import Hotel from "../models/Hotel";
 import Booking from "../models/Booking"; // Assuming you have a Booking model
+import { error } from "elysia";
 
 export default class HotelController {
   /**
@@ -18,7 +19,7 @@ export default class HotelController {
     sortBy,
     sortOrder,
     roomType,
-    capacity
+    capacity,
   }: {
     page?: number;
     searchTerm?: string;
@@ -27,31 +28,32 @@ export default class HotelController {
     priceRange?: { min: number; max: number };
     city?: string;
     country?: string;
-    sortBy?: 'pricePerNight' | 'capacity' | 'rating';
-    sortOrder?: 'asc' | 'desc';
+    sortBy?: "pricePerNight" | "capacity" | "rating";
+    sortOrder?: "asc" | "desc";
     roomType?: string;
     capacity?: number;
   }) {
     try {
       if (page < 1 || limit < 1) {
-        throw new Error(JSON.stringify({
-          status: "error",
+        return error(404, {
           message: "Invalid pagination parameters",
-          errors: [{
-            type: "ValidationError",
-            path: ["page", "limit"],
-            message: "Page and limit must be positive numbers"
-          }]
-        }));
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["page", "limit"],
+              message: "Page and limit must be positive numbers",
+            },
+          ],
+        });
       }
 
       const filter: Record<string, any> = {};
 
       if (searchTerm) {
         filter.$or = [
-          { name: { $regex: searchTerm, $options: 'i' } },
-          { "location.city": { $regex: searchTerm, $options: 'i' } },
-          { "location.country": { $regex: searchTerm, $options: 'i' } }
+          { name: { $regex: searchTerm, $options: "i" } },
+          { "location.city": { $regex: searchTerm, $options: "i" } },
+          { "location.country": { $regex: searchTerm, $options: "i" } },
         ];
       }
 
@@ -62,20 +64,20 @@ export default class HotelController {
       if (priceRange) {
         filter["rooms.pricePerNight"] = {
           $gte: priceRange.min,
-          $lte: priceRange.max
+          $lte: priceRange.max,
         };
       }
 
       if (city) {
-        filter["location.city"] = { $regex: city, $options: 'i' };
+        filter["location.city"] = { $regex: city, $options: "i" };
       }
 
       if (country) {
-        filter["location.country"] = { $regex: country, $options: 'i' };
+        filter["location.country"] = { $regex: country, $options: "i" };
       }
 
       if (roomType) {
-        filter["rooms.roomType"] = { $regex: roomType, $options: 'i' };
+        filter["rooms.roomType"] = { $regex: roomType, $options: "i" };
       }
 
       if (capacity) {
@@ -84,18 +86,16 @@ export default class HotelController {
 
       const sort: Record<string, 1 | -1> = {};
       if (sortBy) {
-        sort[sortBy === 'pricePerNight' ? 'rooms.pricePerNight' : sortBy] = sortOrder === 'asc' ? 1 : -1;
+        sort[sortBy === "pricePerNight" ? "rooms.pricePerNight" : sortBy] =
+          sortOrder === "asc" ? 1 : -1;
       } else {
         sort.createdAt = -1;
       }
 
       const skipCount = (page - 1) * limit;
       const [hotels, totalCount] = await Promise.all([
-        Hotel.find(filter)
-          .sort(sort)
-          .skip(skipCount)
-          .limit(limit),
-        Hotel.countDocuments(filter)
+        Hotel.find(filter).sort(sort).skip(skipCount).limit(limit),
+        Hotel.countDocuments(filter),
       ]);
 
       return {
@@ -104,22 +104,25 @@ export default class HotelController {
           hotels,
           totalPages: Math.ceil(totalCount / limit),
           currentPage: page,
-          totalCount
-        }
+          totalCount,
+        },
       };
     } catch (error: any) {
-      if (error.message.startsWith('{')) {
+      if (error.message.startsWith("{")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to fetch hotels",
-        errors: [{
-          type: "ServerError",
-          path: [],
-          message: error.message
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Failed to fetch hotels",
+          errors: [
+            {
+              type: "ServerError",
+              path: [],
+              message: error.message,
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -131,34 +134,40 @@ export default class HotelController {
     try {
       const hotel = await Hotel.findById(id);
       if (!hotel) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Hotel not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Hotel with the specified ID does not exist"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Hotel not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Hotel with the specified ID does not exist",
+              },
+            ],
+          })
+        );
       }
 
       return {
         status: "success",
-        data: hotel
+        data: hotel,
       };
     } catch (error: any) {
-      if (error.message.startsWith('{')) {
+      if (error.message.startsWith("{")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to fetch hotel",
-        errors: [{
-          type: "ServerError",
-          path: [],
-          message: error.message
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Failed to fetch hotel",
+          errors: [
+            {
+              type: "ServerError",
+              path: [],
+              message: error.message,
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -173,18 +182,19 @@ export default class HotelController {
 
       return {
         status: "success",
-        data: hotel
+        data: hotel,
       };
     } catch (error: any) {
-      throw new Error(JSON.stringify({
-        status: "error",
+      return error(400, {
         message: "Failed to create hotel",
-        errors: [{
-          type: "ValidationError",
-          path: [],
-          message: error.message
-        }]
-      }));
+        errors: [
+          {
+            type: "ValidationError",
+            path: [],
+            message: error.message,
+          },
+        ],
+      });
     }
   }
 
@@ -202,34 +212,40 @@ export default class HotelController {
       );
 
       if (!hotel) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Hotel not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Hotel with the specified ID does not exist"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Hotel not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Hotel with the specified ID does not exist",
+              },
+            ],
+          })
+        );
       }
 
       return {
         status: "success",
-        data: hotel
+        data: hotel,
       };
     } catch (error: any) {
-      if (error.message.startsWith('{')) {
+      if (error.message.startsWith("{")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to update hotel",
-        errors: [{
-          type: "ServerError",
-          path: [],
-          message: error.message
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Failed to update hotel",
+          errors: [
+            {
+              type: "ServerError",
+              path: [],
+              message: error.message,
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -240,36 +256,42 @@ export default class HotelController {
   async deleteHotel(id: string) {
     try {
       const hotel = await Hotel.findByIdAndDelete(id);
-      
+
       if (!hotel) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Hotel not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Hotel with the specified ID does not exist"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Hotel not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Hotel with the specified ID does not exist",
+              },
+            ],
+          })
+        );
       }
 
       return {
         status: "success",
-        data: hotel
+        data: hotel,
       };
     } catch (error: any) {
-      if (error.message.startsWith('{')) {
+      if (error.message.startsWith("{")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to delete hotel",
-        errors: [{
-          type: "ServerError",
-          path: [],
-          message: error.message
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Failed to delete hotel",
+          errors: [
+            {
+              type: "ServerError",
+              path: [],
+              message: error.message,
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -278,46 +300,55 @@ export default class HotelController {
    * @throws {Error} 404 - Hotel not found
    * @throws {Error} 400 - Invalid rating data
    */
-  async addRating(id: string, ratingData: { userId: string; rating: number; comment?: string }) {
+  async addRating(
+    id: string,
+    ratingData: { userId: string; rating: number; comment?: string }
+  ) {
     try {
       const hotel = await Hotel.findById(id);
-      
+
       if (!hotel) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Hotel not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Hotel with the specified ID does not exist"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Hotel not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Hotel with the specified ID does not exist",
+              },
+            ],
+          })
+        );
       }
 
       hotel.ratings.push({
         ...ratingData,
-        createdAt: new Date()
+        createdAt: new Date(),
       });
 
       await hotel.save();
 
       return {
         status: "success",
-        data: hotel
+        data: hotel,
       };
     } catch (error: any) {
-      if (error.message.startsWith('{')) {
+      if (error.message.startsWith("{")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to add rating",
-        errors: [{
-          type: "ServerError",
-          path: [],
-          message: error.message
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Failed to add rating",
+          errors: [
+            {
+              type: "ServerError",
+              path: [],
+              message: error.message,
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -325,39 +356,48 @@ export default class HotelController {
    * Get room availability for a hotel
    * @throws {Error} 404 - Hotel not found
    */
-  async getRoomAvailability(id: string, params: {
-    checkIn: Date;
-    checkOut: Date;
-    guests: number;
-  }) {
+  async getRoomAvailability(
+    id: string,
+    params: {
+      checkIn: Date;
+      checkOut: Date;
+      guests: number;
+    }
+  ) {
     try {
       const hotel = await Hotel.findById(id);
       if (!hotel) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Hotel not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Hotel with the specified ID does not exist"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Hotel not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Hotel with the specified ID does not exist",
+              },
+            ],
+          })
+        );
       }
 
       // Check if dates are valid
       const checkInDate = new Date(params.checkIn);
       const checkOutDate = new Date(params.checkOut);
-      
+
       if (checkInDate >= checkOutDate) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Invalid dates",
-          errors: [{
-            type: "ValidationError",
-            path: ["dates"],
-            message: "Check-in date must be before check-out date"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Invalid dates",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["dates"],
+                message: "Check-in date must be before check-out date",
+              },
+            ],
+          })
+        );
       }
 
       // Get existing bookings for this period
@@ -366,35 +406,41 @@ export default class HotelController {
         $or: [
           {
             checkIn: { $lte: checkOutDate },
-            checkOut: { $gte: checkInDate }
-          }
-        ]
+            checkOut: { $gte: checkInDate },
+          },
+        ],
       });
 
       // Get booked room IDs for this period
-      const bookedRoomIds = existingBookings.map(booking => booking.roomId.toString());
+      const bookedRoomIds = existingBookings.map((booking) =>
+        booking.roomId.toString()
+      );
 
       // Filter available rooms based on capacity, maintenance status and existing bookings
-      const availableRooms = hotel.rooms.filter(room => 
-        room.isAvailable && 
-        room.maintenanceStatus === 'Available' &&
-        room.capacity >= params.guests &&
-        !bookedRoomIds.includes(room._id.toString())
+      const availableRooms = hotel.rooms.filter(
+        (room) =>
+          room.isAvailable &&
+          room.maintenanceStatus === "Available" &&
+          room.capacity >= params.guests &&
+          !bookedRoomIds.includes(room._id.toString())
       );
 
       // Calculate prices including seasonal adjustments
-      const roomsWithPrices = availableRooms.map(room => {
+      const roomsWithPrices = availableRooms.map((room) => {
         const basePrice = room.pricePerNight;
-        const totalNights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+        const totalNights = Math.ceil(
+          (checkOutDate.getTime() - checkInDate.getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
         const seasonalPrice = hotel.getCurrentPrice(room.roomType, checkInDate);
-        
+
         return {
           ...room.toObject(),
           calculatedPrice: {
             basePrice,
             seasonalPrice,
-            totalPrice: seasonalPrice * totalNights
-          }
+            totalPrice: seasonalPrice * totalNights,
+          },
         };
       });
 
@@ -405,22 +451,28 @@ export default class HotelController {
           totalRooms: roomsWithPrices.length,
           checkIn: checkInDate,
           checkOut: checkOutDate,
-          nights: Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
-        }
+          nights: Math.ceil(
+            (checkOutDate.getTime() - checkInDate.getTime()) /
+              (1000 * 60 * 60 * 24)
+          ),
+        },
       };
     } catch (error: any) {
-      if (error.message.startsWith('{')) {
+      if (error.message.startsWith("{")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to get room availability",
-        errors: [{
-          type: "ServerError",
-          path: [],
-          message: error.message
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Failed to get room availability",
+          errors: [
+            {
+              type: "ServerError",
+              path: [],
+              message: error.message,
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -429,62 +481,74 @@ export default class HotelController {
    * @throws {Error} 404 - Hotel not found
    * @throws {Error} 400 - Invalid review data
    */
-  async addUserReview(id: string, reviewData: {
-    userId: string;
-    rating: number;
-    comment: string;
-  }) {
+  async addUserReview(
+    id: string,
+    reviewData: {
+      userId: string;
+      rating: number;
+      comment: string;
+    }
+  ) {
     try {
       const hotel = await Hotel.findById(id);
       if (!hotel) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Hotel not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Hotel with the specified ID does not exist"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Hotel not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Hotel with the specified ID does not exist",
+              },
+            ],
+          })
+        );
       }
 
       // Validate rating
       if (reviewData.rating < 1 || reviewData.rating > 5) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Invalid rating",
-          errors: [{
-            type: "ValidationError",
-            path: ["rating"],
-            message: "Rating must be between 1 and 5"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Invalid rating",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["rating"],
+                message: "Rating must be between 1 and 5",
+              },
+            ],
+          })
+        );
       }
 
       hotel.ratings.push({
         ...reviewData,
-        createdAt: new Date()
+        createdAt: new Date(),
       });
 
       await hotel.save();
 
       return {
         status: "success",
-        data: hotel
+        data: hotel,
       };
     } catch (error: any) {
-      if (error.message.startsWith('{')) {
+      if (error.message.startsWith("{")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to add review",
-        errors: [{
-          type: "ServerError",
-          path: [],
-          message: error.message
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Failed to add review",
+          errors: [
+            {
+              type: "ServerError",
+              path: [],
+              message: error.message,
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -504,31 +568,34 @@ export default class HotelController {
 
       // Use MongoDB's geospatial query
       const hotels = await Hotel.find({
-        'location.coordinates': {
+        "location.coordinates": {
           $near: {
             $geometry: {
-              type: 'Point',
-              coordinates: [params.longitude, params.latitude]
+              type: "Point",
+              coordinates: [params.longitude, params.latitude],
             },
-            $maxDistance: radius * 1000 // Convert km to meters
-          }
-        }
+            $maxDistance: radius * 1000, // Convert km to meters
+          },
+        },
       }).limit(limit);
 
       return {
         status: "success",
-        data: hotels
+        data: hotels,
       };
     } catch (error: any) {
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to find nearby hotels",
-        errors: [{
-          type: "ServerError",
-          path: [],
-          message: error.message
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Failed to find nearby hotels",
+          errors: [
+            {
+              type: "ServerError",
+              path: [],
+              message: error.message,
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -540,15 +607,18 @@ export default class HotelController {
     try {
       const hotel = await Hotel.findById(hotelId);
       if (!hotel) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Hotel not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Hotel with the specified ID does not exist"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Hotel not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Hotel with the specified ID does not exist",
+              },
+            ],
+          })
+        );
       }
 
       // Note: This assumes we have a favorites array in the hotel model
@@ -556,7 +626,7 @@ export default class HotelController {
       if (favoriteIndex === -1) {
         hotel.favorites = [...(hotel.favorites || []), userId];
       } else {
-        hotel.favorites = hotel.favorites?.filter(id => id !== userId);
+        hotel.favorites = hotel.favorites?.filter((id) => id !== userId);
       }
 
       await hotel.save();
@@ -565,22 +635,25 @@ export default class HotelController {
         status: "success",
         data: {
           isFavorite: favoriteIndex === -1,
-          hotel
-        }
+          hotel,
+        },
       };
     } catch (error: any) {
-      if (error.message.startsWith('{')) {
+      if (error.message.startsWith("{")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to toggle favorite",
-        errors: [{
-          type: "ServerError",
-          path: [],
-          message: error.message
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Failed to toggle favorite",
+          errors: [
+            {
+              type: "ServerError",
+              path: [],
+              message: error.message,
+            },
+          ],
+        })
+      );
     }
   }
 
@@ -589,62 +662,79 @@ export default class HotelController {
    * @throws {Error} 404 - Hotel not found
    * @throws {Error} 400 - Invalid booking data
    */
-  async bookRoom(hotelId: string, bookingData: {
-    userId: string;
-    roomId: string;
-    checkIn: Date;
-    checkOut: Date;
-    guests: number;
-  }) {
+  async bookRoom(
+    hotelId: string,
+    bookingData: {
+      userId: string;
+      roomId: string;
+      checkIn: Date;
+      checkOut: Date;
+      guests: number;
+    }
+  ) {
     try {
       const hotel = await Hotel.findById(hotelId);
       if (!hotel) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Hotel not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["id"],
-            message: "Hotel with the specified ID does not exist"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Hotel not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["id"],
+                message: "Hotel with the specified ID does not exist",
+              },
+            ],
+          })
+        );
       }
 
-      const room = hotel.rooms.find(r => r._id.toString() === bookingData.roomId);
+      const room = hotel.rooms.find(
+        (r) => r._id.toString() === bookingData.roomId
+      );
       if (!room) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Room not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["roomId"],
-            message: "Room with the specified ID does not exist"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Room not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["roomId"],
+                message: "Room with the specified ID does not exist",
+              },
+            ],
+          })
+        );
       }
 
       if (!room.isAvailable) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Room not available",
-          errors: [{
-            type: "ValidationError",
-            path: ["roomId"],
-            message: "The selected room is not available"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Room not available",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["roomId"],
+                message: "The selected room is not available",
+              },
+            ],
+          })
+        );
       }
 
       if (room.capacity < bookingData.guests) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Room capacity exceeded",
-          errors: [{
-            type: "ValidationError",
-            path: ["guests"],
-            message: `Room capacity is ${room.capacity} guests`
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Room capacity exceeded",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["guests"],
+                message: `Room capacity is ${room.capacity} guests`,
+              },
+            ],
+          })
+        );
       }
 
       // Create booking (assuming we have a Booking model)
@@ -655,8 +745,13 @@ export default class HotelController {
         checkIn: bookingData.checkIn,
         checkOut: bookingData.checkOut,
         guests: bookingData.guests,
-        status: 'confirmed',
-        totalPrice: room.pricePerNight * Math.ceil((bookingData.checkOut.getTime() - bookingData.checkIn.getTime()) / (1000 * 60 * 60 * 24))
+        status: "confirmed",
+        totalPrice:
+          room.pricePerNight *
+          Math.ceil(
+            (bookingData.checkOut.getTime() - bookingData.checkIn.getTime()) /
+              (1000 * 60 * 60 * 24)
+          ),
       });
 
       await booking.save();
@@ -669,22 +764,25 @@ export default class HotelController {
         status: "success",
         data: {
           booking,
-          room
-        }
+          room,
+        },
       };
     } catch (error: any) {
-      if (error.message.startsWith('{')) {
+      if (error.message.startsWith("{")) {
         throw error;
       }
-      throw new Error(JSON.stringify({
-        status: "error",
-        message: "Failed to book room",
-        errors: [{
-          type: "ServerError",
-          path: [],
-          message: error.message
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Failed to book room",
+          errors: [
+            {
+              type: "ServerError",
+              path: [],
+              message: error.message,
+            },
+          ],
+        })
+      );
     }
   }
 }

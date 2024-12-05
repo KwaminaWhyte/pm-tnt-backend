@@ -44,15 +44,18 @@ export default class BookingController {
       } = params;
 
       if (page < 1 || limit < 1) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Invalid pagination parameters",
-          errors: [{
-            type: "ValidationError",
-            path: ["page", "limit"],
-            message: "Page and limit must be positive numbers"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Invalid pagination parameters",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["page", "limit"],
+                message: "Page and limit must be positive numbers",
+              },
+            ],
+          })
+        );
       }
 
       const skipCount = (page - 1) * limit;
@@ -113,15 +116,18 @@ export default class BookingController {
       } = params;
 
       if (page < 1 || limit < 1) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Invalid pagination parameters",
-          errors: [{
-            type: "ValidationError",
-            path: ["page", "limit"],
-            message: "Page and limit must be positive numbers"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Invalid pagination parameters",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["page", "limit"],
+                message: "Page and limit must be positive numbers",
+              },
+            ],
+          })
+        );
       }
 
       const skipCount = (page - 1) * limit;
@@ -181,71 +187,87 @@ export default class BookingController {
       } = data;
 
       if (!hotelId && !vehicleId && !packageId) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Missing service selection",
-          errors: [{
-            type: "ValidationError",
-            path: ["service"],
-            message: "At least one service (hotel, vehicle, or package) must be booked"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Missing service selection",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["service"],
+                message:
+                  "At least one service (hotel, vehicle, or package) must be booked",
+              },
+            ],
+          })
+        );
       }
 
       const start = new Date(startDate);
       const end = new Date(endDate);
       if (start >= end) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Invalid date range",
-          errors: [{
-            type: "ValidationError",
-            path: ["startDate", "endDate"],
-            message: "End date must be after start date"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Invalid date range",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["startDate", "endDate"],
+                message: "End date must be after start date",
+              },
+            ],
+          })
+        );
       }
 
       if (hotelId) {
         const hotel = await Hotel.findById(hotelId);
         if (!hotel) {
-          throw new Error(JSON.stringify({
-            status: "error",
-            message: "Hotel not found",
-            errors: [{
-              type: "NotFoundError",
-              path: ["hotelId"],
-              message: "Invalid hotel ID"
-            }]
-          }));
+          throw new Error(
+            JSON.stringify({
+              message: "Hotel not found",
+              errors: [
+                {
+                  type: "NotFoundError",
+                  path: ["hotelId"],
+                  message: "Invalid hotel ID",
+                },
+              ],
+            })
+          );
         }
       }
 
       if (vehicleId) {
         const vehicle = await Vehicle.findById(vehicleId);
         if (!vehicle) {
-          throw new Error(JSON.stringify({
-            status: "error",
-            message: "Vehicle not found",
-            errors: [{
-              type: "NotFoundError",
-              path: ["vehicleId"],
-              message: "Invalid vehicle ID"
-            }]
-          }));
+          throw new Error(
+            JSON.stringify({
+              message: "Vehicle not found",
+              errors: [
+                {
+                  type: "NotFoundError",
+                  path: ["vehicleId"],
+                  message: "Invalid vehicle ID",
+                },
+              ],
+            })
+          );
         }
 
         const isAvailable = vehicle.isAvailableForDates(start, end);
         if (!isAvailable) {
-          throw new Error(JSON.stringify({
-            status: "error",
-            message: "Vehicle not available",
-            errors: [{
-              type: "ValidationError",
-              path: ["vehicleId"],
-              message: "Vehicle is not available for the selected dates"
-            }]
-          }));
+          throw new Error(
+            JSON.stringify({
+              message: "Vehicle not available",
+              errors: [
+                {
+                  type: "ValidationError",
+                  path: ["vehicleId"],
+                  message: "Vehicle is not available for the selected dates",
+                },
+              ],
+            })
+          );
         }
       }
 
@@ -288,42 +310,51 @@ export default class BookingController {
       const booking = await Booking.findById(bookingId);
 
       if (!booking) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Booking not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["bookingId"],
-            message: "Invalid booking ID"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Booking not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["bookingId"],
+                message: "Invalid booking ID",
+              },
+            ],
+          })
+        );
       }
 
       if (booking.user.toString() !== this.userId) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Unauthorized",
-          errors: [{
-            type: "AuthError",
-            path: ["authorization"],
-            message: "Access denied"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Unauthorized",
+            errors: [
+              {
+                type: "AuthError",
+                path: ["authorization"],
+                message: "Access denied",
+              },
+            ],
+          })
+        );
       }
 
       if (data.startDate && data.endDate) {
         const start = new Date(data.startDate);
         const end = new Date(data.endDate);
         if (start >= end) {
-          throw new Error(JSON.stringify({
-            status: "error",
-            message: "Invalid date range",
-            errors: [{
-              type: "ValidationError",
-              path: ["startDate", "endDate"],
-              message: "End date must be after start date"
-            }]
-          }));
+          throw new Error(
+            JSON.stringify({
+              message: "Invalid date range",
+              errors: [
+                {
+                  type: "ValidationError",
+                  path: ["startDate", "endDate"],
+                  message: "End date must be after start date",
+                },
+              ],
+            })
+          );
         }
       }
 
@@ -346,34 +377,38 @@ export default class BookingController {
   /**
    * Cancel a booking
    */
-  public async cancelBooking(
-    bookingId: string
-  ): Promise<BookingInterface> {
+  public async cancelBooking(bookingId: string): Promise<BookingInterface> {
     try {
       const booking = await Booking.findById(bookingId);
 
       if (!booking) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Booking not found",
-          errors: [{
-            type: "NotFoundError",
-            path: ["bookingId"],
-            message: "Invalid booking ID"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Booking not found",
+            errors: [
+              {
+                type: "NotFoundError",
+                path: ["bookingId"],
+                message: "Invalid booking ID",
+              },
+            ],
+          })
+        );
       }
 
       if (booking.user.toString() !== this.userId) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Unauthorized",
-          errors: [{
-            type: "AuthError",
-            path: ["authorization"],
-            message: "Access denied"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Unauthorized",
+            errors: [
+              {
+                type: "AuthError",
+                path: ["authorization"],
+                message: "Access denied",
+              },
+            ],
+          })
+        );
       }
 
       const now = new Date();
@@ -382,15 +417,19 @@ export default class BookingController {
         (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
       if (hoursUntilStart < 24) {
-        throw new Error(JSON.stringify({
-          status: "error",
-          message: "Cancellation window expired",
-          errors: [{
-            type: "ValidationError",
-            path: ["startDate"],
-            message: "Cannot cancel booking less than 24 hours before start time"
-          }]
-        }));
+        throw new Error(
+          JSON.stringify({
+            message: "Cancellation window expired",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["startDate"],
+                message:
+                  "Cannot cancel booking less than 24 hours before start time",
+              },
+            ],
+          })
+        );
       }
 
       const updatedBooking = await Booking.findByIdAndUpdate(

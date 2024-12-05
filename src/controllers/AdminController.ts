@@ -36,7 +36,6 @@ export default class AdminController {
     if (!admin) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Invalid Credentials",
           errors: [
             {
@@ -54,7 +53,6 @@ export default class AdminController {
     if (!valid) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Invalid Credentials",
           errors: [
             {
@@ -94,7 +92,6 @@ export default class AdminController {
       if (page < 1 || limit < 1) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Invalid pagination parameters",
             errors: [
               {
@@ -129,7 +126,6 @@ export default class AdminController {
       if (page > totalPages && totalCount > 0) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Page number exceeds available pages",
             errors: [
               {
@@ -157,7 +153,6 @@ export default class AdminController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to retrieve admins",
           errors: [
             {
@@ -185,7 +180,6 @@ export default class AdminController {
       if (!user) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Admin not found",
             errors: [
               {
@@ -205,7 +199,6 @@ export default class AdminController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to retrieve admin",
           errors: [
             {
@@ -232,7 +225,6 @@ export default class AdminController {
       if (existingAdmin) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Email already exists",
             errors: [
               {
@@ -264,7 +256,6 @@ export default class AdminController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to create admin",
           errors: [
             {
@@ -296,7 +287,6 @@ export default class AdminController {
         if (existingAdmin) {
           throw new Error(
             JSON.stringify({
-              status: "error",
               message: "Email already exists",
               errors: [
                 {
@@ -319,7 +309,6 @@ export default class AdminController {
       if (!admin) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Admin not found",
             errors: [
               {
@@ -342,7 +331,6 @@ export default class AdminController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to update admin",
           errors: [
             {
@@ -370,7 +358,6 @@ export default class AdminController {
       if (!admin) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Admin not found",
             errors: [
               {
@@ -392,7 +379,6 @@ export default class AdminController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to delete admin",
           errors: [
             {
@@ -421,7 +407,6 @@ export default class AdminController {
       if (!admin) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Admin not found",
             errors: [
               {
@@ -442,7 +427,6 @@ export default class AdminController {
       if (!isValidPassword) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Invalid current password",
             errors: [
               {
@@ -469,7 +453,6 @@ export default class AdminController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to change password",
           errors: [
             {

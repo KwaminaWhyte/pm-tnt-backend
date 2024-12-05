@@ -16,7 +16,7 @@ export function createResponse<T>(
     message,
     data,
     errors,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 }
 
@@ -25,15 +25,18 @@ export function createResponse<T>(
  */
 export function getUserId(request: { userId?: string }): string {
   if (!request.userId) {
-    throw new Error(JSON.stringify({
-      status: "error",
-      message: "Unauthorized",
-      errors: [{
-        type: "AuthError",
-        path: ["authorization"],
-        message: "User ID not found in request"
-      }]
-    }));
+    throw new Error(
+      JSON.stringify({
+        message: "Unauthorized",
+        errors: [
+          {
+            type: "AuthError",
+            path: ["authorization"],
+            message: "User ID not found in request",
+          },
+        ],
+      })
+    );
   }
   return request.userId;
 }
@@ -41,17 +44,25 @@ export function getUserId(request: { userId?: string }): string {
 /**
  * Calculate date difference in days
  */
-export function calculateDateDifference(startDate: Date, endDate: Date): number {
-  return Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+export function calculateDateDifference(
+  startDate: Date,
+  endDate: Date
+): number {
+  return Math.ceil(
+    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
 }
 
 /**
  * Format currency amount
  */
-export function formatCurrency(amount: number, currency: string = "USD"): string {
+export function formatCurrency(
+  amount: number,
+  currency: string = "USD"
+): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency
+    currency,
   }).format(amount);
 }
 
@@ -60,28 +71,34 @@ export function formatCurrency(amount: number, currency: string = "USD"): string
  */
 export function validateDateRange(startDate: Date, endDate: Date): void {
   if (startDate >= endDate) {
-    throw new Error(JSON.stringify({
-      status: "error",
-      message: "Invalid date range",
-      errors: [{
-        type: "ValidationError",
-        path: ["dates"],
-        message: "End date must be after start date"
-      }]
-    }));
+    throw new Error(
+      JSON.stringify({
+        message: "Invalid date range",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["dates"],
+            message: "End date must be after start date",
+          },
+        ],
+      })
+    );
   }
 
   const now = new Date();
   if (startDate < now) {
-    throw new Error(JSON.stringify({
-      status: "error",
-      message: "Invalid date range",
-      errors: [{
-        type: "ValidationError",
-        path: ["startDate"],
-        message: "Start date cannot be in the past"
-      }]
-    }));
+    throw new Error(
+      JSON.stringify({
+        message: "Invalid date range",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["startDate"],
+            message: "Start date cannot be in the past",
+          },
+        ],
+      })
+    );
   }
 }
 
@@ -98,9 +115,16 @@ export function generateBookingReference(): string {
 /**
  * Parse query parameters for pagination
  */
-export function parsePaginationParams(query: { page?: string | number; limit?: string | number }) {
-  const page = typeof query.page === "string" ? parseInt(query.page, 10) : (query.page || 1);
-  const limit = typeof query.limit === "string" ? parseInt(query.limit, 10) : (query.limit || 10);
+export function parsePaginationParams(query: {
+  page?: string | number;
+  limit?: string | number;
+}) {
+  const page =
+    typeof query.page === "string" ? parseInt(query.page, 10) : query.page || 1;
+  const limit =
+    typeof query.limit === "string"
+      ? parseInt(query.limit, 10)
+      : query.limit || 10;
   return { page, limit };
 }
 

@@ -57,7 +57,6 @@ app.onError(({ error, code }) => {
     // Attempt to parse the error if it's in JSON format and matches your error structure
     const parsedError = JSON.parse(error.message);
     errorMessage = {
-      status: "error",
       message: parsedError.message || "Validation failed",
       data: parsedError.errors
         ? parsedError.errors.map((err) => ({
@@ -73,7 +72,6 @@ app.onError(({ error, code }) => {
   } catch (e) {
     // Fallback in case parsing fails
     errorMessage = {
-      status: "error",
       message: error.message || "An unknown error occurred",
       data: null,
     };

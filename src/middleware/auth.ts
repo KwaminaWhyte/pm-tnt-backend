@@ -18,7 +18,6 @@ export const isAdmin = async ({
   if (!token) {
     throw new Error(
       JSON.stringify({
-        status: "error",
         message: "Unauthorized",
         errors: [
           {
@@ -37,7 +36,6 @@ export const isAdmin = async ({
     if (!payload || payload.role !== "admin") {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Forbidden",
           errors: [
             {
@@ -57,7 +55,6 @@ export const isAdmin = async ({
     }
     throw new Error(
       JSON.stringify({
-        status: "error",
         message: "Unauthorized",
         errors: [
           {

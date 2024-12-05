@@ -16,7 +16,6 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
     if (!token) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Unauthorized",
           errors: [
             {
@@ -35,7 +34,6 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
     } catch (error) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Unauthorized",
           errors: [
             {
