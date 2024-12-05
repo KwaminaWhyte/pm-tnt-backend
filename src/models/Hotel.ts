@@ -61,8 +61,7 @@ const schema = new Schema<HotelInterface>(
     description: { type: String },
     location: { 
       type: locationSchema,
-      required: true,
-      index: '2dsphere' 
+      required: true
     },
     contactInfo: {
       phone: { type: String, required: true },
@@ -102,6 +101,7 @@ const schema = new Schema<HotelInterface>(
 );
 
 // Indexes
+schema.index({ 'location.coordinates': '2dsphere' });
 schema.index({ name: 'text', 'location.city': 'text', 'location.country': 'text' });
 schema.index({ starRating: 1 });
 schema.index({ 'rooms.pricePerNight': 1 });

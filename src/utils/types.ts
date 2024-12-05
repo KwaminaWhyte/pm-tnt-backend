@@ -45,8 +45,8 @@ interface LocationInterface {
   city: string;
   country: string;
   coordinates: {
-    latitude: number;
-    longitude: number;
+    type: 'Point';
+    coordinates: [number, number]; // [longitude, latitude]
   };
 }
 
