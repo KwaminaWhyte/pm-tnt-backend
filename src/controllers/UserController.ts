@@ -105,7 +105,7 @@ export default class UserController {
         ],
       });
 
-      throw new Error(
+      return new Error(
         JSON.stringify({
           status: "error",
           message: "User not found",
