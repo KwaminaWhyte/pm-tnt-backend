@@ -294,8 +294,8 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
             country: t.String(),
             address: t.String(),
             coordinates: t.Object({
-              latitude: t.Number(),
-              longitude: t.Number(),
+              type: t.Literal('Point'),
+              coordinates: t.Array(t.Number())
             }),
           }),
           contactInfo: t.Object({
@@ -378,8 +378,8 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
           //       country: t.String(),
           //       address: t.String(),
           //       coordinates: t.Object({
-          //         latitude: t.Number(),
-          //         longitude: t.Number(),
+          //         type: t.Literal('Point'),
+          //         coordinates: t.Array(t.Number())
           //       }),
           //     })
           //   ),

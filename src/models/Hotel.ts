@@ -7,9 +7,25 @@ const locationSchema = new Schema({
   city: { type: String, required: true },
   country: { type: String, required: true },
   coordinates: {
-    latitude: { type: Number, required: true },
-    longitude: { type: Number, required: true },
-  },
+    type: {
+      type: String,
+      enum: ['Point'],
+      required: true,
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number],
+      required: true,
+      validate: {
+        validator: function(v: number[]) {
+          return v.length === 2 && 
+                 v[0] >= -180 && v[0] <= 180 && // longitude
+                 v[1] >= -90 && v[1] <= 90;     // latitude
+        },
+        message: 'Coordinates must be [longitude, latitude] and within valid ranges'
+      }
+    }
+  }
 }, { _id: false });
 
 const ratingSchema = new Schema({
