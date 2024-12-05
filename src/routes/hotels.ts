@@ -371,7 +371,12 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
             })
           ),
           images: t.Array(t.String()),
-          policies: t.Optional(t.String()),
+          policies: t.Object({
+            cancellationPolicy: t.String(),
+            checkInTime: t.String(),
+            checkOutTime: t.String(),
+            payment: t.String(),
+          }),
         }),
         detail: {
           summary: "Create hotel",
