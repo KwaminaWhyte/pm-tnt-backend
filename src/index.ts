@@ -47,6 +47,8 @@ const app = new Elysia()
   .use(hotelsRoutes);
 
 app.onError(({ error, code }) => {
+  console.log(error, code);
+
   if (code === "NOT_FOUND") return;
 
   let errorMessage;
