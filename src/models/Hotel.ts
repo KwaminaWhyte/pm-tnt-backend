@@ -118,11 +118,14 @@ const schema = new Schema<HotelInterface>(
 
 // Indexes
 schema.index({ "location.geo": "2dsphere" });
-schema.index({
-  name: "text",
-  "location.city": "text",
-  "location.country": "text",
-});
+schema.index(
+  {
+    name: "text",
+    "location.city": "text",
+    "location.country": "text",
+  },
+  { weights: { name: 10, "location.city": 5, "location.country": 1 } }
+);
 schema.index({ starRating: 1 });
 schema.index({ "rooms.pricePerNight": 1 });
 schema.index({ "rooms.capacity": 1 });
