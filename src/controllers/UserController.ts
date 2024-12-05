@@ -22,36 +22,30 @@ export default class UserController {
     const { email, password, firstName, lastName, phone } = data;
 
     if (!email || !password) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Invalid input data",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["email", "password"],
-              message: "Email and password are required",
-            },
-          ],
-        })
-      );
+      return error(404, {
+        message: "Invalid input data",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["email", "password"],
+            message: "Email and password are required",
+          },
+        ],
+      });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Email already exists",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["email"],
-              message: "An account with this email already exists",
-            },
-          ],
-        })
-      );
+      return error(404, {
+        message: "Email already exists",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["email"],
+            message: "An account with this email already exists",
+          },
+        ],
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -78,35 +72,21 @@ export default class UserController {
     const { email, password } = data;
 
     if (!email || !password) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Invalid input data",
-          errors: [
-            {
-              type: "ValidationError",
-              message: "Email and password are required",
-            },
-          ],
-        })
-      );
+      return error(404, {
+        message: "Invalid input data",
+        errors: [
+          {
+            type: "ValidationError",
+            message: "Email and password are required",
+          },
+        ],
+      });
     }
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      console.log({
-        status: "error",
-        message: "User not found",
-        errors: [
-          {
-            type: "AuthenticationError",
-            message: "Invalid credentials",
-          },
-        ],
-      });
       return error(404, {
-        status: "error",
         message: "User not found",
         errors: [
           {
@@ -120,8 +100,7 @@ export default class UserController {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      console.log({
-        status: "error",
+      return error(404, {
         message: "Invalid credentials",
         errors: [
           {
@@ -130,19 +109,6 @@ export default class UserController {
           },
         ],
       });
-
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Invalid credentials",
-          errors: [
-            {
-              type: "AuthenticationError",
-              message: "Incorrect password",
-            },
-          ],
-        })
-      );
     }
 
     // Optional: Generate JWT token if jwt_auth is provided
@@ -170,36 +136,30 @@ export default class UserController {
     console.log(phone);
 
     if (!phone) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Invalid input data",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["phone"],
-              message: "Phone number is required",
-            },
-          ],
-        })
-      );
+      return error(404, {
+        message: "Invalid input data",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["phone"],
+            message: "Phone number is required",
+          },
+        ],
+      });
     }
 
     const user = await User.findOne({ phone });
     if (!user) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "User not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["phone"],
-              message: "No account found with this phone number",
-            },
-          ],
-        })
-      );
+      return error(404, {
+        message: "User not found",
+        errors: [
+          {
+            type: "NotFoundError",
+            path: ["phone"],
+            message: "No account found with this phone number",
+          },
+        ],
+      });
     }
 
     const otp = generateOTP();
@@ -225,19 +185,16 @@ export default class UserController {
         message: "OTP sent successfully",
       };
     } catch (error) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "SMS service error",
-          errors: [
-            {
-              type: "ServiceError",
-              path: ["sms"],
-              message: "Failed to send OTP",
-            },
-          ],
-        })
-      );
+      return error(500, {
+        message: "SMS service error",
+        errors: [
+          {
+            type: "ServiceError",
+            path: ["sms"],
+            message: "Failed to send OTP",
+          },
+        ],
+      });
     }
   }
 
@@ -250,19 +207,16 @@ export default class UserController {
     const { phone, otp } = data;
 
     if (!phone || !otp) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Invalid input data",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["phone", "otp"],
-              message: "Phone and OTP are required",
-            },
-          ],
-        })
-      );
+      return error(404, {
+        message: "Invalid input data",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["phone", "otp"],
+            message: "Phone and OTP are required",
+          },
+        ],
+      });
     }
 
     const user = await User.findOne({
@@ -272,19 +226,16 @@ export default class UserController {
     });
 
     if (!user) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Authentication failed",
-          errors: [
-            {
-              type: "AuthenticationError",
-              path: ["otp"],
-              message: "Invalid or expired OTP",
-            },
-          ],
-        })
-      );
+      return error(401, {
+        message: "Authentication failed",
+        errors: [
+          {
+            type: "AuthenticationError",
+            path: ["otp"],
+            message: "Invalid or expired OTP",
+          },
+        ],
+      });
     }
 
     await User.updateOne(
@@ -313,41 +264,35 @@ export default class UserController {
       const user = await User.findById(userId).select("-password -otp");
 
       if (!user) {
-        throw new Error(
-          JSON.stringify({
-            status: "error",
-            message: "User not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["userId"],
-                message: "User not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "User not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["userId"],
+              message: "User not found",
+            },
+          ],
+        });
       }
 
       return {
         user,
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("User not found")) {
-        throw error;
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("User not found")) {
+        throw e;
       }
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Invalid user ID",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["userId"],
-              message: "Invalid user ID format",
-            },
-          ],
-        })
-      );
+      return error(400, {
+        message: "Invalid user ID",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["userId"],
+            message: "Invalid user ID format",
+          },
+        ],
+      });
     }
   }
 
@@ -360,19 +305,16 @@ export default class UserController {
       const user = await User.findById(id).select("-password -otp");
 
       if (!user) {
-        throw new Error(
-          JSON.stringify({
-            status: "error",
-            message: "User not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "User not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "User not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "User not found",
+            },
+          ],
+        });
       }
 
       return { user };
@@ -380,19 +322,16 @@ export default class UserController {
       if (error instanceof Error && error.message.includes("User not found")) {
         throw error;
       }
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Invalid user ID",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["id"],
-              message: "Invalid user ID format",
-            },
-          ],
-        })
-      );
+      return error(400, {
+        message: "Invalid user ID",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["id"],
+            message: "Invalid user ID format",
+          },
+        ],
+      });
     }
   }
 
@@ -412,36 +351,30 @@ export default class UserController {
     newPassword: string;
   }) {
     if (!currentPassword || !newPassword) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Invalid input data",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["currentPassword", "newPassword"],
-              message: "Current password and new password are required",
-            },
-          ],
-        })
-      );
+      return error(400, {
+        message: "Invalid input data",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["currentPassword", "newPassword"],
+            message: "Current password and new password are required",
+          },
+        ],
+      });
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "User not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["userId"],
-              message: "User not found",
-            },
-          ],
-        })
-      );
+      return error(404, {
+        message: "User not found",
+        errors: [
+          {
+            type: "NotFoundError",
+            path: ["userId"],
+            message: "User not found",
+          },
+        ],
+      });
     }
 
     const isValidPassword = await bcrypt.compare(
@@ -449,19 +382,16 @@ export default class UserController {
       user.password || ""
     );
     if (!isValidPassword) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Invalid current password",
-          errors: [
-            {
-              type: "AuthenticationError",
-              path: ["currentPassword"],
-              message: "Current password is incorrect",
-            },
-          ],
-        })
-      );
+      return error(401, {
+        message: "Invalid current password",
+        errors: [
+          {
+            type: "AuthenticationError",
+            path: ["currentPassword"],
+            message: "Current password is incorrect",
+          },
+        ],
+      });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -490,19 +420,16 @@ export default class UserController {
 
     // Validate required fields
     if (!userData.firstName || !userData.phone) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Missing required fields",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["firstName", "phone"],
-              message: "First name and phone are required",
-            },
-          ],
-        })
-      );
+      return error(400, {
+        message: "Missing required fields",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["firstName", "phone"],
+            message: "First name and phone are required",
+          },
+        ],
+      });
     }
 
     // Check for existing users
@@ -529,13 +456,10 @@ export default class UserController {
     }
 
     if (errors.length > 0) {
-      throw new Error(
-        JSON.stringify({
-          status: "error",
-          message: "Duplicate user data",
-          errors,
-        })
-      );
+      return error(400, {
+        message: "Validation error",
+        errors,
+      });
     }
 
     // Hash password if provided
@@ -564,19 +488,16 @@ export default class UserController {
   }: UserSearchParams) {
     try {
       if (page < 1 || limit < 1) {
-        throw new Error(
-          JSON.stringify({
-            status: "error",
-            message: "Invalid pagination parameters",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["page", "limit"],
-                message: "Page and limit must be positive numbers",
-              },
-            ],
-          })
-        );
+        return error(400, {
+          message: "Invalid pagination parameters",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["page", "limit"],
+              message: "Page and limit must be positive numbers",
+            },
+          ],
+        });
       }
 
       const searchFilter = searchTerm
@@ -599,19 +520,16 @@ export default class UserController {
       const totalPages = Math.ceil(totalCount / limit);
 
       if (page > totalPages && totalCount > 0) {
-        throw new Error(
-          JSON.stringify({
-            status: "error",
-            message: "Page number exceeds available pages",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["page"],
-                message: `Page should be between 1 and ${totalPages}`,
-              },
-            ],
-          })
-        );
+        return error(400, {
+          message: "Page number exceeds available pages",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["page"],
+              message: `Page should be between 1 and ${totalPages}`,
+            },
+          ],
+        });
       }
 
       const users = await User.find(filters)
@@ -635,7 +553,6 @@ export default class UserController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to retrieve users",
           errors: [
             {
@@ -660,7 +577,6 @@ export default class UserController {
       if (!user) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "User not found",
             errors: [
               {
@@ -687,7 +603,6 @@ export default class UserController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to delete user",
           errors: [
             {
@@ -712,7 +627,6 @@ export default class UserController {
       if (!user) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "User not found",
             errors: [
               {
@@ -759,7 +673,6 @@ export default class UserController {
       if (errors.length > 0) {
         throw new Error(
           JSON.stringify({
-            status: "error",
             message: "Validation failed",
             errors,
           })
@@ -782,7 +695,6 @@ export default class UserController {
       }
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to update user",
           errors: [
             {
@@ -838,7 +750,6 @@ export default class UserController {
     } catch (error) {
       throw new Error(
         JSON.stringify({
-          status: "error",
           message: "Failed to remove duplicates",
           errors: [
             {
