@@ -105,19 +105,16 @@ export default class UserController {
           },
         ],
       });
-      return error(401, "User not found");
-      return new Error(
-        JSON.stringify({
-          status: "error",
-          message: "User not found",
-          errors: [
-            {
-              type: "AuthenticationError",
-              message: "Invalid credentials",
-            },
-          ],
-        })
-      );
+      return error(401, {
+        status: "error",
+        message: "User not found",
+        errors: [
+          {
+            type: "AuthenticationError",
+            message: "Invalid credentials",
+          },
+        ],
+      });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
