@@ -105,7 +105,7 @@ export default class UserController {
           },
         ],
       });
-      return error(401, {
+      return error(404, {
         status: "error",
         message: "User not found",
         errors: [
