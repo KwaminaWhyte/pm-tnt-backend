@@ -1,6 +1,6 @@
 import { Schema } from "mongoose";
-import mongoose from "~/utils/mongoose";
 import { PackageInterface } from "~/utils/types";
+import mongoose from "../mongoose";
 
 const ItinerarySchema = new Schema({
   day: { type: Number, required: true },

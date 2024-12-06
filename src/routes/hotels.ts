@@ -9,43 +9,7 @@ const hotelController = new HotelController();
  * Base path: /api/v1/hotels
  */
 const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
-  .derive(async ({ headers, jwt_auth }) => {
-    const auth = headers["authorization"];
-    const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
 
-    if (!token) {
-      throw new Error(
-        JSON.stringify({
-          message: "Unauthorized",
-          errors: [
-            {
-              type: "AuthError",
-              path: ["authorization"],
-              message: "Token is missing",
-            },
-          ],
-        })
-      );
-    }
-
-    try {
-      const userId = await jwt_auth.verify(token);
-      return { userId };
-    } catch (error) {
-      throw new Error(
-        JSON.stringify({
-          message: "Unauthorized",
-          errors: [
-            {
-              type: "AuthError",
-              path: ["authorization"],
-              message: "Invalid or expired token",
-            },
-          ],
-        })
-      );
-    }
-  })
   .guard({
     detail: {
       description: "Require user to be logged in",
@@ -195,6 +159,43 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
     }
   )
 
+  .derive(async ({ headers, jwt_auth }) => {
+    const auth = headers["authorization"];
+    const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+    if (!token) {
+      throw new Error(
+        JSON.stringify({
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Token is missing",
+            },
+          ],
+        })
+      );
+    }
+
+    try {
+      const data = await jwt_auth.verify(token);
+      return { userId: data?.id };
+    } catch (error) {
+      throw new Error(
+        JSON.stringify({
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Invalid or expired token",
+            },
+          ],
+        })
+      );
+    }
+  })
   .post(
     "/:id/reviews",
     ({ params: { id }, body, userId }) =>
@@ -294,8 +295,8 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
             country: t.String(),
             address: t.String(),
             coordinates: t.Object({
-              type: t.Literal('Point'),
-              coordinates: t.Array(t.Number())
+              type: t.Literal("Point"),
+              coordinates: t.Array(t.Number()),
             }),
           }),
           contactInfo: t.Object({

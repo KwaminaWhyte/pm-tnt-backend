@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import Admin, { AdminInterface } from "../models/Admin";
+import { error } from "elysia";
 
 interface CreateAdminDTO {
   fullName: string;
@@ -34,18 +35,16 @@ export default class AdminController {
     });
 
     if (!admin) {
-      throw new Error(
-        JSON.stringify({
-          message: "Invalid Credentials",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["email"],
-              message: "Invalid Credentials",
-            },
-          ],
-        })
-      );
+      return error(404, {
+        message: "Invalid Credentials",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["email"],
+            message: "Invalid Credentials",
+          },
+        ],
+      });
     }
 
     const valid = await bcrypt.compare(password, admin.password);
