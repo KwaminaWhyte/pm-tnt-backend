@@ -71,13 +71,15 @@ export default class HotelController {
         Hotel.countDocuments(filter),
       ]);
 
+      // Standardize success response for listing hotels
       return {
         status: "success",
-        data: {
-          hotels,
-          totalPages: Math.ceil(totalCount / limit),
+        data: hotels,
+        pagination: {
           currentPage: page,
-          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          totalItems: totalCount,
+          itemsPerPage: limit,
         },
       };
     } catch (error: any) {

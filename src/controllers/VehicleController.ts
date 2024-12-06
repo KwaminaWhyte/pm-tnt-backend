@@ -119,11 +119,12 @@ export default class VehicleController {
         });
       }
 
+      // Standardize success response for listing vehicles
       return {
-        vehicles,
+        data: vehicles,
         pagination: {
           currentPage: page,
-          totalPages,
+          totalPages: Math.ceil(totalCount / limit),
           totalItems: totalCount,
           itemsPerPage: limit,
         },
