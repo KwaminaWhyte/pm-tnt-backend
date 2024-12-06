@@ -54,48 +54,6 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
     }
   })
 
-  .get(
-    "/",
-    async ({ query }) =>
-      await hotelController.getHotels({
-        page: query?.page ? parseInt(query.page as string) : 1,
-        limit: query?.limit ? parseInt(query.limit as string) : 10,
-        searchTerm: query?.searchTerm as string,
-        city: query?.city as string,
-        country: query?.country as string,
-        sortBy: query?.sortBy as "pricePerNight" | "capacity" | "rating",
-        sortOrder: query?.sortOrder as "asc" | "desc",
-      }),
-    {
-      detail: {
-        tags: ["Hotels"],
-        summary: "List hotels",
-        description: "Retrieve a list of hotels with optional pagination and filtering",
-        responses: {
-          200: {
-            description: "Hotels retrieved successfully",
-            content: {
-              "application/json": {
-                schema: t.Object({
-                  data: t.Array(t.Any()),
-                  pagination: t.Object({
-                    currentPage: t.Number(),
-                    totalPages: t.Number(),
-                    totalItems: t.Number(),
-                    itemsPerPage: t.Number(),
-                  }),
-                }),
-              },
-            },
-          },
-          400: {
-            description: "Invalid query parameters",
-          },
-        },
-      },
-    }
-  )
-
   .post(
     "/:id/reviews",
     ({ params: { id }, body, userId }) =>

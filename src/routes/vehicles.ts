@@ -49,52 +49,6 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
     },
   })
 
-  .get(
-    "/",
-    async ({ query }) =>
-      await vehicleController.getVehicles({
-        page: query?.page ? parseInt(query.page as string) : 1,
-        limit: query?.limit ? parseInt(query.limit as string) : 10,
-        searchTerm: query?.searchTerm as string,
-        isAvailable: query?.isAvailable === "true",
-        priceRange: query?.priceRange ? JSON.parse(query.priceRange as string) : undefined,
-        vehicleType: query?.vehicleType as string,
-        city: query?.city as string,
-        country: query?.country as string,
-        capacity: query?.capacity ? parseInt(query.capacity as string) : undefined,
-        sortBy: query?.sortBy as "pricePerDay" | "capacity" | "rating",
-        sortOrder: query?.sortOrder as "asc" | "desc",
-      }),
-    {
-      detail: {
-        tags: ["Vehicles"],
-        summary: "List vehicles",
-        description: "Retrieve a list of vehicles with optional pagination and filtering",
-        responses: {
-          200: {
-            description: "Vehicles retrieved successfully",
-            content: {
-              "application/json": {
-                schema: t.Object({
-                  data: t.Array(t.Any()),
-                  pagination: t.Object({
-                    currentPage: t.Number(),
-                    totalPages: t.Number(),
-                    totalItems: t.Number(),
-                    itemsPerPage: t.Number(),
-                  }),
-                }),
-              },
-            },
-          },
-          400: {
-            description: "Invalid query parameters",
-          },
-        },
-      },
-    }
-  )
-
   .post(
     "/:id/book",
     async ({ params: { id }, body, userId }) => {

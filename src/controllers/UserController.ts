@@ -538,9 +538,8 @@ export default class UserController {
         .limit(limit)
         .sort({ createdAt: -1 });
 
-      // Standardize success response for listing users
       return {
-        data: users,
+        users,
         pagination: {
           currentPage: page,
           totalPages,

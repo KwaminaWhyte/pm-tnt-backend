@@ -167,41 +167,39 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
         page: query?.page ? parseInt(query.page as string) : 1,
         limit: query?.limit ? parseInt(query.limit as string) : 10,
         searchTerm: query?.searchTerm as string,
-        sortBy: query?.sortBy as "createdAt" | "email",
-        sortOrder: query?.sortOrder as "asc" | "desc",
+        status: query?.status as string,
       }),
     {
       query: t.Object({
         page: t.Optional(t.String()),
         limit: t.Optional(t.String()),
         searchTerm: t.Optional(t.String()),
-        sortBy: t.Optional(t.String()),
-        sortOrder: t.Optional(t.String()),
+        status: t.Optional(t.String()),
       }),
       detail: {
         tags: ["Users"],
-        summary: "List users",
-        description: "Retrieve a list of users with optional pagination and filtering",
+        summary: "Get all users with pagination and search parameters",
+        description:
+          "Retrieve a list of all users with pagination and search parameters",
         security: [{ bearerAuth: [] }],
         responses: {
           200: {
             description: "Users retrieved successfully",
             content: {
               "application/json": {
-                schema: t.Object({
-                  data: t.Array(t.Any()),
-                  pagination: t.Object({
-                    currentPage: t.Number(),
-                    totalPages: t.Number(),
-                    totalItems: t.Number(),
-                    itemsPerPage: t.Number(),
-                  }),
-                }),
+                schema: t.Array(
+                  t.Object({
+                    id: t.String(),
+                    email: t.String(),
+                    firstName: t.String(),
+                    lastName: t.Optional(t.String()),
+                    phone: t.Optional(t.String()),
+                    createdAt: t.String(),
+                    updatedAt: t.String(),
+                  })
+                ),
               },
             },
-          },
-          400: {
-            description: "Invalid query parameters",
           },
           401: {
             description: "Unauthorized - Invalid or missing token",
