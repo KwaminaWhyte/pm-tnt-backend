@@ -70,7 +70,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
       detail: {
         summary: "Add hotel review",
         description: "Add a user review to a hotel",
-        tags: ["Hotels", "Reviews"],
+        tags: ["Hotels - Auth User", "Reviews"],
         responses: {
           200: {
             description: "Review added successfully",
@@ -93,7 +93,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
       detail: {
         summary: "Toggle favorite",
         description: "Toggle favorite status of a hotel for the current user",
-        tags: ["Hotels", "User Preferences"],
+        tags: ["Hotels - Auth User", "User Preferences"],
         responses: {
           200: {
             description: "Favorite status toggled successfully",
@@ -126,7 +126,7 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
       detail: {
         summary: "Book room",
         description: "Book a room in the hotel",
-        tags: ["Hotels", "Bookings"],
+        tags: ["Hotels - Auth User", "Bookings"],
         responses: {
           200: {
             description: "Room booked successfully",

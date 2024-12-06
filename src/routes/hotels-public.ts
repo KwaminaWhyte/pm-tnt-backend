@@ -51,7 +51,7 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
         summary: "Get all hotels",
         description:
           "Retrieve a list of hotels with optional filtering and pagination",
-        tags: ["Hotels"],
+        tags: ["Hotels - Public"],
         responses: {
           200: {
             description: "List of hotels retrieved successfully",
@@ -71,7 +71,7 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
     detail: {
       summary: "Get hotel by ID",
       description: "Retrieve a specific hotel by its ID",
-      tags: ["Hotels"],
+      tags: ["Hotels - Public"],
       responses: {
         200: {
           description: "Hotel retrieved successfully",
@@ -104,7 +104,7 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
         summary: "Get room availability",
         description:
           "Check room availability for specific dates and number of guests",
-        tags: ["Hotels", "Rooms"],
+        tags: ["Hotels - Public", "Rooms"],
         responses: {
           200: {
             description: "Room availability retrieved successfully",
@@ -140,7 +140,7 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
         summary: "Get nearby hotels",
         description:
           "Find hotels within a specified radius of given coordinates",
-        tags: ["Hotels", "Search"],
+        tags: ["Hotels - Public", "Search"],
         responses: {
           200: {
             description: "Nearby hotels retrieved successfully",

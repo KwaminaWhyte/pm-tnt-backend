@@ -69,7 +69,7 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
     {
       detail: {
         summary: "Book a vehicle",
-        tags: ["Vehicles - Public"],
+        tags: ["Vehicles - Auth User"],
       },
       params: t.Object({
         id: t.String(),
@@ -119,7 +119,7 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
     {
       detail: {
         summary: "Get vehicle booking history",
-        tags: ["Vehicles - Public"],
+        tags: ["Vehicles - Auth User"],
       },
     }
   )
