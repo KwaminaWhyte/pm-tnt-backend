@@ -46,6 +46,25 @@ const ratingSchema = new Schema(
   { _id: true }
 );
 
+const roomSchema = new Schema(
+  {
+    roomNumber: { type: String, required: true },
+    floor: { type: Number, required: true },
+    roomType: { type: String, required: true },
+    pricePerNight: { type: Number, required: true },
+    capacity: { type: Number, required: true },
+    features: [String],
+    isAvailable: { type: Boolean, default: true },
+    maintenanceStatus: {
+      type: String,
+      enum: ["Available", "Cleaning", "Maintenance"],
+      default: "Available",
+    },
+    images: [String],
+  },
+  { _id: true }
+);
+
 const schema = new Schema<HotelInterface>(
   {
     name: {
@@ -72,6 +91,7 @@ const schema = new Schema<HotelInterface>(
     amenities: [String],
     checkInTime: { type: String, required: true },
     checkOutTime: { type: String, required: true },
+    rooms: [roomSchema],
     images: [String],
     ratings: [ratingSchema],
     policies: {
