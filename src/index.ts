@@ -9,6 +9,7 @@ import usersRoutes from "./routes/users";
 import adminAuthRoutes from "./routes/admin-auth";
 import hotelsRoutes from "./routes/hotels";
 import hotelsPublicRoutes from "./routes/hotels-public";
+import roomRoutes from "./routes/rooms";
 import { jwtConfig } from "./utils/jwt.config";
 
 const app = new Elysia()
@@ -48,7 +49,8 @@ const app = new Elysia()
   .use(adminsRoutes)
   .use(usersRoutes)
   .use(hotelsPublicRoutes)
-  .use(hotelsRoutes);
+  .use(hotelsRoutes)
+  .use(roomRoutes);
 
 app.onError(({ error, code }) => {
   console.log(error, code);

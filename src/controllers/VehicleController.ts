@@ -5,6 +5,7 @@ import {
   VehicleRatingDTO,
 } from "../utils/types";
 import Vehicle from "../models/Vehicle";
+import { error } from 'elysia';
 
 export default class VehicleController {
   /**
@@ -38,18 +39,16 @@ export default class VehicleController {
   }) {
     try {
       if (page < 1 || limit < 1) {
-        throw new Error(
-          JSON.stringify({
-            message: "Invalid pagination parameters",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["page", "limit"],
-                message: "Page and limit must be positive numbers",
-              },
-            ],
-          })
-        );
+        return error(400, {
+          message: "Invalid pagination parameters",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["page", "limit"],
+              message: "Page and limit must be positive numbers",
+            },
+          ],
+        });
       }
 
       const filter: Record<string, any> = {};
@@ -108,18 +107,16 @@ export default class VehicleController {
       const totalPages = Math.ceil(totalCount / limit);
 
       if (page > totalPages && totalCount > 0) {
-        throw new Error(
-          JSON.stringify({
-            message: "Page number exceeds available pages",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["page"],
-                message: `Page should be between 1 and ${totalPages}`,
-              },
-            ],
-          })
-        );
+        return error(400, {
+          message: "Page number exceeds available pages",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["page"],
+              message: `Page should be between 1 and ${totalPages}`,
+            },
+          ],
+        });
       }
 
       return {
@@ -131,25 +128,23 @@ export default class VehicleController {
           itemsPerPage: limit,
         },
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("status")) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to retrieve vehicles",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+      return error(500, {
+        message: "Failed to retrieve vehicles",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -162,40 +157,36 @@ export default class VehicleController {
       const vehicle = await Vehicle.findById(id);
 
       if (!vehicle) {
-        throw new Error(
-          JSON.stringify({
-            message: "Vehicle not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Vehicle not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "Vehicle not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Vehicle not found",
+            },
+          ],
+        });
       }
 
       return { vehicle };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("status")) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to retrieve vehicle",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["id"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+      return error(500, {
+        message: "Failed to retrieve vehicle",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["id"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -221,25 +212,23 @@ export default class VehicleController {
         message: "Vehicle created successfully",
         vehicle: savedVehicle,
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("status")) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to create vehicle",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+      return error(500, {
+        message: "Failed to create vehicle",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -253,18 +242,16 @@ export default class VehicleController {
       const vehicle = await Vehicle.findById(id);
 
       if (!vehicle) {
-        throw new Error(
-          JSON.stringify({
-            message: "Vehicle not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Vehicle not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "Vehicle not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Vehicle not found",
+            },
+          ],
+        });
       }
 
       const locationUpdate =
@@ -292,25 +279,23 @@ export default class VehicleController {
         message: "Vehicle updated successfully",
         vehicle: updatedVehicle,
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("status")) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to update vehicle",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+      return error(500, {
+        message: "Failed to update vehicle",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -323,42 +308,38 @@ export default class VehicleController {
       const vehicle = await Vehicle.findByIdAndDelete(id);
 
       if (!vehicle) {
-        throw new Error(
-          JSON.stringify({
-            message: "Vehicle not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Vehicle not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "Vehicle not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Vehicle not found",
+            },
+          ],
+        });
       }
 
       return {
         message: "Vehicle deleted successfully",
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("status")) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to delete vehicle",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+      return error(500, {
+        message: "Failed to delete vehicle",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -372,18 +353,16 @@ export default class VehicleController {
       const vehicle = await Vehicle.findById(id);
 
       if (!vehicle) {
-        throw new Error(
-          JSON.stringify({
-            message: "Vehicle not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Vehicle not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "Vehicle not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Vehicle not found",
+            },
+          ],
+        });
       }
 
       const existingRatingIndex = vehicle.ratings?.findIndex(
@@ -414,25 +393,23 @@ export default class VehicleController {
         message: "Rating submitted successfully",
         vehicle,
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("status")) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to submit rating",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+      return error(500, {
+        message: "Failed to submit rating",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -452,18 +429,16 @@ export default class VehicleController {
       const vehicle = await Vehicle.findById(id);
 
       if (!vehicle) {
-        throw new Error(
-          JSON.stringify({
-            message: "Vehicle not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Vehicle not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "Vehicle not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Vehicle not found",
+            },
+          ],
+        });
       }
 
       // Check if dates are valid
@@ -471,18 +446,16 @@ export default class VehicleController {
       const endDate = new Date(params.endDate);
 
       if (startDate >= endDate) {
-        throw new Error(
-          JSON.stringify({
-            message: "Invalid dates",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["dates"],
-                message: "Start date must be before end date",
-              },
-            ],
-          })
-        );
+        return error(400, {
+          message: "Invalid dates",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["dates"],
+              message: "Start date must be before end date",
+            },
+          ],
+        });
       }
 
       // Check vehicle availability using the model method
@@ -527,25 +500,23 @@ export default class VehicleController {
           ...priceDetails,
         },
       };
-    } catch (error: any) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("status")) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to check vehicle availability",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+      return error(500, {
+        message: "Failed to check vehicle availability",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -608,22 +579,20 @@ export default class VehicleController {
           {}
         ),
       };
-    } catch (error) {
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to retrieve statistics",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+    } catch (err) {
+      return error(500, {
+        message: "Failed to retrieve statistics",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 }

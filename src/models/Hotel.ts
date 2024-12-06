@@ -46,25 +46,6 @@ const ratingSchema = new Schema(
   { _id: true }
 );
 
-const roomSchema = new Schema(
-  {
-    roomNumber: { type: String, required: true },
-    floor: { type: Number, required: true },
-    roomType: { type: String, required: true },
-    pricePerNight: { type: Number, required: true },
-    capacity: { type: Number, required: true },
-    features: [String],
-    isAvailable: { type: Boolean, default: true },
-    maintenanceStatus: {
-      type: String,
-      enum: ["Available", "Cleaning", "Maintenance"],
-      default: "Available",
-    },
-    images: [String],
-  },
-  { _id: true }
-);
-
 const schema = new Schema<HotelInterface>(
   {
     name: {
@@ -91,7 +72,6 @@ const schema = new Schema<HotelInterface>(
     amenities: [String],
     checkInTime: { type: String, required: true },
     checkOutTime: { type: String, required: true },
-    rooms: [roomSchema],
     images: [String],
     ratings: [ratingSchema],
     policies: {
@@ -127,21 +107,12 @@ schema.index(
   { weights: { name: 10, "location.city": 5, "location.country": 1 } }
 );
 schema.index({ starRating: 1 });
-schema.index({ "rooms.pricePerNight": 1 });
-schema.index({ "rooms.capacity": 1 });
-schema.index({ "rooms.isAvailable": 1 });
 
 // Virtuals
 schema.virtual("averageRating").get(function () {
   if (!this.ratings || this.ratings.length === 0) return 0;
   const sum = this.ratings.reduce((acc, curr) => acc + curr.rating, 0);
   return Math.round((sum / this.ratings.length) * 10) / 10;
-});
-
-schema.virtual("availableRooms").get(function () {
-  return this.rooms.filter(
-    (room) => room.isAvailable && room.maintenanceStatus === "Available"
-  );
 });
 
 // Middleware
@@ -165,19 +136,15 @@ schema.pre("save", function (next) {
 
 // Methods
 schema.methods.getCurrentPrice = function (
-  roomType: string,
   date: Date = new Date()
 ) {
-  const room = this.rooms.find((r) => r.roomType === roomType);
-  if (!room) return null;
-
   const seasonalPrice = this.seasonalPrices.find(
     (sp) => date >= sp.startDate && date <= sp.endDate
   );
 
   return seasonalPrice
-    ? room.pricePerNight * seasonalPrice.multiplier
-    : room.pricePerNight;
+    ? seasonalPrice.multiplier
+    : 1;
 };
 
 let Hotel: Model<HotelInterface>;

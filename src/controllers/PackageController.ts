@@ -58,14 +58,17 @@ export default class PackageController {
         packages,
         totalPages,
       });
-    } catch (error) {
-      console.error("Error fetching packages:", error);
-      return createResponse(false, 500, "Error fetching packages", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+    } catch (err) {
+      console.error("Error fetching packages:", err);
+      return error(500, {
+        message: "Error fetching packages",
+        errors: [
+          {
+            message:
+              err instanceof Error ? err.message : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -77,7 +80,16 @@ export default class PackageController {
       const packageItem = await Package.findById(id);
 
       if (!packageItem) {
-        return createResponse(false, 404, "Package not found");
+        return error(404, {
+          message: "Package not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Package not found",
+            },
+          ],
+        });
       }
 
       return createResponse(
@@ -86,14 +98,17 @@ export default class PackageController {
         "Package retrieved successfully",
         packageItem
       );
-    } catch (error) {
-      console.error("Error retrieving package:", error);
-      return createResponse(false, 500, "Error fetching package", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+    } catch (err) {
+      console.error("Error retrieving package:", err);
+      return error(500, {
+        message: "Error retrieving package",
+        errors: [
+          {
+            message:
+              err instanceof Error ? err.message : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -172,14 +187,17 @@ export default class PackageController {
         "Package created successfully",
         savedPackage
       );
-    } catch (error) {
-      console.error("Error creating package:", error);
-      return createResponse(false, 500, "Error creating package", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+    } catch (err) {
+      console.error("Error creating package:", err);
+      return error(500, {
+        message: "Error creating package",
+        errors: [
+          {
+            message:
+              err instanceof Error ? err.message : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -267,18 +285,30 @@ export default class PackageController {
       );
 
       if (!updated) {
-        return createResponse(false, 404, "Package not found");
+        return error(404, {
+          message: "Package not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Package not found",
+            },
+          ],
+        });
       }
 
       return createResponse(true, 200, "Package updated successfully", updated);
-    } catch (error) {
-      console.error("Error updating package:", error);
-      return createResponse(false, 500, "Error updating package", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+    } catch (err) {
+      console.error("Error updating package:", err);
+      return error(500, {
+        message: "Error updating package",
+        errors: [
+          {
+            message:
+              err instanceof Error ? err.message : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -290,18 +320,30 @@ export default class PackageController {
       const deleted = await Package.findByIdAndDelete(id);
 
       if (!deleted) {
-        return createResponse(false, 404, "Package not found");
+        return error(404, {
+          message: "Package not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Package not found",
+            },
+          ],
+        });
       }
 
       return createResponse(true, 200, "Package deleted successfully");
-    } catch (error) {
-      console.error("Error deleting package:", error);
-      return createResponse(false, 500, "Error deleting package", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+    } catch (err) {
+      console.error("Error deleting package:", err);
+      return error(500, {
+        message: "Error deleting package",
+        errors: [
+          {
+            message:
+              err instanceof Error ? err.message : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 }

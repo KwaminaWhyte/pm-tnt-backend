@@ -58,20 +58,17 @@ export default class DestinationController {
         destinations,
         totalPages,
       });
-    } catch (error) {
-      console.error("Error fetching destinations:", error);
-      return createResponse(
-        false,
-        500,
-        "Error fetching destinations",
-        undefined,
-        [
+    } catch (err) {
+      console.error("Error fetching destinations:", err);
+      return error(500, {
+        message: "Error fetching destinations",
+        errors: [
           {
             message:
-              error instanceof Error ? error.message : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
-        ]
-      );
+        ],
+      });
     }
   }
 
@@ -85,7 +82,16 @@ export default class DestinationController {
       const destination = await Destination.findById(id);
 
       if (!destination) {
-        return createResponse(false, 404, "Destination not found");
+        return error(404, {
+          message: "Destination not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Destination not found",
+            },
+          ],
+        });
       }
 
       return createResponse(
@@ -94,20 +100,17 @@ export default class DestinationController {
         "Destination retrieved successfully",
         destination
       );
-    } catch (error) {
-      console.error("Error retrieving destination:", error);
-      return createResponse(
-        false,
-        500,
-        "Error fetching destination",
-        undefined,
-        [
+    } catch (err) {
+      console.error("Error retrieving destination:", err);
+      return error(500, {
+        message: "Error fetching destination",
+        errors: [
           {
             message:
-              error instanceof Error ? error.message : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
-        ]
-      );
+        ],
+      });
     }
   }
 
@@ -131,16 +134,13 @@ export default class DestinationController {
       });
 
       if (error) {
-        return createResponse(
-          false,
-          400,
-          "Validation failed",
-          undefined,
-          error.details.map((err) => ({
+        return error(400, {
+          message: "Validation failed",
+          errors: error.details.map((err) => ({
             field: err.path.join("."),
             message: err.message,
-          }))
-        );
+          })),
+        });
       }
 
       const existingDestination = await Destination.findOne({
@@ -148,18 +148,15 @@ export default class DestinationController {
       });
 
       if (existingDestination) {
-        return createResponse(
-          false,
-          400,
-          "Destination already exists",
-          undefined,
-          [
+        return error(400, {
+          message: "Destination already exists",
+          errors: [
             {
               field: "name",
               message: "A destination with this name already exists",
             },
-          ]
-        );
+          ],
+        });
       }
 
       const destination = new Destination(value);
@@ -171,20 +168,17 @@ export default class DestinationController {
         "Destination created successfully",
         savedDestination
       );
-    } catch (error) {
-      console.error("Error creating destination:", error);
-      return createResponse(
-        false,
-        500,
-        "Error creating destination",
-        undefined,
-        [
+    } catch (err) {
+      console.error("Error creating destination:", err);
+      return error(500, {
+        message: "Error creating destination",
+        errors: [
           {
             message:
-              error instanceof Error ? error.message : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
-        ]
-      );
+        ],
+      });
     }
   }
 
@@ -209,16 +203,13 @@ export default class DestinationController {
       });
 
       if (error) {
-        return createResponse(
-          false,
-          400,
-          "Validation failed",
-          undefined,
-          error.details.map((err) => ({
+        return error(400, {
+          message: "Validation failed",
+          errors: error.details.map((err) => ({
             field: err.path.join("."),
             message: err.message,
-          }))
-        );
+          })),
+        });
       }
 
       if (value.name) {
@@ -228,18 +219,15 @@ export default class DestinationController {
         });
 
         if (existingDestination) {
-          return createResponse(
-            false,
-            400,
-            "Destination already exists",
-            undefined,
-            [
+          return error(400, {
+            message: "Destination already exists",
+            errors: [
               {
                 field: "name",
                 message: "A destination with this name already exists",
               },
-            ]
-          );
+            ],
+          });
         }
       }
 
@@ -250,7 +238,16 @@ export default class DestinationController {
       );
 
       if (!updated) {
-        return createResponse(false, 404, "Destination not found");
+        return error(404, {
+          message: "Destination not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Destination not found",
+            },
+          ],
+        });
       }
 
       return createResponse(
@@ -259,20 +256,17 @@ export default class DestinationController {
         "Destination updated successfully",
         updated
       );
-    } catch (error) {
-      console.error("Error updating destination:", error);
-      return createResponse(
-        false,
-        500,
-        "Error updating destination",
-        undefined,
-        [
+    } catch (err) {
+      console.error("Error updating destination:", err);
+      return error(500, {
+        message: "Error updating destination",
+        errors: [
           {
             message:
-              error instanceof Error ? error.message : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
-        ]
-      );
+        ],
+      });
     }
   }
 
@@ -284,24 +278,30 @@ export default class DestinationController {
       const deleted = await Destination.findByIdAndDelete(id);
 
       if (!deleted) {
-        return createResponse(false, 404, "Destination not found");
+        return error(404, {
+          message: "Destination not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Destination not found",
+            },
+          ],
+        });
       }
 
       return createResponse(true, 200, "Destination deleted successfully");
-    } catch (error) {
-      console.error("Error deleting destination:", error);
-      return createResponse(
-        false,
-        500,
-        "Error deleting destination",
-        undefined,
-        [
+    } catch (err) {
+      console.error("Error deleting destination:", err);
+      return error(500, {
+        message: "Error deleting destination",
+        errors: [
           {
             message:
-              error instanceof Error ? error.message : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
-        ]
-      );
+        ],
+      });
     }
   }
 }

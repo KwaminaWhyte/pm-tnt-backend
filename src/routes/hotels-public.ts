@@ -18,19 +18,10 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
         searchTerm: query.searchTerm as string,
         limit: Number(query.limit) || 10,
         isAvailable: query.isAvailable === "true",
-        priceRange:
-          query.minPrice && query.maxPrice
-            ? {
-                min: Number(query.minPrice),
-                max: Number(query.maxPrice),
-              }
-            : undefined,
         city: query.city as string,
         country: query.country as string,
         sortBy: query.sortBy as "pricePerNight" | "capacity" | "rating",
         sortOrder: query.sortOrder as "asc" | "desc",
-        roomType: query.roomType as string,
-        capacity: query.capacity ? Number(query.capacity) : undefined,
       }),
     {
       query: t.Object({
@@ -38,14 +29,10 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
         searchTerm: t.Optional(t.String()),
         limit: t.Optional(t.String()),
         isAvailable: t.Optional(t.String()),
-        minPrice: t.Optional(t.String()),
-        maxPrice: t.Optional(t.String()),
         city: t.Optional(t.String()),
         country: t.Optional(t.String()),
         sortBy: t.Optional(t.String()),
         sortOrder: t.Optional(t.String()),
-        roomType: t.Optional(t.String()),
-        capacity: t.Optional(t.String()),
       }),
       detail: {
         summary: "Get all hotels",

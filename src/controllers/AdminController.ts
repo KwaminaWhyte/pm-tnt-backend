@@ -36,12 +36,12 @@ export default class AdminController {
 
     if (!admin) {
       return error(404, {
-        message: "Invalid Credentials",
+        message: "Admin not found",
         errors: [
           {
-            type: "ValidationError",
+            type: "NotFoundError",
             path: ["email"],
-            message: "Invalid Credentials",
+            message: "Admin not found",
           },
         ],
       });
@@ -50,18 +50,16 @@ export default class AdminController {
     const valid = await bcrypt.compare(password, admin.password);
 
     if (!valid) {
-      throw new Error(
-        JSON.stringify({
-          message: "Invalid Credentials",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["password"],
-              message: "Invalid Credentials",
-            },
-          ],
-        })
-      );
+      return error(401, {
+        message: "Invalid Credentials",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["password"],
+            message: "Invalid Credentials",
+          },
+        ],
+      });
     }
 
     // const token = await this.generateToken(admin._id);
@@ -89,18 +87,16 @@ export default class AdminController {
   }) {
     try {
       if (page < 1 || limit < 1) {
-        throw new Error(
-          JSON.stringify({
-            message: "Invalid pagination parameters",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["page", "limit"],
-                message: "Page and limit must be positive numbers",
-              },
-            ],
-          })
-        );
+        return error(400, {
+          message: "Invalid pagination parameters",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["page", "limit"],
+              message: "Page and limit must be positive numbers",
+            },
+          ],
+        });
       }
 
       const filter: Record<string, any> = {};
@@ -123,18 +119,16 @@ export default class AdminController {
       const totalPages = Math.ceil(totalCount / limit);
 
       if (page > totalPages && totalCount > 0) {
-        throw new Error(
-          JSON.stringify({
-            message: "Page number exceeds available pages",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["page"],
-                message: `Page should be between 1 and ${totalPages}`,
-              },
-            ],
-          })
-        );
+        return error(400, {
+          message: "Page number exceeds available pages",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["page"],
+              message: `Page should be between 1 and ${totalPages}`,
+            },
+          ],
+        });
       }
 
       return {
@@ -146,25 +140,20 @@ export default class AdminController {
           itemsPerPage: limit,
         },
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
-      }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to retrieve admins",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+    } catch (err) {
+      return error(500, {
+        message: "Failed to retrieve admins",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -177,40 +166,33 @@ export default class AdminController {
       const user = await Admin.findById(id).select("-password");
 
       if (!user) {
-        throw new Error(
-          JSON.stringify({
-            message: "Admin not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Admin not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "Admin not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Admin not found",
+            },
+          ],
+        });
       }
 
       return { user };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
-      }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to retrieve admin",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["id"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+    } catch (err) {
+      return error(500, {
+        message: "Failed to retrieve admin",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["id"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -222,18 +204,16 @@ export default class AdminController {
     try {
       const existingAdmin = await Admin.findOne({ email: data.email });
       if (existingAdmin) {
-        throw new Error(
-          JSON.stringify({
-            message: "Email already exists",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["email"],
-                message: "An admin with this email already exists",
-              },
-            ],
-          })
-        );
+        return error(400, {
+          message: "Email already exists",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["email"],
+              message: "An admin with this email already exists",
+            },
+          ],
+        });
       }
 
       const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -249,25 +229,20 @@ export default class AdminController {
         message: "Admin created successfully",
         admin: adminWithoutPassword,
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
-      }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to create admin",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+    } catch (err) {
+      return error(500, {
+        message: "Failed to create admin",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -284,18 +259,16 @@ export default class AdminController {
           _id: { $ne: id },
         });
         if (existingAdmin) {
-          throw new Error(
-            JSON.stringify({
-              message: "Email already exists",
-              errors: [
-                {
-                  type: "ValidationError",
-                  path: ["email"],
-                  message: "An admin with this email already exists",
-                },
-              ],
-            })
-          );
+          return error(400, {
+            message: "Email already exists",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["email"],
+                message: "An admin with this email already exists",
+              },
+            ],
+          });
         }
       }
 
@@ -306,43 +279,36 @@ export default class AdminController {
       ).select("-password");
 
       if (!admin) {
-        throw new Error(
-          JSON.stringify({
-            message: "Admin not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Admin not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "Admin not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Admin not found",
+            },
+          ],
+        });
       }
 
       return {
         message: "Admin updated successfully",
         admin,
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
-      }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to update admin",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+    } catch (err) {
+      return error(500, {
+        message: "Failed to update admin",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -355,42 +321,35 @@ export default class AdminController {
       const admin = await Admin.findByIdAndDelete(id);
 
       if (!admin) {
-        throw new Error(
-          JSON.stringify({
-            message: "Admin not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Admin not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "Admin not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Admin not found",
+            },
+          ],
+        });
       }
 
       return {
         message: "Admin deleted successfully",
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
-      }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to delete admin",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+    } catch (err) {
+      return error(500, {
+        message: "Failed to delete admin",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -404,18 +363,16 @@ export default class AdminController {
       const admin = await Admin.findById(id);
 
       if (!admin) {
-        throw new Error(
-          JSON.stringify({
-            message: "Admin not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Admin not found",
-              },
-            ],
-          })
-        );
+        return error(404, {
+          message: "Admin not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Admin not found",
+            },
+          ],
+        });
       }
 
       const isValidPassword = await bcrypt.compare(
@@ -424,18 +381,16 @@ export default class AdminController {
       );
 
       if (!isValidPassword) {
-        throw new Error(
-          JSON.stringify({
-            message: "Invalid current password",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["currentPassword"],
-                message: "Current password is incorrect",
-              },
-            ],
-          })
-        );
+        return error(400, {
+          message: "Invalid current password",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["currentPassword"],
+              message: "Current password is incorrect",
+            },
+          ],
+        });
       }
 
       const hashedPassword = await bcrypt.hash(data.newPassword, 10);
@@ -446,25 +401,20 @@ export default class AdminController {
       return {
         message: "Password changed successfully",
       };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("status")) {
-        throw error;
-      }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to change password",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            },
-          ],
-        })
-      );
+    } catch (err) {
+      return error(500, {
+        message: "Failed to change password",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error
+                ? err.message
+                : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 }

@@ -73,14 +73,17 @@ export default class PaymentController {
         payments,
         totalPages,
       });
-    } catch (error) {
-      console.error("Error fetching payments:", error);
-      return createResponse(false, 500, "Error fetching payments", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+    } catch (err) {
+      console.error("Error fetching payments:", err);
+      return error(500, {
+        message: "Error fetching payments",
+        errors: [
+          {
+            message:
+              err instanceof Error ? err.message : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -146,20 +149,17 @@ export default class PaymentController {
         payments,
         totalPages,
       });
-    } catch (error) {
-      console.error("Error fetching user payments:", error);
-      return createResponse(
-        false,
-        500,
-        "Error fetching your payments",
-        undefined,
-        [
+    } catch (err) {
+      console.error("Error fetching user payments:", err);
+      return error(500, {
+        message: "Error fetching your payments",
+        errors: [
           {
             message:
-              error instanceof Error ? error.message : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
-        ]
-      );
+        ],
+      });
     }
   }
 
@@ -171,7 +171,16 @@ export default class PaymentController {
       const payment = await Payment.findById(id).populate("user");
 
       if (!payment) {
-        return createResponse(false, 404, "Payment not found");
+        return error(404, {
+          message: "Payment not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Payment not found",
+            },
+          ],
+        });
       }
 
       return createResponse(
@@ -180,14 +189,17 @@ export default class PaymentController {
         "Payment retrieved successfully",
         payment
       );
-    } catch (error) {
-      console.error("Error retrieving payment:", error);
-      return createResponse(false, 500, "Error fetching payment", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+    } catch (err) {
+      console.error("Error retrieving payment:", err);
+      return error(500, {
+        message: "Error fetching payment",
+        errors: [
+          {
+            message:
+              err instanceof Error ? err.message : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -242,20 +254,17 @@ export default class PaymentController {
         "Payment initialized successfully",
         payment
       );
-    } catch (error) {
-      console.error("Error initializing payment:", error);
-      return createResponse(
-        false,
-        500,
-        "Error initializing payment",
-        undefined,
-        [
+    } catch (err) {
+      console.error("Error initializing payment:", err);
+      return error(500, {
+        message: "Error initializing payment",
+        errors: [
           {
             message:
-              error instanceof Error ? error.message : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
-        ]
-      );
+        ],
+      });
     }
   }
 
@@ -302,7 +311,16 @@ export default class PaymentController {
       const payment = await Payment.findById(paymentId);
 
       if (!payment) {
-        return createResponse(false, 404, "Payment not found");
+        return error(404, {
+          message: "Payment not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Payment not found",
+            },
+          ],
+        });
       }
 
       if (payment.status === "paid") {
@@ -330,14 +348,17 @@ export default class PaymentController {
         "Payment processed successfully",
         updated
       );
-    } catch (error) {
-      console.error("Error processing payment:", error);
-      return createResponse(false, 500, "Error processing payment", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+    } catch (err) {
+      console.error("Error processing payment:", err);
+      return error(500, {
+        message: "Error processing payment",
+        errors: [
+          {
+            message:
+              err instanceof Error ? err.message : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 
@@ -349,7 +370,16 @@ export default class PaymentController {
       const payment = await Payment.findById(id);
 
       if (!payment) {
-        return createResponse(false, 404, "Payment not found");
+        return error(404, {
+          message: "Payment not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Payment not found",
+            },
+          ],
+        });
       }
 
       if (payment.status === "paid") {
@@ -365,14 +395,17 @@ export default class PaymentController {
       });
 
       return createResponse(true, 200, "Payment cancelled successfully");
-    } catch (error) {
-      console.error("Error cancelling payment:", error);
-      return createResponse(false, 500, "Error cancelling payment", undefined, [
-        {
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
-        },
-      ]);
+    } catch (err) {
+      console.error("Error cancelling payment:", err);
+      return error(500, {
+        message: "Error cancelling payment",
+        errors: [
+          {
+            message:
+              err instanceof Error ? err.message : "Unknown error occurred",
+          },
+        ],
+      });
     }
   }
 }

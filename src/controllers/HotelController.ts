@@ -12,26 +12,18 @@ export default class HotelController {
     page = 1,
     searchTerm,
     limit = 10,
-    isAvailable,
-    priceRange,
     city,
     country,
     sortBy,
     sortOrder,
-    roomType,
-    capacity,
   }: {
     page?: number;
     searchTerm?: string;
     limit?: number;
-    isAvailable?: boolean;
-    priceRange?: { min: number; max: number };
     city?: string;
     country?: string;
     sortBy?: "pricePerNight" | "capacity" | "rating";
     sortOrder?: "asc" | "desc";
-    roomType?: string;
-    capacity?: number;
   }) {
     try {
       if (page < 1 || limit < 1) {
@@ -57,31 +49,12 @@ export default class HotelController {
         ];
       }
 
-      if (isAvailable !== undefined) {
-        filter["rooms.isAvailable"] = isAvailable;
-      }
-
-      if (priceRange) {
-        filter["rooms.pricePerNight"] = {
-          $gte: priceRange.min,
-          $lte: priceRange.max,
-        };
-      }
-
       if (city) {
         filter["location.city"] = { $regex: city, $options: "i" };
       }
 
       if (country) {
         filter["location.country"] = { $regex: country, $options: "i" };
-      }
-
-      if (roomType) {
-        filter["rooms.roomType"] = { $regex: roomType, $options: "i" };
-      }
-
-      if (capacity) {
-        filter["rooms.capacity"] = { $gte: capacity };
       }
 
       const sort: Record<string, 1 | -1> = {};
