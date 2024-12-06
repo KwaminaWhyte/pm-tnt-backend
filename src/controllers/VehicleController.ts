@@ -120,13 +120,14 @@ export default class VehicleController {
       }
 
       return {
-        vehicles,
+        success: true,
+        data: vehicles,
         pagination: {
           currentPage: page,
           totalPages,
           totalItems: totalCount,
-          itemsPerPage: limit,
-        },
+          itemsPerPage: limit
+        }
       };
     } catch (err) {
       if (err instanceof Error && err.message.includes("status")) {

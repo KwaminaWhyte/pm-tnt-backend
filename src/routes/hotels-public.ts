@@ -12,7 +12,7 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
 
   .get(
     "/",
-    ({ query }) =>
+    async ({ query }) =>
       hotelController.getHotels({
         page: Number(query.page) || 1,
         searchTerm: query.searchTerm as string,
@@ -138,6 +138,41 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
         },
       },
     }
-  );
+  )
+
+  .get("/", async ({ query }) => hotelController.getHotels(query), {
+    detail: {
+      summary: "Get all hotels with pagination and filtering",
+      tags: ["Hotels - Public"],
+      responses: {
+        200: {
+          description: "List of hotels with pagination",
+          content: {
+            "application/json": {
+              schema: t.Object({
+                success: t.Boolean(),
+                data: t.Array(t.Any()),
+                pagination: t.Object({
+                  currentPage: t.Number(),
+                  totalPages: t.Number(),
+                  totalItems: t.Number(),
+                  itemsPerPage: t.Number()
+                })
+              })
+            }
+          }
+        }
+      }
+    },
+    query: t.Object({
+      page: t.Optional(t.Number()),
+      limit: t.Optional(t.Number()),
+      searchTerm: t.Optional(t.String()),
+      city: t.Optional(t.String()),
+      country: t.Optional(t.String()),
+      sortBy: t.Optional(t.Union([t.Literal("pricePerNight"), t.Literal("capacity"), t.Literal("rating")])),
+      sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")]))
+    })
+  })
 
 export default hotelPublicRoutes;

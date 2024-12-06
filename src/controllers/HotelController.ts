@@ -72,12 +72,13 @@ export default class HotelController {
       ]);
 
       return {
-        status: "success",
-        data: {
-          hotels,
-          totalPages: Math.ceil(totalCount / limit),
+        success: true,
+        data: hotels,
+        pagination: {
           currentPage: page,
-          totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+          totalItems: totalCount,
+          itemsPerPage: limit,
         },
       };
     } catch (error: any) {

@@ -54,10 +54,16 @@ export default class DestinationController {
       ]);
 
       const totalPages = Math.ceil(totalDestinationsCount / limit);
-      return createResponse(true, 200, "Destinations retrieved successfully", {
-        destinations,
-        totalPages,
-      });
+      return {
+        success: true,
+        data: destinations,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: totalDestinationsCount,
+          itemsPerPage: limit
+        }
+      };
     } catch (err) {
       console.error("Error fetching destinations:", err);
       return error(500, {

@@ -83,10 +83,14 @@ export default class BookingController {
       const totalPages = Math.ceil(totalBookingsCount / limit);
 
       return {
-        bookings,
-        totalPages,
-        currentPage: page,
-        totalBookings: totalBookingsCount,
+        success: true,
+        data: bookings,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: totalBookingsCount,
+          itemsPerPage: limit,
+        },
       };
     } catch (err) {
       console.error("Error fetching bookings:", err);

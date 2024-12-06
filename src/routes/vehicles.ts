@@ -123,6 +123,47 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
       },
     }
   )
+  .get("/", async ({ query }) => vehicleController.getVehicles(query), {
+    detail: {
+      summary: "Get all vehicles with pagination and filtering",
+      tags: ["Vehicles - Public"],
+      responses: {
+        200: {
+          description: "List of vehicles with pagination",
+          content: {
+            "application/json": {
+              schema: t.Object({
+                success: t.Boolean(),
+                data: t.Array(t.Any()),
+                pagination: t.Object({
+                  currentPage: t.Number(),
+                  totalPages: t.Number(),
+                  totalItems: t.Number(),
+                  itemsPerPage: t.Number()
+                })
+              })
+            }
+          }
+        }
+      }
+    },
+    query: t.Object({
+      page: t.Optional(t.Number()),
+      limit: t.Optional(t.Number()),
+      searchTerm: t.Optional(t.String()),
+      isAvailable: t.Optional(t.Boolean()),
+      priceRange: t.Optional(t.Object({
+        min: t.Number(),
+        max: t.Number()
+      })),
+      vehicleType: t.Optional(t.String()),
+      city: t.Optional(t.String()),
+      country: t.Optional(t.String()),
+      capacity: t.Optional(t.Number()),
+      sortBy: t.Optional(t.Union([t.Literal("pricePerDay"), t.Literal("capacity"), t.Literal("rating")])),
+      sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")]))
+    })
+  })
 
   .group("/admin", (app) =>
     app
