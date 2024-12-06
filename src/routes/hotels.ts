@@ -159,43 +159,44 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels" })
     }
   )
 
-  .derive(async ({ headers, jwt_auth }) => {
-    const auth = headers["authorization"];
-    const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  // .derive(async ({ headers, jwt_auth }) => {
+  //   const auth = headers["authorization"];
+  //   const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
 
-    if (!token) {
-      throw new Error(
-        JSON.stringify({
-          message: "Unauthorized",
-          errors: [
-            {
-              type: "AuthError",
-              path: ["authorization"],
-              message: "Token is missing",
-            },
-          ],
-        })
-      );
-    }
+  //   if (!token) {
+  //     throw new Error(
+  //       JSON.stringify({
+  //         message: "Unauthorized",
+  //         errors: [
+  //           {
+  //             type: "AuthError",
+  //             path: ["authorization"],
+  //             message: "Token is missing",
+  //           },
+  //         ],
+  //       })
+  //     );
+  //   }
 
-    try {
-      const data = await jwt_auth.verify(token);
-      return { userId: data?.id };
-    } catch (error) {
-      throw new Error(
-        JSON.stringify({
-          message: "Unauthorized",
-          errors: [
-            {
-              type: "AuthError",
-              path: ["authorization"],
-              message: "Invalid or expired token",
-            },
-          ],
-        })
-      );
-    }
-  })
+  //   try {
+  //     const data = await jwt_auth.verify(token);
+  //     return { userId: data?.id };
+  //   } catch (error) {
+  //     throw new Error(
+  //       JSON.stringify({
+  //         message: "Unauthorized",
+  //         errors: [
+  //           {
+  //             type: "AuthError",
+  //             path: ["authorization"],
+  //             message: "Invalid or expired token",
+  //           },
+  //         ],
+  //       })
+  //     );
+  //   }
+  // })
+
   .post(
     "/:id/reviews",
     ({ params: { id }, body, userId }) =>
