@@ -170,57 +170,35 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
         status: query?.status as string,
       }),
     {
-      query: t.Object({
-        page: t.Optional(t.String()),
-        limit: t.Optional(t.String()),
-        searchTerm: t.Optional(t.String()),
-        status: t.Optional(t.String()),
-      }),
       detail: {
+        summary: "List all users",
         tags: ["Users"],
-        summary: "Get all users with pagination and search parameters",
-        description:
-          "Retrieve a list of all users with pagination and search parameters",
-        security: [{ bearerAuth: [] }],
         responses: {
           200: {
-            description: "Users retrieved successfully",
-            content: {
-              "application/json": {
-                schema: t.Array(
-                  t.Object({
-                    id: t.String(),
-                    email: t.String(),
-                    firstName: t.String(),
-                    lastName: t.Optional(t.String()),
-                    phone: t.Optional(t.String()),
-                    createdAt: t.String(),
-                    updatedAt: t.String(),
-                  })
-                ),
-              },
-            },
-          },
-          401: {
-            description: "Unauthorized - Invalid or missing token",
+            description: "List of users with pagination",
             content: {
               "application/json": {
                 schema: t.Object({
-                  status: t.Literal("error"),
-                  message: t.String(),
-                  errors: t.Array(
-                    t.Object({
-                      type: t.String(),
-                      path: t.Array(t.String()),
-                      message: t.String(),
-                    })
-                  ),
+                  success: t.Boolean(),
+                  data: t.Array(t.Any()),
+                  pagination: t.Object({
+                    currentPage: t.Number(),
+                    totalPages: t.Number(),
+                    totalItems: t.Number(),
+                    itemsPerPage: t.Number(),
+                  }),
                 }),
               },
             },
           },
         },
       },
+      query: t.Object({
+        page: t.Optional(t.Number()),
+        limit: t.Optional(t.Number()),
+        searchTerm: t.Optional(t.String()),
+        status: t.Optional(t.String()),
+      }),
     }
   )
   .put(

@@ -51,6 +51,25 @@ const vehiclePublicRoutes = new Elysia({ prefix: "/api/v1/vehicles/public" })
       detail: {
         summary: "List all vehicles",
         tags: ["Vehicles - Public"],
+        responses: {
+          200: {
+            description: "List of vehicles with pagination",
+            content: {
+              "application/json": {
+                schema: t.Object({
+                  success: t.Boolean(),
+                  data: t.Array(t.Any()),
+                  pagination: t.Object({
+                    currentPage: t.Number(),
+                    totalPages: t.Number(),
+                    totalItems: t.Number(),
+                    itemsPerPage: t.Number()
+                  })
+                })
+              }
+            }
+          }
+        }
       },
       query: t.Object({
         page: t.Optional(t.Number()),

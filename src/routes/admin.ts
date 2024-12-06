@@ -58,6 +58,25 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
       detail: {
         summary: "List all admins",
         tags: ["Admins"],
+        responses: {
+          200: {
+            description: "List of admins with pagination",
+            content: {
+              "application/json": {
+                schema: t.Object({
+                  success: t.Boolean(),
+                  data: t.Array(t.Any()),
+                  pagination: t.Object({
+                    currentPage: t.Number(),
+                    totalPages: t.Number(),
+                    totalItems: t.Number(),
+                    itemsPerPage: t.Number()
+                  })
+                })
+              }
+            }
+          }
+        }
       },
       query: t.Object({
         page: t.Optional(t.Number()),

@@ -516,7 +516,15 @@ export default class UserController {
         ...(status && { status }),
       };
 
-      const totalCount = await User.countDocuments(filters);
+      const [users, totalCount] = await Promise.all([
+        User.find(filters)
+          .select("-password -otp")
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .sort({ createdAt: -1 }),
+        User.countDocuments(filters),
+      ]);
+
       const totalPages = Math.ceil(totalCount / limit);
 
       if (page > totalPages && totalCount > 0) {
@@ -532,14 +540,9 @@ export default class UserController {
         });
       }
 
-      const users = await User.find(filters)
-        .select("-password -otp")
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .sort({ createdAt: -1 });
-
       return {
-        users,
+        success: true,
+        data: users,
         pagination: {
           currentPage: page,
           totalPages,

@@ -132,7 +132,8 @@ export default class AdminController {
       }
 
       return {
-        admins,
+        success: true,
+        data: admins,
         pagination: {
           currentPage: page,
           totalPages,
