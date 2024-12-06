@@ -3,10 +3,12 @@ import swagger from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 import userAuthRoutes from "./routes/user-auth";
 import vehiclesRoutes from "./routes/vehicles";
+import vehiclesPublicRoutes from "./routes/vehicles-public";
 import adminsRoutes from "./routes/admin";
 import usersRoutes from "./routes/users";
 import adminAuthRoutes from "./routes/admin-auth";
 import hotelsRoutes from "./routes/hotels";
+import hotelsPublicRoutes from "./routes/hotels-public";
 import { jwtConfig } from "./utils/jwt.config";
 
 const app = new Elysia()
@@ -42,8 +44,10 @@ const app = new Elysia()
   .use(userAuthRoutes)
   .use(adminAuthRoutes)
   .use(vehiclesRoutes)
+  .use(vehiclesPublicRoutes)
   .use(adminsRoutes)
   .use(usersRoutes)
+  .use(hotelsPublicRoutes)
   .use(hotelsRoutes);
 
 app.onError(({ error, code }) => {
