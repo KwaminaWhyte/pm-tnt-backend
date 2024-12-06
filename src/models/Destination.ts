@@ -1,6 +1,6 @@
 import { Schema } from "mongoose";
-import mongoose from "~/utils/mongoose";
 import { DestinationInterface } from "~/utils/types";
+import mongoose from "../mongoose";
 
 const schema = new Schema<DestinationInterface>(
   {
