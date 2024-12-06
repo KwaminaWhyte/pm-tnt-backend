@@ -1,71 +1,79 @@
+import { error } from "elysia";
 import Package from "../models/Package";
+import { PackageInterface } from "../utils/types";
 
 export default class PackageController {
-  private request: Request;
-  private path: string;
-
-  constructor(request: Request) {
-    const url = new URL(request.url);
-    const path = url.pathname + url.search;
-
-    this.request = request;
-    this.path = path;
-  }
-
   /**
    * Retrieve all packages with pagination and filtering
+   * @throws {Error} 400 - Invalid search parameters
    */
-  public async getPackages({
-    page,
+  async getPackages({
+    page = 1,
     searchTerm,
     limit = 10,
+    sortBy,
+    sortOrder,
   }: {
-    page: number;
+    page?: number;
     searchTerm?: string;
     limit?: number;
-  }): Promise<
-    ApiResponse<{ packages: PackageInterface[]; totalPages: number }>
-  > {
+    sortBy?: "price" | "rating";
+    sortOrder?: "asc" | "desc";
+  }) {
     try {
-      const buildRegex = (term: string): RegExp =>
-        new RegExp(
-          term
-            .split(" ")
-            .map((word) => `(?=.*${word})`)
-            .join(""),
-          "i"
-        );
+      if (page < 1 || limit < 1) {
+        return error(400, {
+          message: "Invalid pagination parameters",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["page", "limit"],
+              message: "Page and limit must be positive numbers",
+            },
+          ],
+        });
+      }
 
-      const searchFilter: Record<string, any> = {};
+      const filter: Record<string, any> = {};
+
       if (searchTerm) {
-        searchFilter.$or = [
-          { name: buildRegex(searchTerm) },
-          { description: buildRegex(searchTerm) },
+        filter.$or = [
+          { name: { $regex: searchTerm, $options: "i" } },
+          { description: { $regex: searchTerm, $options: "i" } },
         ];
       }
 
-      const [packages, totalPackagesCount] = await Promise.all([
-        Package.find(searchFilter)
-          .skip((page - 1) * limit)
-          .limit(limit)
-          .sort({ createdAt: -1 })
-          .exec(),
-        Package.countDocuments(searchFilter).exec(),
+      const sort: Record<string, 1 | -1> = {};
+      if (sortBy) {
+        sort[sortBy] = sortOrder === "asc" ? 1 : -1;
+      } else {
+        sort.createdAt = -1;
+      }
+
+      const skipCount = (page - 1) * limit;
+      const [packages, totalCount] = await Promise.all([
+        Package.find(filter).sort(sort).skip(skipCount).limit(limit),
+        Package.countDocuments(filter),
       ]);
 
-      const totalPages = Math.ceil(totalPackagesCount / limit);
-      return createResponse(true, 200, "Packages retrieved successfully", {
-        packages,
-        totalPages,
-      });
-    } catch (err) {
-      console.error("Error fetching packages:", err);
+      return {
+        success: true,
+        data: packages,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+          totalItems: totalCount,
+          itemsPerPage: limit,
+        },
+      };
+    } catch (err: any) {
       return error(500, {
-        message: "Error fetching packages",
+        message: "Failed to fetch packages",
         errors: [
           {
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
+            type: "ServerError",
+            path: [],
+            message: err.message,
           },
         ],
       });
@@ -73,12 +81,12 @@ export default class PackageController {
   }
 
   /**
-   * Retrieve a single package by ID
+   * Get package by ID
+   * @throws {Error} 404 - Package not found
    */
-  public async getPackage(id: string): Promise<ApiResponse<PackageInterface>> {
+  async getPackageById(id: string) {
     try {
       const packageItem = await Package.findById(id);
-
       if (!packageItem) {
         return error(404, {
           message: "Package not found",
@@ -86,26 +94,24 @@ export default class PackageController {
             {
               type: "NotFoundError",
               path: ["id"],
-              message: "Package not found",
+              message: "Package with the specified ID does not exist",
             },
           ],
         });
       }
 
-      return createResponse(
-        true,
-        200,
-        "Package retrieved successfully",
-        packageItem
-      );
-    } catch (err) {
-      console.error("Error retrieving package:", err);
+      return {
+        success: true,
+        data: packageItem,
+      };
+    } catch (err: any) {
       return error(500, {
-        message: "Error retrieving package",
+        message: "Failed to fetch package",
         errors: [
           {
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
+            type: "ServerError",
+            path: [],
+            message: err.message,
           },
         ],
       });
@@ -114,87 +120,25 @@ export default class PackageController {
 
   /**
    * Create a new package
+   * @throws {Error} 400 - Invalid package data
    */
-  public async createPackage(
-    packageData: Partial<PackageInterface>
-  ): Promise<ApiResponse<PackageInterface>> {
-    const schema = Joi.object({
-      name: Joi.string().required().label("Name"),
-      price: Joi.number().positive().required().label("Price"),
-      description: Joi.string().label("Description"),
-      images: Joi.array().items(Joi.string().uri()).label("Images"),
-      videos: Joi.array().items(Joi.string().uri()).label("Videos"),
-      duration: Joi.object({
-        days: Joi.number().integer().min(1).required().label("Days"),
-        nights: Joi.number().integer().min(0).required().label("Nights"),
-      })
-        .required()
-        .label("Duration"),
-      accommodations: Joi.array()
-        .items(Joi.string())
-        .min(1)
-        .required()
-        .label("Accommodations"),
-      transportation: Joi.string()
-        .valid("Flight", "Train", "Bus", "Private Car", "None")
-        .required()
-        .label("Transportation"),
-      activities: Joi.array().items(Joi.string()).label("Activities"),
-      itinerary: Joi.array()
-        .items(
-          Joi.object({
-            day: Joi.number().integer().min(1).required(),
-            title: Joi.string().required(),
-            description: Joi.string().required(),
-            activities: Joi.array().items(Joi.string()),
-          })
-        )
-        .label("Itinerary"),
-    });
-
+  async createPackage(packageData: Partial<PackageInterface>) {
     try {
-      const { error, value } = schema.validate(packageData, {
-        abortEarly: false,
-      });
+      const packageItem = new Package(packageData);
+      await packageItem.save();
 
-      if (error) {
-        return createResponse(
-          false,
-          400,
-          "Validation failed",
-          undefined,
-          error.details.map((err) => ({
-            field: err.path.join("."),
-            message: err.message,
-          }))
-        );
-      }
-
-      const existingPackage = await Package.findOne({ name: value.name });
-
-      if (existingPackage) {
-        return createResponse(false, 400, "Package already exists", undefined, [
-          { field: "name", message: "A package with this name already exists" },
-        ]);
-      }
-
-      const packageItem = new Package(value);
-      const savedPackage = await packageItem.save();
-
-      return createResponse(
-        true,
-        201,
-        "Package created successfully",
-        savedPackage
-      );
-    } catch (err) {
-      console.error("Error creating package:", err);
-      return error(500, {
-        message: "Error creating package",
+      return {
+        success: true,
+        data: packageItem,
+      };
+    } catch (err: any) {
+      return error(400, {
+        message: "Failed to create package",
         errors: [
           {
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
+            type: "ValidationError",
+            path: [],
+            message: err.message,
           },
         ],
       });
@@ -202,110 +146,43 @@ export default class PackageController {
   }
 
   /**
-   * Update an existing package
+   * Update package by ID
+   * @throws {Error} 404 - Package not found
+   * @throws {Error} 400 - Invalid update data
    */
-  public async updatePackage(
-    id: string,
-    updateData: Partial<PackageInterface>
-  ): Promise<ApiResponse<PackageInterface>> {
+  async updatePackage(id: string, updateData: Partial<PackageInterface>) {
     try {
-      const schema = Joi.object({
-        name: Joi.string().label("Name"),
-        price: Joi.number().positive().label("Price"),
-        description: Joi.string().label("Description"),
-        images: Joi.array().items(Joi.string().uri()).label("Images"),
-        videos: Joi.array().items(Joi.string().uri()).label("Videos"),
-        duration: Joi.object({
-          days: Joi.number().integer().min(1).label("Days"),
-          nights: Joi.number().integer().min(0).label("Nights"),
-        }).label("Duration"),
-        accommodations: Joi.array()
-          .items(Joi.string())
-          .min(1)
-          .label("Accommodations"),
-        transportation: Joi.string()
-          .valid("Flight", "Train", "Bus", "Private Car", "None")
-          .label("Transportation"),
-        activities: Joi.array().items(Joi.string()).label("Activities"),
-        itinerary: Joi.array()
-          .items(
-            Joi.object({
-              day: Joi.number().integer().min(1).required(),
-              title: Joi.string().required(),
-              description: Joi.string().required(),
-              activities: Joi.array().items(Joi.string()),
-            })
-          )
-          .label("Itinerary"),
-      });
-
-      const { error, value } = schema.validate(updateData, {
-        abortEarly: false,
-      });
-
-      if (error) {
-        return createResponse(
-          false,
-          400,
-          "Validation failed",
-          undefined,
-          error.details.map((err) => ({
-            field: err.path.join("."),
-            message: err.message,
-          }))
-        );
-      }
-
-      if (value.name) {
-        const existingPackage = await Package.findOne({
-          name: value.name,
-          _id: { $ne: id },
-        });
-
-        if (existingPackage) {
-          return createResponse(
-            false,
-            400,
-            "Package already exists",
-            undefined,
-            [
-              {
-                field: "name",
-                message: "A package with this name already exists",
-              },
-            ]
-          );
-        }
-      }
-
-      const updated = await Package.findByIdAndUpdate(
+      const packageItem = await Package.findByIdAndUpdate(
         id,
-        { $set: value },
+        { $set: updateData },
         { new: true, runValidators: true }
       );
 
-      if (!updated) {
+      if (!packageItem) {
         return error(404, {
           message: "Package not found",
           errors: [
             {
               type: "NotFoundError",
               path: ["id"],
-              message: "Package not found",
+              message: "Package with the specified ID does not exist",
             },
           ],
         });
       }
 
-      return createResponse(true, 200, "Package updated successfully", updated);
-    } catch (err) {
-      console.error("Error updating package:", err);
-      return error(500, {
-        message: "Error updating package",
+      return {
+        success: true,
+        data: packageItem,
+      };
+    } catch (err: any) {
+      return error(400, {
+        message: "Failed to update package",
         errors: [
           {
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
+            type: "ValidationError",
+            path: [],
+            message: err.message,
           },
         ],
       });
@@ -313,34 +190,128 @@ export default class PackageController {
   }
 
   /**
-   * Delete a package
+   * Delete package by ID
+   * @throws {Error} 404 - Package not found
    */
-  public async deletePackage(id: string): Promise<ApiResponse<void>> {
+  async deletePackage(id: string) {
     try {
-      const deleted = await Package.findByIdAndDelete(id);
+      const packageItem = await Package.findByIdAndDelete(id);
 
-      if (!deleted) {
+      if (!packageItem) {
         return error(404, {
           message: "Package not found",
           errors: [
             {
               type: "NotFoundError",
               path: ["id"],
-              message: "Package not found",
+              message: "Package with the specified ID does not exist",
             },
           ],
         });
       }
 
-      return createResponse(true, 200, "Package deleted successfully");
-    } catch (err) {
-      console.error("Error deleting package:", err);
+      return {
+        success: true,
+        message: "Package deleted successfully",
+      };
+    } catch (err: any) {
       return error(500, {
-        message: "Error deleting package",
+        message: "Failed to delete package",
         errors: [
           {
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
+            type: "ServerError",
+            path: [],
+            message: err.message,
+          },
+        ],
+      });
+    }
+  }
+
+  /**
+   * Create a customized version of an existing package
+   * @throws {Error} 404 - Package not found
+   * @throws {Error} 400 - Invalid customization data
+   */
+  async customizePackage(
+    packageId: string,
+    customizations: {
+      accommodations?: string[];
+      transportation?: "Flight" | "Train" | "Bus" | "Private Car" | "None";
+      activities?: string[];
+      meals?: {
+        breakfast?: boolean;
+        lunch?: boolean;
+        dinner?: boolean;
+      };
+      itinerary?: Array<{
+        day: number;
+        title: string;
+        description: string;
+        activities?: string[];
+      }>;
+    }
+  ) {
+    try {
+      const originalPackage = await Package.findById(packageId);
+
+      if (!originalPackage) {
+        return error(404, {
+          message: "Package not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["packageId"],
+              message: "Package with the specified ID does not exist",
+            },
+          ],
+        });
+      }
+
+      // Create a new customized package based on the original
+      const customizedPackage = {
+        name: `${originalPackage.name} (Customized)`,
+        price: originalPackage.price,
+        description: originalPackage.description,
+        images: originalPackage.images,
+        videos: originalPackage.videos,
+        duration: originalPackage.duration,
+        // Merge original and custom accommodations, removing duplicates
+        accommodations: customizations.accommodations || originalPackage.accommodations,
+        // Use custom transportation or keep original
+        transportation: customizations.transportation || originalPackage.transportation,
+        // Merge original and custom activities, removing duplicates
+        activities: customizations.activities 
+          ? [...new Set([...originalPackage.activities, ...customizations.activities])]
+          : originalPackage.activities,
+        // Merge meals preferences
+        meals: {
+          ...originalPackage.meals,
+          ...(customizations.meals || {}),
+        },
+        // Use custom itinerary or keep original
+        itinerary: customizations.itinerary || originalPackage.itinerary,
+        termsAndConditions: originalPackage.termsAndConditions,
+        availability: originalPackage.availability,
+        rating: originalPackage.rating,
+      };
+
+      // Create and save the new customized package
+      const newPackage = new Package(customizedPackage);
+      await newPackage.save();
+
+      return {
+        success: true,
+        data: newPackage,
+      };
+    } catch (err: any) {
+      return error(400, {
+        message: "Failed to customize package",
+        errors: [
+          {
+            type: "ValidationError",
+            path: [],
+            message: err.message,
           },
         ],
       });
