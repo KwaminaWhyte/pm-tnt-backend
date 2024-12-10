@@ -124,6 +124,57 @@ export default class PackageController {
    */
   async createPackage(packageData: Partial<PackageInterface>) {
     try {
+      // Validate dates
+      if (packageData.availability) {
+        const startDate = new Date(packageData.availability.startDate);
+        const endDate = new Date(packageData.availability.endDate);
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          return error(400, {
+            message: "Invalid date format",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["availability"],
+                message: "Start date and end date must be valid dates",
+              },
+            ],
+          });
+        }
+
+        if (startDate > endDate) {
+          return error(400, {
+            message: "Invalid date range",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["availability"],
+                message: "Start date must be before end date",
+              },
+            ],
+          });
+        }
+      }
+
+      // Validate itinerary
+      if (packageData.itinerary) {
+        const days = packageData.duration?.days || 0;
+        const invalidDays = packageData.itinerary.some(item => item.day > days);
+        
+        if (invalidDays) {
+          return error(400, {
+            message: "Invalid itinerary",
+            errors: [
+              {
+                type: "ValidationError",
+                path: ["itinerary"],
+                message: "Itinerary day cannot exceed package duration",
+              },
+            ],
+          });
+        }
+      }
+
       const packageItem = new Package(packageData);
       await packageItem.save();
 
@@ -132,11 +183,22 @@ export default class PackageController {
         data: packageItem,
       };
     } catch (err: any) {
-      return error(400, {
+      if (err.name === 'ValidationError') {
+        return error(400, {
+          message: "Validation failed",
+          errors: Object.keys(err.errors).map(key => ({
+            type: "ValidationError",
+            path: [key],
+            message: err.errors[key].message,
+          })),
+        });
+      }
+      
+      return error(500, {
         message: "Failed to create package",
         errors: [
           {
-            type: "ValidationError",
+            type: "ServerError",
             path: [],
             message: err.message,
           },

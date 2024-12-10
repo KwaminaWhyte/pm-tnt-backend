@@ -28,13 +28,19 @@ const packageRoutes = new Elysia({ prefix: "/api/v1/packages" })
             },
           },
         },
+        400: {
+          description: "Invalid query parameters",
+        },
+        500: {
+          description: "Server error",
+        },
       },
     },
     query: t.Object({
-      page: t.Optional(t.Number()),
-      limit: t.Optional(t.Number()),
+      page: t.Optional(t.Number({ minimum: 1 })),
+      limit: t.Optional(t.Number({ minimum: 1, maximum: 100 })),
       searchTerm: t.Optional(t.String()),
-      sortBy: t.Optional(t.Union([t.Literal("price"), t.Literal("rating")])),
+      sortBy: t.Optional(t.Union([t.Literal("price"), t.Literal("rating"), t.Literal("createdAt")])),
       sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
     }),
   })
@@ -48,7 +54,7 @@ const packageRoutes = new Elysia({ prefix: "/api/v1/packages" })
     }),
   })
   // Protected routes
-  .group("", (app) =>
+  .group("/admin", (app) =>
     app
       .derive(async ({ headers, jwt_auth }) => {
         const auth = headers["authorization"];
@@ -98,14 +104,14 @@ const packageRoutes = new Elysia({ prefix: "/api/v1/packages" })
           tags: ["Packages - Admin"],
         },
         body: t.Object({
-          name: t.String(),
-          price: t.Number(),
+          name: t.String({ minLength: 1 }),
+          price: t.Number({ minimum: 0 }),
           description: t.Optional(t.String()),
           images: t.Optional(t.Array(t.String())),
           videos: t.Optional(t.Array(t.String())),
           duration: t.Object({
-            days: t.Number(),
-            nights: t.Number(),
+            days: t.Number({ minimum: 1 }),
+            nights: t.Number({ minimum: 0 }),
           }),
           accommodations: t.Array(t.String()),
           transportation: t.Union([
@@ -116,27 +122,21 @@ const packageRoutes = new Elysia({ prefix: "/api/v1/packages" })
             t.Literal("None"),
           ]),
           activities: t.Optional(t.Array(t.String())),
-          meals: t.Optional(
-            t.Object({
-              breakfast: t.Optional(t.Boolean()),
-              lunch: t.Optional(t.Boolean()),
-              dinner: t.Optional(t.Boolean()),
-            })
-          ),
-          itinerary: t.Optional(
-            t.Array(
-              t.Object({
-                day: t.Number(),
-                title: t.String(),
-                description: t.String(),
-                activities: t.Optional(t.Array(t.String())),
-              })
-            )
-          ),
+          meals: t.Optional(t.Object({
+            breakfast: t.Optional(t.Boolean()),
+            lunch: t.Optional(t.Boolean()),
+            dinner: t.Optional(t.Boolean()),
+          })),
+          itinerary: t.Optional(t.Array(t.Object({
+            day: t.Number({ minimum: 1 }),
+            title: t.String(),
+            description: t.String(),
+            activities: t.Optional(t.Array(t.String())),
+          }))),
           termsAndConditions: t.Optional(t.String()),
           availability: t.Object({
-            startDate: t.String(),
-            endDate: t.String(),
+            startDate: t.String({ format: 'date-time' }),
+            endDate: t.String({ format: 'date-time' }),
           }),
         }),
       })
