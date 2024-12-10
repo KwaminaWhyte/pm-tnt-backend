@@ -13,6 +13,7 @@ import roomRoutes from "./routes/rooms";
 import tripsRoutes from "./routes/trips";
 import packageRoutes from "./routes/packages";
 import { jwtConfig } from "./utils/jwt.config";
+import destinationRoutes from "./routes/destinations";
 
 const app = new Elysia()
   .use(
@@ -54,7 +55,8 @@ const app = new Elysia()
   .use(hotelsRoutes)
   .use(roomRoutes)
   .use(tripsRoutes)
-  .use(packageRoutes);
+  .use(packageRoutes)
+  .use(destinationRoutes);
 
 app.onError(({ error, code }) => {
   console.log(error, code);
