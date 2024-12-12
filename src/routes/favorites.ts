@@ -3,7 +3,7 @@ import FavoriteController from "../controllers/FavoriteController";
 
 const favoriteController = new FavoriteController();
 
-const favoritesRoutes = new Elysia({ prefix: "/favorites" })
+const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
   .guard({
     detail: {
       tags: ["Favorites"],

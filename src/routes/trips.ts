@@ -6,7 +6,7 @@ const tripController = new TripController();
 
 const tripsRoutes = new Elysia()
   // .use(authenticateUser)
-  .group("/trips", (app) =>
+  .group("/api/v1/trips", (app) =>
     app
       .get(
         "/",
