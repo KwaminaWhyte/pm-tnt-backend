@@ -156,13 +156,13 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
                   currentPage: t.Number(),
                   totalPages: t.Number(),
                   totalItems: t.Number(),
-                  itemsPerPage: t.Number()
-                })
-              })
-            }
-          }
-        }
-      }
+                  itemsPerPage: t.Number(),
+                }),
+              }),
+            },
+          },
+        },
+      },
     },
     query: t.Object({
       page: t.Optional(t.Number()),
@@ -170,9 +170,15 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
       searchTerm: t.Optional(t.String()),
       city: t.Optional(t.String()),
       country: t.Optional(t.String()),
-      sortBy: t.Optional(t.Union([t.Literal("pricePerNight"), t.Literal("capacity"), t.Literal("rating")])),
-      sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")]))
-    })
-  })
+      sortBy: t.Optional(
+        t.Union([
+          t.Literal("pricePerNight"),
+          t.Literal("capacity"),
+          t.Literal("rating"),
+        ])
+      ),
+      sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+    }),
+  });
 
 export default hotelPublicRoutes;

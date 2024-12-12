@@ -86,25 +86,25 @@ const hotelRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
     }
   )
 
-  .post(
-    "/:id/favorite",
-    ({ params: { id }, userId }) => hotelController.toggleFavorite(id, userId),
-    {
-      detail: {
-        summary: "Toggle favorite",
-        description: "Toggle favorite status of a hotel for the current user",
-        tags: ["Hotels - Auth User", "User Preferences"],
-        responses: {
-          200: {
-            description: "Favorite status toggled successfully",
-          },
-          404: {
-            description: "Hotel not found",
-          },
-        },
-      },
-    }
-  )
+  // .post(
+  //   "/:id/favorite",
+  //   ({ params: { id }, userId }) => hotelController.toggleFavorite(id, userId),
+  //   {
+  //     detail: {
+  //       summary: "Toggle favorite",
+  //       description: "Toggle favorite status of a hotel for the current user",
+  //       tags: ["Hotels - Auth User", "User Preferences"],
+  //       responses: {
+  //         200: {
+  //           description: "Favorite status toggled successfully",
+  //         },
+  //         404: {
+  //           description: "Hotel not found",
+  //         },
+  //       },
+  //     },
+  //   }
+  // )
 
   .post(
     "/:id/book",

@@ -1,7 +1,9 @@
 import { HotelInterface } from "../utils/types";
 import Hotel from "../models/Hotel";
 import Booking from "../models/Booking"; // Assuming you have a Booking model
+import Favorite from "../models/Favorite";
 import { error } from "elysia";
+import FavoriteController from "./FavoriteController";
 
 export default class HotelController {
   /**
@@ -573,63 +575,14 @@ export default class HotelController {
     }
   }
 
-  /**
-   * Toggle hotel favorite status for a user
-   * @throws {Error} 404 - Hotel not found
-   */
-  async toggleFavorite(hotelId: string, userId: string) {
-    try {
-      const hotel = await Hotel.findById(hotelId);
-      if (!hotel) {
-        throw new Error(
-          JSON.stringify({
-            message: "Hotel not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Hotel with the specified ID does not exist",
-              },
-            ],
-          })
-        );
-      }
-
-      // Note: This assumes we have a favorites array in the hotel model
-      const favoriteIndex = hotel.favorites?.indexOf(userId) ?? -1;
-      if (favoriteIndex === -1) {
-        hotel.favorites = [...(hotel.favorites || []), userId];
-      } else {
-        hotel.favorites = hotel.favorites?.filter((id) => id !== userId);
-      }
-
-      await hotel.save();
-
-      return {
-        status: "success",
-        data: {
-          isFavorite: favoriteIndex === -1,
-          hotel,
-        },
-      };
-    } catch (error: any) {
-      if (error.message.startsWith("{")) {
-        throw error;
-      }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to toggle favorite",
-          errors: [
-            {
-              type: "ServerError",
-              path: [],
-              message: error.message,
-            },
-          ],
-        })
-      );
-    }
-  }
+  // /**
+  //  * Toggle hotel favorite status for a user
+  //  * @throws {Error} 404 - Hotel not found
+  //  */
+  // async toggleFavorite(hotelId: string, userId: string) {
+  //   const favoriteController = new FavoriteController();
+  //   return favoriteController.toggleFavorite(hotelId, 'hotel', userId);
+  // }
 
   /**
    * Book a room in the hotel

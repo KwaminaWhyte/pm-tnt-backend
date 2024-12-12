@@ -1,6 +1,8 @@
 import cors from "@elysiajs/cors";
 import swagger from "@elysiajs/swagger";
 import { Elysia } from "elysia";
+
+import { jwtConfig } from "./utils/jwt.config";
 import userAuthRoutes from "./routes/user-auth";
 import vehiclesRoutes from "./routes/vehicles";
 import vehiclesPublicRoutes from "./routes/vehicles-public";
@@ -12,8 +14,8 @@ import hotelsPublicRoutes from "./routes/hotels-public";
 import roomRoutes from "./routes/rooms";
 import tripsRoutes from "./routes/trips";
 import packageRoutes from "./routes/packages";
-import { jwtConfig } from "./utils/jwt.config";
 import destinationRoutes from "./routes/destinations";
+import favoritesRoutes from "./routes/favorites";
 
 const app = new Elysia()
   .use(
@@ -56,6 +58,7 @@ const app = new Elysia()
   .use(roomRoutes)
   .use(tripsRoutes)
   .use(packageRoutes)
+  .use(favoritesRoutes)
   .use(destinationRoutes);
 
 app.onError(({ error, code }) => {

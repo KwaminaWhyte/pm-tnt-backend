@@ -2,11 +2,15 @@ import { type Model, Schema } from "mongoose";
 import mongoose from "~/utils/mongoose";
 import { AmenityInterface } from "~/utils/types";
 
-const schema = new Schema<AmenityInterface>({
-  name: { type: String, required: true }, // e.g., "Wi-Fi", "Gym", "Pool"
-  description: String,
-  createdAt: { type: Date, default: Date.now },
-});
+const schema = new Schema<AmenityInterface>(
+  {
+    name: { type: String, required: true }, // e.g., "Wi-Fi", "Gym", "Pool"
+    description: String,
+  },
+  {
+    timestamps: true,
+  }
+);
 
 let Amenity: Model<AmenityInterface>;
 try {

@@ -41,9 +41,8 @@ const ratingSchema = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: "users", required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: String,
-    createdAt: { type: Date, default: Date.now },
   },
-  { _id: true }
+  { _id: true, timestamps: true }
 );
 
 const schema = new Schema<HotelInterface>(
@@ -135,16 +134,12 @@ schema.pre("save", function (next) {
 });
 
 // Methods
-schema.methods.getCurrentPrice = function (
-  date: Date = new Date()
-) {
+schema.methods.getCurrentPrice = function (date: Date = new Date()) {
   const seasonalPrice = this.seasonalPrices.find(
     (sp) => date >= sp.startDate && date <= sp.endDate
   );
 
-  return seasonalPrice
-    ? seasonalPrice.multiplier
-    : 1;
+  return seasonalPrice ? seasonalPrice.multiplier : 1;
 };
 
 let Hotel: Model<HotelInterface>;
