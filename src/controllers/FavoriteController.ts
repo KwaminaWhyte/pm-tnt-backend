@@ -85,6 +85,16 @@ export default class FavoriteController {
     return result;
   }
 
+  async isFavorited(userId: string, itemId: string, itemType: "hotel" | "vehicle" | "package") {
+    const favorite = await Favorite.findOne({
+      userId,
+      itemId,
+      itemType,
+    });
+    
+    return { isFavorite: !!favorite };
+  }
+
   private getModelByType(itemType: string) {
     switch (itemType) {
       case "hotel":

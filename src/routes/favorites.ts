@@ -233,6 +233,41 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
         },
       },
     }
+  )
+  .get(
+    "/check/:itemType/:id",
+    async ({ params: { itemType, id }, userId }) => {
+      return favoriteController.isFavorited(
+        userId,
+        id,
+        itemType as "hotel" | "vehicle" | "package"
+      );
+    },
+    {
+      params: t.Object({
+        itemType: t.String({
+          enum: ["hotel", "vehicle", "package"],
+        }),
+        id: t.String(),
+      }),
+      detail: {
+        summary: "Check Favorite Status",
+        description: "Check if an item is favorited by the authenticated user",
+        tags: ["Favorites"],
+      },
+      responses: {
+        200: {
+          description: "Successfully checked favorite status",
+          content: {
+            "application/json": {
+              schema: t.Object({
+                isFavorite: t.Boolean(),
+              }),
+            },
+          },
+        },
+      },
+    }
   );
 
 export default favoritesRoutes;
