@@ -4,12 +4,14 @@ import { type ApiResponse } from "../utils/types";
 import Booking from "../models/Booking";
 import Hotel from "../models/Hotel";
 import Vehicle from "../models/Vehicle";
+import Package from "../models/Package";
 import {
   BookingInterface,
   BookingSearchParams,
   CreateBookingDTO,
   UpdateBookingDTO,
 } from "../utils/types";
+import mongoose from "mongoose";
 
 export default class BookingController {
   private request: Request;
@@ -30,7 +32,7 @@ export default class BookingController {
    */
   public async getBookings(
     params: BookingSearchParams
-  ): Promise<{ bookings: BookingInterface[]; totalPages: number }> {
+  ): Promise<ApiResponse<{ bookings: BookingInterface[]; totalPages: number }>> {
     try {
       const {
         page = 1,
@@ -43,146 +45,79 @@ export default class BookingController {
         sortOrder = "desc",
       } = params;
 
-      if (page < 1 || limit < 1) {
-        return error(400, {
-          message: "Invalid pagination parameters",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["page", "limit"],
-              message: "Page and limit must be positive numbers",
-            },
-          ],
-        });
+      const filter: Record<string, any> = { userId: this.userId };
+
+      if (status) {
+        filter.status = status;
       }
 
-      const skipCount = (page - 1) * limit;
-      const filter: Record<string, any> = {};
+      if (paymentStatus) {
+        filter["payment.status"] = paymentStatus;
+      }
 
-      if (status) filter.status = status;
-      if (paymentStatus) filter.paymentStatus = paymentStatus;
-      if (startDate) filter.startDate = { $gte: new Date(startDate) };
-      if (endDate) filter.endDate = { $lte: new Date(endDate) };
+      if (startDate || endDate) {
+        filter.bookingDate = {};
+        if (startDate) filter.bookingDate.$gte = new Date(startDate);
+        if (endDate) filter.bookingDate.$lte = new Date(endDate);
+      }
 
-      const sortOptions: Record<string, 1 | -1> = {
+      const sort: Record<string, 1 | -1> = {
         [sortBy]: sortOrder === "asc" ? 1 : -1,
       };
 
-      const [bookings, totalBookingsCount] = await Promise.all([
-        Booking.find(filter)
-          .skip(skipCount)
-          .limit(limit)
-          .sort(sortOptions)
-          .populate("user", "firstName lastName email phone")
-          .populate("hotel", "name city country")
-          .populate("vehicle", "make model vehicleType")
-          .exec(),
-        Booking.countDocuments(filter).exec(),
-      ]);
+      const totalDocs = await Booking.countDocuments(filter);
+      const totalPages = Math.ceil(totalDocs / limit);
 
-      const totalPages = Math.ceil(totalBookingsCount / limit);
+      const bookings = await Booking.find(filter)
+        .sort(sort)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate("hotelBooking.hotelId", "name location rating")
+        .populate("vehicleBooking.vehicleId", "make model year")
+        .populate("packageBooking.packageId", "name description price");
 
       return {
         success: true,
-        data: bookings,
-        pagination: {
-          currentPage: page,
+        data: {
+          bookings,
           totalPages,
-          totalItems: totalBookingsCount,
-          itemsPerPage: limit,
         },
       };
     } catch (err) {
-      console.error("Error fetching bookings:", err);
       return error(500, {
-        message: "Internal Server Error",
-        errors: [
-          {
-            type: "InternalServerError",
-            path: [],
-            message: "An unexpected error occurred",
-          },
-        ],
+        message: "Error retrieving bookings",
+        error: err,
       });
     }
   }
 
   /**
-   * Retrieve bookings for the current user
+   * Get a single booking by ID
    */
-  public async getMyBookings(
-    params: BookingSearchParams
-  ): Promise<{ bookings: BookingInterface[]; totalPages: number }> {
+  public async getBookingById(bookingId: string): Promise<ApiResponse<BookingInterface>> {
     try {
-      const {
-        page = 1,
-        limit = 10,
-        status,
-        paymentStatus,
-        startDate,
-        endDate,
-        type,
-        sortBy = "bookingDate",
-        sortOrder = "desc",
-      } = params;
+      const booking = await Booking.findOne({
+        _id: bookingId,
+        userId: this.userId,
+      })
+        .populate("hotelBooking.hotelId", "name location rating images")
+        .populate("hotelBooking.roomIds", "type amenities price")
+        .populate("vehicleBooking.vehicleId", "make model year images specifications")
+        .populate("packageBooking.packageId", "name description price inclusions")
+        .populate("packageBooking.customizations.itemId");
 
-      if (page < 1 || limit < 1) {
-        return error(400, {
-          message: "Invalid pagination parameters",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["page", "limit"],
-              message: "Page and limit must be positive numbers",
-            },
-          ],
-        });
+      if (!booking) {
+        return error(404, { message: "Booking not found" });
       }
 
-      const skipCount = (page - 1) * limit;
-      const filter: Record<string, any> = { user: this.userId };
-
-      if (status) filter.status = status;
-      if (paymentStatus) filter.paymentStatus = paymentStatus;
-      if (startDate) filter.startDate = { $gte: new Date(startDate) };
-      if (endDate) filter.endDate = { $lte: new Date(endDate) };
-      if (type === "hotel") filter.hotel = { $exists: true };
-      if (type === "vehicle") filter.vehicle = { $exists: true };
-
-      const sortOptions: Record<string, 1 | -1> = {
-        [sortBy]: sortOrder === "asc" ? 1 : -1,
-      };
-
-      const [bookings, totalBookingsCount] = await Promise.all([
-        Booking.find(filter)
-          .skip(skipCount)
-          .limit(limit)
-          .sort(sortOptions)
-          .populate("hotel", "name city country")
-          .populate("vehicle", "make model vehicleType")
-          .exec(),
-        Booking.countDocuments(filter).exec(),
-      ]);
-
-      const totalPages = Math.ceil(totalBookingsCount / limit);
-
       return {
-        bookings,
-        totalPages,
-        currentPage: page,
-        totalBookings: totalBookingsCount,
+        success: true,
+        data: booking,
       };
     } catch (err) {
-      console.error("Error fetching user bookings:", err);
       return error(500, {
-        message: "Internal Server Error",
-        errors: [
-          {
-            type: "InternalServerError",
-            path: [],
-            message: "An unexpected error occurred",
-          },
-        ],
+        message: "Error retrieving booking",
+        error: err,
       });
     }
   }
@@ -191,127 +126,37 @@ export default class BookingController {
    * Create a new booking
    */
   public async createBooking(
-    data: CreateBookingDTO
-  ): Promise<BookingInterface> {
+    bookingData: CreateBookingDTO
+  ): Promise<ApiResponse<BookingInterface>> {
     try {
-      const {
-        hotelId,
-        vehicleId,
-        packageId,
-        startDate,
-        endDate,
-        totalPrice,
-        bookingDetails,
-      } = data;
-
-      if (!hotelId && !vehicleId && !packageId) {
-        return error(400, {
-          message: "Missing service selection",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["service"],
-              message:
-                "At least one service (hotel, vehicle, or package) must be booked",
-            },
-          ],
-        });
-      }
-
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      if (start >= end) {
-        return error(400, {
-          message: "Invalid date range",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["startDate", "endDate"],
-              message: "End date must be after start date",
-            },
-          ],
-        });
-      }
-
-      if (hotelId) {
-        const hotel = await Hotel.findById(hotelId);
-        if (!hotel) {
-          return error(404, {
-            message: "Hotel not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["hotelId"],
-                message: "Invalid hotel ID",
-              },
-            ],
-          });
-        }
-      }
-
-      if (vehicleId) {
-        const vehicle = await Vehicle.findById(vehicleId);
-        if (!vehicle) {
-          return error(404, {
-            message: "Vehicle not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["vehicleId"],
-                message: "Invalid vehicle ID",
-              },
-            ],
-          });
-        }
-
-        const isAvailable = vehicle.isAvailableForDates(start, end);
-        if (!isAvailable) {
-          return error(400, {
-            message: "Vehicle not available",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["vehicleId"],
-                message: "Vehicle is not available for the selected dates",
-              },
-            ],
-          });
-        }
-      }
-
       const booking = new Booking({
-        user: this.userId,
-        hotel: hotelId,
-        vehicle: vehicleId,
-        travelPackage: packageId,
-        startDate: start,
-        endDate: end,
-        totalPrice,
-        bookingDetails,
-        bookingDate: new Date(),
+        ...bookingData,
+        userId: this.userId,
+        bookingReference: this.generateBookingReference(),
         status: "Pending",
-        paymentStatus: "Unpaid",
+        payment: {
+          status: "Pending",
+          amount: await this.calculateTotalAmount(bookingData),
+          currency: "USD",
+        },
       });
 
-      await booking.save();
+      // Validate availability before creating booking
+      await this.validateAvailability(bookingData);
 
-      const populatedBooking = await Booking.findById(booking._id)
-        .populate("hotel", "name city country")
-        .populate("vehicle", "make model vehicleType")
-        .exec();
+      const savedBooking = await booking.save();
 
-      return populatedBooking;
+      // Update inventory for the booked items
+      await this.updateInventory(savedBooking, "reserve");
+
+      return {
+        success: true,
+        data: savedBooking,
+      };
     } catch (err) {
-      console.error("Error creating booking:", err);
       return error(500, {
-        message: "Internal Server Error",
-        errors: [
-          {
-            type: "InternalServerError",
-            path: [],
-            message: "An unexpected error occurred",
-          },
-        ],
+        message: "Error creating booking",
+        error: err,
       });
     }
   }
@@ -321,75 +166,52 @@ export default class BookingController {
    */
   public async updateBooking(
     bookingId: string,
-    data: UpdateBookingDTO
-  ): Promise<BookingInterface> {
+    updateData: UpdateBookingDTO
+  ): Promise<ApiResponse<BookingInterface>> {
     try {
-      const booking = await Booking.findById(bookingId);
+      const booking = await Booking.findOne({
+        _id: bookingId,
+        userId: this.userId,
+      });
 
       if (!booking) {
-        return error(404, {
-          message: "Booking not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["bookingId"],
-              message: "Invalid booking ID",
-            },
-          ],
+        return error(404, { message: "Booking not found" });
+      }
+
+      if (!this.canUpdateBooking(booking)) {
+        return error(400, {
+          message: "Booking cannot be updated in its current state",
         });
       }
 
-      if (booking.user.toString() !== this.userId) {
-        return error(401, {
-          message: "Unauthorized",
-          errors: [
-            {
-              type: "AuthError",
-              path: ["authorization"],
-              message: "Access denied",
-            },
-          ],
-        });
+      // If changing dates or items, validate availability
+      if (this.requiresAvailabilityCheck(updateData)) {
+        await this.validateAvailability(updateData);
       }
 
-      if (data.startDate && data.endDate) {
-        const start = new Date(data.startDate);
-        const end = new Date(data.endDate);
-        if (start >= end) {
-          return error(400, {
-            message: "Invalid date range",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["startDate", "endDate"],
-                message: "End date must be after start date",
-              },
-            ],
-          });
-        }
+      // Update inventory if items changed
+      if (this.itemsChanged(booking, updateData)) {
+        await this.updateInventory(booking, "release");
+        await this.updateInventory({ ...booking.toObject(), ...updateData }, "reserve");
       }
 
       const updatedBooking = await Booking.findByIdAndUpdate(
         bookingId,
-        { $set: data },
+        { ...updateData, updatedAt: new Date() },
         { new: true }
       )
-        .populate("hotel", "name city country")
-        .populate("vehicle", "make model vehicleType")
-        .exec();
+        .populate("hotelBooking.hotelId")
+        .populate("vehicleBooking.vehicleId")
+        .populate("packageBooking.packageId");
 
-      return updatedBooking;
+      return {
+        success: true,
+        data: updatedBooking,
+      };
     } catch (err) {
-      console.error("Error updating booking:", err);
       return error(500, {
-        message: "Internal Server Error",
-        errors: [
-          {
-            type: "InternalServerError",
-            path: [],
-            message: "An unexpected error occurred",
-          },
-        ],
+        message: "Error updating booking",
+        error: err,
       });
     }
   }
@@ -397,77 +219,223 @@ export default class BookingController {
   /**
    * Cancel a booking
    */
-  public async cancelBooking(bookingId: string) {
+  public async cancelBooking(bookingId: string): Promise<ApiResponse<BookingInterface>> {
     try {
-      const booking = await Booking.findById(bookingId);
+      const booking = await Booking.findOne({
+        _id: bookingId,
+        userId: this.userId,
+      });
 
       if (!booking) {
-        return error(404, {
-          message: "Booking not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["bookingId"],
-              message: "Invalid booking ID",
-            },
-          ],
-        });
+        return error(404, { message: "Booking not found" });
       }
 
-      if (booking.user.toString() !== this.userId) {
-        return error(401, {
-          message: "Unauthorized",
-          errors: [
-            {
-              type: "AuthError",
-              path: ["authorization"],
-              message: "Access denied",
-            },
-          ],
-        });
-      }
-
-      const now = new Date();
-      const startDate = new Date(booking.startDate);
-      const hoursUntilStart =
-        (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-      if (hoursUntilStart < 24) {
+      if (!this.canCancelBooking(booking)) {
         return error(400, {
-          message: "Cancellation window expired",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["startDate"],
-              message:
-                "Cannot cancel booking less than 24 hours before start time",
-            },
-          ],
+          message: "Booking cannot be cancelled in its current state",
         });
       }
 
-      const updatedBooking = await Booking.findByIdAndUpdate(
-        bookingId,
-        { $set: { status: "Cancelled" } },
-        { new: true }
-      )
-        .populate("hotel", "name city country")
-        .populate("vehicle", "make model vehicleType")
-        .exec();
+      // Calculate refund amount based on cancellation policy
+      const refundAmount = await this.calculateRefundAmount(booking);
 
-      return updatedBooking;
+      // Update booking status
+      booking.status = "Cancelled";
+      booking.cancellation = {
+        date: new Date(),
+        reason: "Customer requested cancellation",
+        refundAmount,
+        refundStatus: refundAmount > 0 ? "Pending" : "NotApplicable",
+      };
+
+      // Release inventory
+      await this.updateInventory(booking, "release");
+
+      const updatedBooking = await booking.save();
+
+      return {
+        success: true,
+        data: updatedBooking,
+      };
     } catch (err) {
-      console.error("Error cancelling booking:", err);
       return error(500, {
-        message: "Internal Server Error",
-        errors: [
-          {
-            type: "InternalServerError",
-            path: [],
-            message: "An unexpected error occurred",
-          },
-        ],
+        message: "Error cancelling booking",
+        error: err,
       });
     }
+  }
+
+  /**
+   * Update booking itinerary progress
+   */
+  public async updateItineraryProgress(
+    bookingId: string,
+    activityId: string,
+    status: "completed" | "upcoming"
+  ): Promise<ApiResponse<BookingInterface>> {
+    try {
+      const booking = await Booking.findOne({
+        _id: bookingId,
+        userId: this.userId,
+      });
+
+      if (!booking) {
+        return error(404, { message: "Booking not found" });
+      }
+
+      if (status === "completed") {
+        booking.itinerary.progress.completedActivities.push(new mongoose.Types.ObjectId(activityId));
+        const nextActivityIndex = booking.itinerary.progress.completedActivities.length;
+        if (booking.packageBooking?.customizations?.[nextActivityIndex]) {
+          booking.itinerary.progress.nextActivity = booking.packageBooking.customizations[nextActivityIndex].itemId;
+        }
+      }
+
+      const updatedBooking = await booking.save();
+
+      return {
+        success: true,
+        data: updatedBooking,
+      };
+    } catch (err) {
+      return error(500, {
+        message: "Error updating itinerary progress",
+        error: err,
+      });
+    }
+  }
+
+  // Private helper methods
+
+  private generateBookingReference(): string {
+    return `BK${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+  }
+
+  private async calculateTotalAmount(bookingData: CreateBookingDTO): Promise<number> {
+    let total = 0;
+
+    if (bookingData.hotelBooking) {
+      const hotel = await Hotel.findById(bookingData.hotelBooking.hotelId);
+      if (hotel) {
+        // Add hotel room costs
+        total += hotel.basePrice * bookingData.hotelBooking.numberOfNights;
+      }
+    }
+
+    if (bookingData.vehicleBooking) {
+      const vehicle = await Vehicle.findById(bookingData.vehicleBooking.vehicleId);
+      if (vehicle) {
+        // Add vehicle rental costs
+        total += vehicle.rentalPrice * bookingData.vehicleBooking.numberOfDays;
+      }
+    }
+
+    if (bookingData.packageBooking) {
+      const pkg = await Package.findById(bookingData.packageBooking.packageId);
+      if (pkg) {
+        // Add package base price
+        total += pkg.basePrice;
+        // Add customization costs
+        total += this.calculateCustomizationsCost(bookingData.packageBooking.customizations);
+      }
+    }
+
+    return total;
+  }
+
+  private async validateAvailability(bookingData: CreateBookingDTO | UpdateBookingDTO): Promise<void> {
+    if (bookingData.hotelBooking) {
+      const isHotelAvailable = await this.checkHotelAvailability(
+        bookingData.hotelBooking.hotelId,
+        bookingData.hotelBooking.checkIn,
+        bookingData.hotelBooking.checkOut
+      );
+      if (!isHotelAvailable) {
+        throw new Error("Selected hotel rooms are not available for the specified dates");
+      }
+    }
+
+    if (bookingData.vehicleBooking) {
+      const isVehicleAvailable = await this.checkVehicleAvailability(
+        bookingData.vehicleBooking.vehicleId,
+        bookingData.vehicleBooking.pickupDate,
+        bookingData.vehicleBooking.returnDate
+      );
+      if (!isVehicleAvailable) {
+        throw new Error("Selected vehicle is not available for the specified dates");
+      }
+    }
+
+    if (bookingData.packageBooking) {
+      const isPackageAvailable = await this.checkPackageAvailability(
+        bookingData.packageBooking.packageId,
+        bookingData.packageBooking.startDate,
+        bookingData.packageBooking.participants
+      );
+      if (!isPackageAvailable) {
+        throw new Error("Selected package is not available for the specified dates and participants");
+      }
+    }
+  }
+
+  private canUpdateBooking(booking: BookingInterface): boolean {
+    const nonUpdateableStatuses = ["Completed", "Cancelled", "InProgress"];
+    return !nonUpdateableStatuses.includes(booking.status);
+  }
+
+  private canCancelBooking(booking: BookingInterface): boolean {
+    const nonCancellableStatuses = ["Completed", "Cancelled"];
+    return !nonCancellableStatuses.includes(booking.status);
+  }
+
+  private async calculateRefundAmount(booking: BookingInterface): Promise<number> {
+    const cancellationDate = new Date();
+    const bookingStartDate = new Date(booking.bookingDate);
+    const daysUntilBooking = Math.ceil(
+      (bookingStartDate.getTime() - cancellationDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    let refundPercentage = 0;
+    if (daysUntilBooking > 30) {
+      refundPercentage = 100;
+    } else if (daysUntilBooking > 14) {
+      refundPercentage = 75;
+    } else if (daysUntilBooking > 7) {
+      refundPercentage = 50;
+    } else if (daysUntilBooking > 3) {
+      refundPercentage = 25;
+    }
+
+    return (booking.payment.amount * refundPercentage) / 100;
+  }
+
+  private async updateInventory(booking: BookingInterface, action: "reserve" | "release"): Promise<void> {
+    if (booking.hotelBooking) {
+      await this.updateHotelInventory(booking.hotelBooking, action);
+    }
+    if (booking.vehicleBooking) {
+      await this.updateVehicleInventory(booking.vehicleBooking, action);
+    }
+    if (booking.packageBooking) {
+      await this.updatePackageInventory(booking.packageBooking, action);
+    }
+  }
+
+  private requiresAvailabilityCheck(updateData: UpdateBookingDTO): boolean {
+    return !!(
+      updateData.hotelBooking?.checkIn ||
+      updateData.hotelBooking?.checkOut ||
+      updateData.vehicleBooking?.pickupDate ||
+      updateData.vehicleBooking?.returnDate ||
+      updateData.packageBooking?.startDate
+    );
+  }
+
+  private itemsChanged(oldBooking: BookingInterface, newData: UpdateBookingDTO): boolean {
+    return !!(
+      (newData.hotelBooking && oldBooking.hotelBooking?.hotelId !== newData.hotelBooking.hotelId) ||
+      (newData.vehicleBooking && oldBooking.vehicleBooking?.vehicleId !== newData.vehicleBooking.vehicleId) ||
+      (newData.packageBooking && oldBooking.packageBooking?.packageId !== newData.packageBooking.packageId)
+    );
   }
 }

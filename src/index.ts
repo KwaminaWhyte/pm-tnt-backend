@@ -12,10 +12,10 @@ import adminAuthRoutes from "./routes/admin-auth";
 import hotelsRoutes from "./routes/hotels";
 import hotelsPublicRoutes from "./routes/hotels-public";
 import roomRoutes from "./routes/rooms";
-import tripsRoutes from "./routes/trips";
 import packageRoutes from "./routes/packages";
 import destinationRoutes from "./routes/destinations";
 import favoritesRoutes from "./routes/favorites";
+import bookingRoutes from "./routes/bookings";
 
 const app = new Elysia()
   .use(
@@ -56,8 +56,8 @@ const app = new Elysia()
   .use(hotelsPublicRoutes)
   .use(hotelsRoutes)
   .use(roomRoutes)
-  .use(tripsRoutes)
   .use(packageRoutes)
+  .use(bookingRoutes)
   .use(favoritesRoutes)
   .use(destinationRoutes);
 

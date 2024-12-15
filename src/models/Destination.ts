@@ -1,147 +1,159 @@
 import { Schema } from "mongoose";
-import { DestinationInterface } from "~/utils/types";
 import mongoose from "../mongoose";
+
+export interface DestinationInterface {
+  name: string;
+  country: string;
+  city: string;
+  description: string;
+  highlights: string[];
+  price: number;
+  discount?: number;
+  images: string[];
+  location: {
+    type: string;
+    coordinates: number[];
+  };
+  bestTimeToVisit: {
+    startMonth: number;
+    endMonth: number;
+  };
+  climate: 'Tropical' | 'Dry' | 'Temperate' | 'Continental' | 'Polar';
+  popularActivities: string[];
+  localCuisine: string[];
+  culturalEvents: Array<{
+    name: string;
+    description: string;
+    date?: {
+      month: number;
+      day?: number;
+    };
+  }>;
+  relatedDestinations: Array<{
+    destinationId: Schema.Types.ObjectId;
+    relationshipType: 'NearBy' | 'SimilarClimate' | 'PopularCombination';
+  }>;
+  seasonalPricing: Array<{
+    startMonth: number;
+    endMonth: number;
+    priceMultiplier: number;
+  }>;
+  travelTips: string[];
+  visaRequirements?: string;
+  languages: string[];
+  currency: string;
+  timeZone: string;
+  status: 'Active' | 'Inactive' | 'Seasonal';
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const schema = new Schema<DestinationInterface>(
   {
-    name: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
-    country: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    city: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    description: {
-      type: String,
-      required: true,
-    },
-    highlights: [{
-      type: String,
-      trim: true,
-    }],
-    price: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    discount: {
-      type: Number,
-      min: 0,
-      max: 100,
-      default: 0,
-    },
-    images: [{
-      type: String,
+    name: { type: String, required: true },
+    country: { type: String, required: true },
+    city: { type: String, required: true },
+    description: { type: String, required: true },
+    highlights: { type: [String], default: [] },
+    price: { type: Number, required: true },
+    discount: Number,
+    images: {
+      type: [String],
+      default: [],
       validate: {
-        validator: function(v: string) {
-          return /^https?:\/\/.+/.test(v);
-        },
+        validator: (v: string[]) => v.every(url => /^https?:\/\/.+/.test(url)),
         message: "Image URL must be a valid URL"
       }
-    }],
+    },
     location: {
       type: {
         type: String,
-        enum: ['Point'],
-        default: 'Point',
+        enum: ["Point"],
+        required: true,
+        default: "Point"
       },
       coordinates: {
         type: [Number],
         required: true,
         validate: {
-          validator: function(v: number[]) {
-            return v.length === 2 && 
-                   v[0] >= -180 && v[0] <= 180 && 
-                   v[1] >= -90 && v[1] <= 90;
+          validator: (v: number[]) => {
+            return (
+              v.length === 2 &&
+              v[0] >= -180 && v[0] <= 180 && // longitude
+              v[1] >= -90 && v[1] <= 90 // latitude
+            );
           },
           message: "Invalid coordinates. Must be [longitude, latitude] within valid ranges"
         }
       }
     },
     bestTimeToVisit: {
-      startMonth: {
-        type: Number,
-        min: 1,
-        max: 12,
-        required: true,
-      },
-      endMonth: {
-        type: Number,
-        min: 1,
-        max: 12,
-        required: true,
-      },
+      startMonth: { type: Number, required: true, min: 1, max: 12 },
+      endMonth: { type: Number, required: true, min: 1, max: 12 }
     },
     climate: {
       type: String,
-      enum: ['Tropical', 'Dry', 'Temperate', 'Continental', 'Polar'],
       required: true,
+      enum: ['Tropical', 'Dry', 'Temperate', 'Continental', 'Polar']
     },
-    popularActivities: [{
+    popularActivities: { type: [String], default: [] },
+    localCuisine: { type: [String], default: [] },
+    culturalEvents: {
+      type: [{
+        name: { type: String, required: true },
+        description: { type: String, required: true },
+        date: {
+          month: { type: Number, min: 1, max: 12 },
+          day: { type: Number, min: 1, max: 31 }
+        }
+      }],
+      default: []
+    },
+    relatedDestinations: {
+      type: [{
+        destinationId: { type: Schema.Types.ObjectId, ref: 'destinations' },
+        relationshipType: {
+          type: String,
+          enum: ['NearBy', 'SimilarClimate', 'PopularCombination']
+        }
+      }],
+      default: []
+    },
+    seasonalPricing: {
+      type: [{
+        startMonth: { type: Number, required: true, min: 1, max: 12 },
+        endMonth: { type: Number, required: true, min: 1, max: 12 },
+        priceMultiplier: { type: Number, required: true, min: 0 }
+      }],
+      default: []
+    },
+    travelTips: { type: [String], default: [] },
+    visaRequirements: String,
+    languages: { type: [String], required: true },
+    currency: { type: String, required: true },
+    timeZone: { type: String, required: true },
+    status: {
       type: String,
-      trim: true,
-    }],
-    localCuisine: [{
-      type: String,
-      trim: true,
-    }],
-    culturalEvents: [{
-      name: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      month: {
-        type: Number,
-        min: 1,
-        max: 12,
-        required: true,
-      },
-      description: String,
-    }],
-    rating: {
-      average: {
-        type: Number,
-        min: 0,
-        max: 5,
-        default: 0,
-      },
-      count: {
-        type: Number,
-        default: 0,
-      },
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+      enum: ['Active', 'Inactive', 'Seasonal'],
+      default: 'Active'
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
-// Add indexes for better query performance
-schema.index({ name: 1 });
-schema.index({ country: 1, city: 1 });
+// Create indexes for common queries
 schema.index({ location: '2dsphere' });
-schema.index({ 'rating.average': -1 });
-schema.index({ price: 1 });
+schema.index({ name: 'text', description: 'text' });
+schema.index({ price: 1, 'bestTimeToVisit.startMonth': 1 });
+schema.index({ country: 1, city: 1 });
 
-let Destination: mongoose.Model<DestinationInterface>;
+let Destination;
 try {
-  Destination = mongoose.model<DestinationInterface>("destinations");
+  Destination = mongoose.model('destinations');
 } catch (error) {
-  Destination = mongoose.model<DestinationInterface>("destinations", schema);
+  Destination = mongoose.model('destinations', schema);
 }
 
 export default Destination;

@@ -245,6 +245,174 @@ const packageRoutes = new Elysia({ prefix: "/api/v1/packages" })
           ),
         }),
       })
+      .post("/:id/share", async ({ params: { id }, body, user }) => packageController.sharePackage(id, user._id, body.sharedWithIds), {
+        detail: {
+          summary: "Share a package with other users",
+          tags: ["Packages - Auth User"],
+        },
+        body: t.Object({
+          sharedWithIds: t.Array(t.String())
+        })
+      })
+      .post("/:id/meals", async ({ params: { id }, body, user }) => packageController.updateMealPlan(id, user._id, body.meals), {
+        detail: {
+          summary: "Update package meal plan",
+          tags: ["Packages - Auth User"],
+        },
+        body: t.Object({
+          meals: t.Array(t.Object({
+            type: t.Union([t.Literal('Breakfast'), t.Literal('Lunch'), t.Literal('Dinner')]),
+            date: t.String(),
+            venue: t.Optional(t.String()),
+            isIncluded: t.Boolean(),
+            preferences: t.Optional(t.Array(t.String()))
+          }))
+        })
+      })
+      .post("/:id/budget", async ({ params: { id }, body, user }) => packageController.updateBudget(id, user._id, body.budget), {
+        detail: {
+          summary: "Update package budget",
+          tags: ["Packages - Auth User"],
+        },
+        body: t.Object({
+          budget: t.Object({
+            estimatedTotal: t.Number(),
+            breakdown: t.Object({
+              accommodation: t.Number(),
+              transportation: t.Number(),
+              activities: t.Number(),
+              meals: t.Number(),
+              others: t.Number()
+            })
+          })
+        })
+      })
+      .post("/:id/templates", async ({ params: { id }, body, user }) => {
+        return packageController.saveAsTemplate(id, user._id, body);
+      }, {
+        detail: {
+          tags: ["Packages - Auth User"],
+          summary: "Save package customization as template",
+        },
+        body: t.Object({
+          name: t.String(),
+          description: t.Optional(t.String()),
+          customizations: t.Object({
+            accommodations: t.Optional(t.Object({
+              hotelIds: t.Optional(t.Array(t.String())),
+              preferences: t.Optional(t.Object({
+                roomTypes: t.Optional(t.Array(t.String())),
+                amenities: t.Optional(t.Array(t.String())),
+                boardBasis: t.Optional(t.Array(t.String())),
+                location: t.Optional(t.Array(t.String()))
+              }))
+            })),
+            transportation: t.Optional(t.Object({
+              type: t.Optional(t.Union([
+                t.Literal("Flight"),
+                t.Literal("Train"),
+                t.Literal("Bus"),
+                t.Literal("Private Car"),
+                t.Literal("None")
+              ])),
+              preferences: t.Optional(t.Object({
+                class: t.Optional(t.String()),
+                seatingPreference: t.Optional(t.String()),
+                specialAssistance: t.Optional(t.Array(t.String())),
+                luggageOptions: t.Optional(t.Array(t.String()))
+              }))
+            })),
+            activities: t.Optional(t.Object({
+              included: t.Optional(t.Array(t.String())),
+              excluded: t.Optional(t.Array(t.String())),
+              preferences: t.Optional(t.Object({
+                difficulty: t.Optional(t.Array(t.String())),
+                duration: t.Optional(t.Array(t.String())),
+                type: t.Optional(t.Array(t.String())),
+                timeOfDay: t.Optional(t.Array(t.String()))
+              }))
+            })),
+            meals: t.Optional(t.Object({
+              included: t.Optional(t.Object({
+                breakfast: t.Optional(t.Boolean()),
+                lunch: t.Optional(t.Boolean()),
+                dinner: t.Optional(t.Boolean())
+              })),
+              preferences: t.Optional(t.Object({
+                dietary: t.Optional(t.Array(t.String())),
+                cuisine: t.Optional(t.Array(t.String())),
+                mealTimes: t.Optional(t.Object({
+                  breakfast: t.Optional(t.String()),
+                  lunch: t.Optional(t.String()),
+                  dinner: t.Optional(t.String())
+                }))
+              }))
+            })),
+            itinerary: t.Optional(t.Object({
+              pace: t.Optional(t.Union([
+                t.Literal("Relaxed"),
+                t.Literal("Moderate"),
+                t.Literal("Fast")
+              ])),
+              flexibility: t.Optional(t.Union([
+                t.Literal("Fixed"),
+                t.Literal("Flexible"),
+                t.Literal("Very Flexible")
+              ])),
+              focusAreas: t.Optional(t.Array(t.String())),
+              customDays: t.Optional(t.Array(t.Object({
+                day: t.Number(),
+                title: t.String(),
+                description: t.String(),
+                activities: t.Array(t.String()),
+                meals: t.Optional(t.Object({
+                  breakfast: t.Optional(t.String()),
+                  lunch: t.Optional(t.String()),
+                  dinner: t.Optional(t.String())
+                }))
+              })))
+            })),
+            accessibility: t.Optional(t.Object({
+              wheelchairAccess: t.Optional(t.Boolean()),
+              mobilityAssistance: t.Optional(t.Boolean()),
+              dietaryRestrictions: t.Optional(t.Array(t.String())),
+              medicalRequirements: t.Optional(t.Array(t.String()))
+            })),
+            budget: t.Optional(t.Object({
+              maxBudget: t.Optional(t.Number()),
+              priorityAreas: t.Optional(t.Array(t.String())),
+              flexibleAreas: t.Optional(t.Array(t.String()))
+            }))
+          }),
+          isPublic: t.Optional(t.Boolean()),
+          tags: t.Optional(t.Array(t.String()))
+        })
+      })
+      .get("/templates", async ({ user, query }) => {
+        return packageController.getTemplates(user._id, query);
+      }, {
+        detail: {
+          tags: ["Packages - Auth User"],
+          summary: "Get user's package templates",
+        },
+        query: t.Object({
+          search: t.Optional(t.String()),
+          tags: t.Optional(t.Array(t.String())),
+          page: t.Optional(t.Number()),
+          limit: t.Optional(t.Number())
+        })
+      })
+      .post("/templates/:id/create", async ({ params: { id }, body, user }) => {
+        return packageController.createFromTemplate(id, user._id, body.customizations);
+      }, {
+        detail: {
+          tags: ["Packages - Auth User"],
+          summary: "Create package from template",
+        },
+        body: t.Object({
+          customizations: t.Optional(t.Any())
+        })
+      })
   );
 
 export default packageRoutes;
