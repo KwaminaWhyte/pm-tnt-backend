@@ -619,9 +619,7 @@ export default class HotelController {
         );
       }
 
-      const room = hotel.rooms.find(
-        (r) => r._id.toString() === bookingData.roomId
-      );
+      const room = await Room.findById(bookingData.roomId);
       if (!room) {
         throw new Error(
           JSON.stringify({
