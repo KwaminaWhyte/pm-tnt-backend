@@ -5,6 +5,7 @@ import Favorite from "../models/Favorite";
 import { error } from "elysia";
 import FavoriteController from "./FavoriteController";
 import Room from "../models/Room";
+import User from "../models/User";
 
 export default class HotelController {
   /**
@@ -600,6 +601,9 @@ export default class HotelController {
       checkIn: Date;
       checkOut: Date;
       guests: number;
+      // contactName: string;
+      // contactEmail: string;
+      // contactPhone: string;
     }
   ) {
     try {
@@ -665,21 +669,42 @@ export default class HotelController {
         );
       }
 
+      const user = await User.findById(bookingData.userId);
+
       // Create booking (assuming we have a Booking model)
       const booking = new Booking({
-        hotelId,
-        roomId: bookingData.roomId,
         userId: bookingData.userId,
-        checkIn: bookingData.checkIn,
-        checkOut: bookingData.checkOut,
-        guests: bookingData.guests,
-        status: "confirmed",
-        totalPrice:
-          room.pricePerNight *
-          Math.ceil(
-            (bookingData.checkOut.getTime() - bookingData.checkIn.getTime()) /
-              (1000 * 60 * 60 * 24)
-          ),
+        bookingType: "hotel",
+        bookingReference: `HB${Date.now()}`,
+        startDate: bookingData.checkIn,
+        endDate: bookingData.checkOut,
+        hotelBooking: {
+          hotelId: hotelId,
+          roomIds: [bookingData.roomId],
+          numberOfGuests: bookingData.guests,
+        },
+        pricing: {
+          basePrice:
+            room.pricePerNight *
+            Math.ceil(
+              (bookingData.checkOut.getTime() - bookingData.checkIn.getTime()) /
+                (1000 * 60 * 60 * 24)
+            ),
+          taxes: room.pricePerNight * 0.1, // Assuming 10% tax
+          totalPrice:
+            room.pricePerNight *
+            Math.ceil(
+              (bookingData.checkOut.getTime() - bookingData.checkIn.getTime()) /
+                (1000 * 60 * 60 * 24)
+            ) *
+            1.1, // Including tax
+        },
+        // contactInfo: {
+        //   name: bookingData.contactName,
+        //   email: bookingData.contactEmail,
+        //   phone: bookingData.contactPhone,
+        // },
+        status: "Confirmed",
       });
 
       await booking.save();
