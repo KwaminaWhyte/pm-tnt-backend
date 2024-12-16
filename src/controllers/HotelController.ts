@@ -4,6 +4,7 @@ import Booking from "../models/Booking"; // Assuming you have a Booking model
 import Favorite from "../models/Favorite";
 import { error } from "elysia";
 import FavoriteController from "./FavoriteController";
+import Room from "../models/Room";
 
 export default class HotelController {
   /**
@@ -124,9 +125,11 @@ export default class HotelController {
         );
       }
 
+      const rooms = Room.find({ hotel: id });
+
       return {
         status: "success",
-        data: hotel,
+        data: { hotel, rooms },
       };
     } catch (error: any) {
       if (error.message.startsWith("{")) {
