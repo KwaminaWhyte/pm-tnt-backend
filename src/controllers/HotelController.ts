@@ -125,7 +125,7 @@ export default class HotelController {
         );
       }
 
-      const rooms = Room.find({ hotel: id });
+      const rooms = await Room.find({ hotel: id });
 
       return {
         status: "success",
