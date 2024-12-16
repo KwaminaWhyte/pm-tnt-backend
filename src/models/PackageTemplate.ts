@@ -33,7 +33,7 @@ export interface PackageTemplateInterface {
         duration: string[];
         type: string[];
         timeOfDay: string[];
-      };
+      }[];
     };
     meals?: {
       included: {
@@ -133,11 +133,14 @@ const packageTemplateSchema = new Schema<PackageTemplateInterface>(
         included: [{ type: Schema.Types.ObjectId, ref: "activities" }],
         excluded: [{ type: Schema.Types.ObjectId, ref: "activities" }],
         preferences: {
-          difficulty: [String],
-          duration: [String],
-          type: [String],
-          timeOfDay: [String],
-        },
+          type: [{
+            difficulty: { type: [String], default: [] },
+            duration: { type: [String], default: [] },
+            type: { type: [String], default: [] },
+            timeOfDay: { type: [String], default: [] }
+          }],
+          default: []
+        }
       },
       meals: {
         included: {
@@ -165,17 +168,19 @@ const packageTemplateSchema = new Schema<PackageTemplateInterface>(
           enum: ["Fixed", "Flexible", "Very Flexible"],
         },
         focusAreas: [String],
-        customDays: [{
-          day: Number,
-          title: String,
-          description: String,
-          activities: [{ type: Schema.Types.ObjectId, ref: "activities" }],
-          meals: {
-            breakfast: { type: Schema.Types.ObjectId, ref: "restaurants" },
-            lunch: { type: Schema.Types.ObjectId, ref: "restaurants" },
-            dinner: { type: Schema.Types.ObjectId, ref: "restaurants" },
+        customDays: [
+          {
+            day: Number,
+            title: String,
+            description: String,
+            activities: [{ type: Schema.Types.ObjectId, ref: "activities" }],
+            meals: {
+              breakfast: { type: Schema.Types.ObjectId, ref: "restaurants" },
+              lunch: { type: Schema.Types.ObjectId, ref: "restaurants" },
+              dinner: { type: Schema.Types.ObjectId, ref: "restaurants" },
+            },
           },
-        }],
+        ],
       },
       accessibility: {
         wheelchairAccess: Boolean,
@@ -206,6 +211,9 @@ packageTemplateSchema.index({ tags: 1 });
 packageTemplateSchema.index({ isPublic: 1 });
 packageTemplateSchema.index({ createdAt: -1 });
 
-const PackageTemplate = mongoose.model<PackageTemplateInterface>("PackageTemplate", packageTemplateSchema);
+const PackageTemplate = mongoose.model<PackageTemplateInterface>(
+  "PackageTemplate",
+  packageTemplateSchema
+);
 
 export default PackageTemplate;

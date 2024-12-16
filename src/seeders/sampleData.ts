@@ -1,12 +1,12 @@
-import mongoose from 'mongoose';
-import User from '../models/User';
-import Hotel from '../models/Hotel';
-import Activity from '../models/Activity';
-import Package from '../models/Package';
-import PackageTemplate from '../models/PackageTemplate';
-import Booking from '../models/Booking';
-import Review from '../models/Review';
-import Destination from '../models/Destination';
+import mongoose from "mongoose";
+import User from "../models/User";
+import Hotel from "../models/Hotel";
+import Activity from "../models/Activity";
+import Package from "../models/Package";
+import PackageTemplate from "../models/PackageTemplate";
+import Booking from "../models/Booking";
+import Review from "../models/Review";
+import Destination from "../models/Destination";
 
 export async function seedSampleData() {
   try {
@@ -19,7 +19,7 @@ export async function seedSampleData() {
       PackageTemplate.deleteMany({}),
       Booking.deleteMany({}),
       Review.deleteMany({}),
-      Destination.deleteMany({})
+      Destination.deleteMany({}),
     ]);
 
     // Create User
@@ -35,84 +35,80 @@ export async function seedSampleData() {
         notifications: {
           email: true,
           sms: true,
-          push: true
-        }
-      }
+          push: true,
+        },
+      },
     });
 
     // Create Destination
-    const destination = await mongoose.model('destinations').create({
+    const destination = await mongoose.model("destinations").create({
       name: "Phuket",
       country: "Thailand",
       city: "Phuket City",
-      description: "Beautiful island destination in Thailand with pristine beaches and vibrant culture",
+      description:
+        "Beautiful island destination in Thailand with pristine beaches and vibrant culture",
       highlights: [
         "Phi Phi Islands",
         "Big Buddha",
         "Old Phuket Town",
-        "Phang Nga Bay"
+        "Phang Nga Bay",
       ],
       price: 1000, // Base price for the destination
       location: {
         type: "Point",
-        coordinates: [98.3923, 7.8804] // [longitude, latitude]
+        coordinates: [98.3923, 7.8804], // [longitude, latitude]
       },
       bestTimeToVisit: {
         startMonth: 11, // November
-        endMonth: 4 // April
+        endMonth: 4, // April
       },
       climate: "Tropical",
       popularActivities: [
         "Island Hopping",
         "Scuba Diving",
         "Thai Cooking Classes",
-        "Temple Tours"
+        "Temple Tours",
       ],
-      localCuisine: [
-        "Tom Yum Goong",
-        "Pad Thai",
-        "Som Tum",
-        "Massaman Curry"
-      ],
+      localCuisine: ["Tom Yum Goong", "Pad Thai", "Som Tum", "Massaman Curry"],
       culturalEvents: [
         {
           name: "Loy Krathong",
           description: "Festival of Light",
           date: {
-            month: 11
-          }
+            month: 11,
+          },
         },
         {
           name: "Songkran",
           description: "Thai New Year Water Festival",
           date: {
             month: 4,
-            day: 13
-          }
-        }
+            day: 13,
+          },
+        },
       ],
       seasonalPricing: [
         {
           startMonth: 11,
           endMonth: 4,
-          priceMultiplier: 1.3 // High season
+          priceMultiplier: 1.3, // High season
         },
         {
           startMonth: 5,
           endMonth: 10,
-          priceMultiplier: 0.8 // Low season
-        }
+          priceMultiplier: 0.8, // Low season
+        },
       ],
       travelTips: [
         "Best to visit during dry season (November to April)",
         "Book island tours in advance",
-        "Respect local customs and dress codes at temples"
+        "Respect local customs and dress codes at temples",
       ],
       visaRequirements: "Visa-free for many countries up to 30 days",
       languages: ["Thai", "English"],
       currency: "THB",
       timeZone: "Asia/Bangkok",
-      status: "Active"
+      status: "Active",
     });
 
     // Create Hotel
@@ -125,13 +121,13 @@ export async function seedSampleData() {
         country: "Thailand",
         geo: {
           type: "Point",
-          coordinates: [98.3923, 7.8804] // [longitude, latitude]
-        }
+          coordinates: [98.3923, 7.8804], // [longitude, latitude]
+        },
       },
       contactInfo: {
         phone: "+12345678903",
         email: "info@grandocean.com",
-        website: "https://grandocean.com"
+        website: "https://grandocean.com",
       },
       starRating: 5,
       amenities: [
@@ -140,40 +136,31 @@ export async function seedSampleData() {
         "Beach Access",
         "Free WiFi",
         "Restaurant",
-        "Room Service"
+        "Room Service",
       ],
       checkInTime: "14:00",
       checkOutTime: "12:00",
       images: [
         "https://example.com/hotel/grand-ocean/1.jpg",
-        "https://example.com/hotel/grand-ocean/2.jpg"
+        "https://example.com/hotel/grand-ocean/2.jpg",
       ],
       policies: {
         checkIn: "14:00",
         checkOut: "12:00",
         cancellation: "24 hours before check-in",
         payment: "Credit card required for booking",
-        houseRules: [
-          "No smoking",
-          "No pets",
-          "Quiet hours 10 PM - 7 AM"
-        ]
+        houseRules: ["No smoking", "No pets", "Quiet hours 10 PM - 7 AM"],
       },
       rooms: [
         {
           type: "Deluxe Ocean View",
           description: "Spacious room with panoramic ocean views",
           capacity: 2,
-          amenities: [
-            "King Bed",
-            "Ocean View",
-            "Mini Bar",
-            "Private Balcony"
-          ],
+          amenities: ["King Bed", "Ocean View", "Mini Bar", "Private Balcony"],
           basePrice: 350,
-          size: "45m²"
-        }
-      ]
+          size: "45m²",
+        },
+      ],
     });
 
     // Create Activities
@@ -189,35 +176,29 @@ export async function seedSampleData() {
           {
             dayOfWeek: 1, // Monday
             startTime: "08:00",
-            endTime: "16:00"
+            endTime: "16:00",
           },
           {
             dayOfWeek: 3, // Wednesday
             startTime: "08:00",
-            endTime: "16:00"
+            endTime: "16:00",
           },
           {
             dayOfWeek: 5, // Friday
             startTime: "08:00",
-            endTime: "16:00"
-          }
+            endTime: "16:00",
+          },
         ],
         location: {
           name: "Phuket Marina",
-          coordinates: [98.3923, 7.8804] // [longitude, latitude]
+          coordinates: [98.3923, 7.8804], // [longitude, latitude]
         },
         maxParticipants: 15,
         minParticipants: 4,
         requirements: ["Swimming ability", "Sunscreen", "Beach wear"],
-        included: [
-          "Boat Trip",
-          "Lunch",
-          "Snorkeling Equipment"
-        ],
+        included: ["Boat Trip", "Lunch", "Snorkeling Equipment"],
         excluded: ["Hotel pickup", "Travel insurance"],
-        images: [
-          "https://example.com/activities/island-hopping/1.jpg"
-        ]
+        images: ["https://example.com/activities/island-hopping/1.jpg"],
       },
       {
         name: "Thai Cooking Class",
@@ -230,27 +211,21 @@ export async function seedSampleData() {
           {
             dayOfWeek: 2, // Tuesday
             startTime: "09:00",
-            endTime: "13:00"
+            endTime: "13:00",
           },
           {
             dayOfWeek: 4, // Thursday
             startTime: "09:00",
-            endTime: "13:00"
-          }
+            endTime: "13:00",
+          },
         ],
         maxParticipants: 12,
         minParticipants: 2,
         requirements: ["No cooking experience needed"],
-        included: [
-          "Ingredients",
-          "Cookbook",
-          "Certificate"
-        ],
+        included: ["Ingredients", "Cookbook", "Certificate"],
         excluded: ["Hotel transfer"],
-        images: [
-          "https://example.com/activities/cooking-class/1.jpg"
-        ]
-      }
+        images: ["https://example.com/activities/cooking-class/1.jpg"],
+      },
     ]);
 
     // Create Package
@@ -260,43 +235,50 @@ export async function seedSampleData() {
       price: 1200,
       duration: {
         days: 5,
-        nights: 4
+        nights: 4,
       },
-      destinations: [{
-        destinationId: destination._id,
-        order: 1,
-        stayDuration: 5
-      }],
-      hotels: [{
-        hotelId: hotel._id,
-        roomTypes: ["Deluxe Ocean View"],
-        checkIn: "14:00",
-        checkOut: "12:00"
-      }],
+      destinations: [
+        {
+          destinationId: destination._id,
+          order: 1,
+          stayDuration: 5,
+        },
+      ],
+      hotels: [
+        {
+          hotelId: hotel._id,
+          roomTypes: ["Deluxe Ocean View"],
+          checkIn: "14:00",
+          checkOut: "12:00",
+        },
+      ],
       activities: activities.map((activity, index) => ({
         activityId: activity._id,
         day: index + 2, // Starting activities from day 2
-        timeSlot: "09:00"
+        timeSlot: "09:00",
       })),
       transportation: {
         type: "RentalCar",
-        details: [{
-          type: "SUV",
-          from: "Phuket International Airport",
-          to: "Grand Ocean Resort & Spa",
-          day: 1
-        }]
+        details: [
+          {
+            type: "SUV",
+            from: "Phuket International Airport",
+            to: "Grand Ocean Resort & Spa",
+            day: 1,
+          },
+        ],
       },
       itinerary: [
         {
           day: 1,
           title: "Arrival & Relaxation",
-          description: "Arrive at Phuket International Airport, transfer to hotel, and free time at beach",
+          description:
+            "Arrive at Phuket International Airport, transfer to hotel, and free time at beach",
           meals: {
             breakfast: false,
             lunch: false,
-            dinner: true
-          }
+            dinner: true,
+          },
         },
         {
           day: 2,
@@ -305,44 +287,44 @@ export async function seedSampleData() {
           meals: {
             breakfast: true,
             lunch: true,
-            dinner: false
-          }
-        }
+            dinner: false,
+          },
+        },
       ],
       included: [
         "Hotel accommodation",
         "Daily breakfast",
         "Airport transfers",
-        "Island hopping tour"
+        "Island hopping tour",
       ],
       excluded: [
         "International flights",
         "Travel insurance",
-        "Personal expenses"
+        "Personal expenses",
       ],
       terms: [
         "Cancellation policy applies",
         "Passport required",
-        "Minimum 2 participants required"
+        "Minimum 2 participants required",
       ],
       maxParticipants: 15,
       minParticipants: 2,
       startDates: [
         new Date("2024-12-20"),
         new Date("2024-12-27"),
-        new Date("2025-01-03")
+        new Date("2025-01-03"),
       ],
       seasonalPricing: [
         {
           startDate: new Date("2024-12-01"),
           endDate: new Date("2025-02-28"),
-          priceMultiplier: 1.3
-        }
+          priceMultiplier: 1.3,
+        },
       ],
       status: "Active",
       sharing: {
         isPublic: true,
-        sharedWith: []
+        sharedWith: [],
       },
       budget: {
         estimatedTotal: 1500,
@@ -351,8 +333,8 @@ export async function seedSampleData() {
           transportation: 200,
           activities: 400,
           meals: 200,
-          others: 100
-        }
+          others: 100,
+        },
       },
       meals: [
         {
@@ -360,16 +342,16 @@ export async function seedSampleData() {
           date: new Date("2024-12-21"),
           venue: "Hotel Restaurant",
           isIncluded: true,
-          preferences: ["Vegetarian available", "Halal available"]
+          preferences: ["Vegetarian available", "Halal available"],
         },
         {
           type: "Lunch",
           date: new Date("2024-12-21"),
           venue: "Beach Restaurant",
           isIncluded: true,
-          preferences: ["Seafood", "Local cuisine"]
-        }
-      ]
+          preferences: ["Seafood", "Local cuisine"],
+        },
+      ],
     });
 
     // Create Package Template
@@ -382,121 +364,125 @@ export async function seedSampleData() {
         accommodations: {
           preferences: {
             roomTypes: ["Family Suite", "Connecting Rooms"],
-            amenities: ["Kids Club", "Children's Pool"]
-          }
+            amenities: ["Kids Club", "Children's Pool"],
+          },
         },
         activities: {
-          preferences: {
-            difficulty: ["Easy"],
-            type: ["Family", "Educational"]
-          }
+          included: [],
+          excluded: [],
+          preferences: [
+            {
+              difficulty: ["Easy"],
+              duration: ["2-3 hours", "Half-day"],
+              type: ["Family", "Educational"],
+              timeOfDay: ["Morning", "Afternoon"],
+            },
+          ],
         },
         meals: {
           included: {
             breakfast: true,
             lunch: false,
-            dinner: true
+            dinner: true,
           },
           preferences: {
             dietary: ["Child-Friendly", "Vegetarian Options"],
             mealTimes: {
               breakfast: "07:30",
-              dinner: "18:30"
-            }
-          }
-        }
+              dinner: "18:30",
+            },
+          },
+        },
       },
       isPublic: true,
-      tags: ["Family", "Beach", "Kid-Friendly"]
+      tags: ["Family", "Beach", "Kid-Friendly"],
     });
 
     // Create Booking
     const booking = await Booking.create({
       userId: user._id,
+      bookingType: "package",
       bookingReference: "BK1702600123XYZ",
-      bookingDate: "2024-12-15T01:29:00Z",
+      startDate: new Date("2024-12-20"),
+      endDate: new Date("2024-12-25"),
       status: "Confirmed",
+      contactInfo: {
+        name: "John Doe",
+        email: "john@example.com",
+        phone: "+12345678901"
+      },
       packageBooking: {
         packageId: travelPackage._id,
-        startDate: "2024-12-20",
         participants: [
           {
             type: "adult",
-            count: 2
+            count: 2,
           },
           {
             type: "child",
-            count: 2
-          }
+            count: 2,
+          },
         ],
         customizations: {
           hotelId: hotel._id,
-          roomIds: [hotel.rooms[0]._id],
-          activities: activities.map(a => a._id)
+          roomTypes: ["Deluxe Ocean View"],
+          activities: activities.map((a) => a._id),
         }
+      },
+      pricing: {
+        basePrice: 1200,
+        taxes: 120,
+        totalPrice: 1320,
+        currency: "USD"
       },
       itinerary: {
         currentDestination: "Phuket",
         progress: {
           completedActivities: [],
-          nextActivity: activities[0]._id
+          nextActivity: activities[0]._id,
         },
-        status: "NotStarted"
+        status: "NotStarted",
       },
       payment: {
         status: "Paid",
-        amount: 1560,
-        currency: "USD",
         breakdown: {
           basePrice: 1200,
           seasonalAdjustment: 360,
           taxes: 120,
-          fees: 80
+          fees: 80,
         },
         method: "Credit Card",
-        paidAt: "2024-12-15T01:29:00Z"
-      },
-      contact: {
-        name: "John Doe",
-        email: "john.doe@example.com",
-        phone: "+12345678901",
-        emergencyContact: {
-          name: "Jane Doe",
-          relationship: "Spouse",
-          phone: "+12345678902"
-        }
+        paidAt: "2024-12-15T01:29:00Z",
       },
       specialRequests: [
         "Early check-in requested",
-        "Child seats for airport transfer"
+        "Child seats for airport transfer",
       ],
       createdAt: "2024-12-15T01:29:00Z",
-      updatedAt: "2024-12-15T01:29:00Z"
+      updatedAt: "2024-12-15T01:29:00Z",
     });
 
     // Create Review
     const review = await Review.create({
       userId: user._id,
-      bookingId: booking._id,
-      packageId: travelPackage._id,
+      itemType: "package",
+      itemId: travelPackage._id,
       rating: 5,
       title: "Amazing family vacation!",
-      content: "Everything was perfect from start to finish...",
-      aspects: {
+      content: "Had a wonderful time with my family. The activities were perfect for kids and adults alike.",
+      ratings: {
         accommodation: 5,
         activities: 5,
         transportation: 4,
-        valueForMoney: 5
+        valueForMoney: 5,
       },
-      photos: [
-        "https://example.com/user-reviews/657b3e1f/1.jpg"
-      ],
+      photos: ["https://example.com/user-reviews/657b3e1f/1.jpg"],
       verified: true,
       createdAt: "2025-01-05T12:00:00Z",
-      helpfulVotes: 12
+      helpfulVotes: 12,
     });
 
-    console.log('Sample data seeded successfully!');
+    console.log("Sample data seeded successfully!");
     return {
       user,
       hotel,
@@ -505,10 +491,10 @@ export async function seedSampleData() {
       packageTemplate,
       booking,
       review,
-      destination
+      destination,
     };
   } catch (error) {
-    console.error('Error seeding data:', error);
+    console.error("Error seeding data:", error);
     throw error;
   }
 }

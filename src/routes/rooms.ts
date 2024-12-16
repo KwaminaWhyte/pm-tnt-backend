@@ -5,13 +5,7 @@ const roomController = new RoomController();
 
 const roomRoutes = new Elysia({ prefix: "/api/v1/rooms" })
 
-  .get("/", async ({ query, res }) => {
-    try {
-      await roomController.getRooms(query, res);
-    } catch (error) {
-      res.status(500).json({ message: "Error retrieving rooms", error });
-    }
-  }, {
+  .get("/", ({ query }) => roomController.getRooms(query), {
     query: t.Object({
       isAvailable: t.Optional(t.String()),
       priceRange: t.Optional(t.String()),
@@ -33,13 +27,33 @@ const roomRoutes = new Elysia({ prefix: "/api/v1/rooms" })
     },
   })
 
-  .post("/", async ({ body, res }) => {
-    try {
-      await roomController.createRoom(body, res);
-    } catch (error) {
-      res.status(500).json({ message: "Error creating room", error });
-    }
-  }, {
+  .get("/hotel/:hotelId", ({ params: { hotelId }, query }) => 
+    roomController.getRoomsByHotelId(hotelId, query), {
+    query: t.Object({
+      isAvailable: t.Optional(t.String()),
+      priceRange: t.Optional(t.String()),
+      roomType: t.Optional(t.String()),
+      capacity: t.Optional(t.String()),
+    }),
+    detail: {
+      summary: "Get rooms by hotel ID",
+      description: "Retrieve a list of rooms for a specific hotel with optional filtering",
+      tags: ["Rooms"],
+      responses: {
+        200: {
+          description: "List of hotel rooms retrieved successfully",
+        },
+        404: {
+          description: "Hotel not found",
+        },
+        500: {
+          description: "Error retrieving hotel rooms",
+        },
+      },
+    },
+  })
+
+  .post("/", ({ body }) => roomController.createRoom(body), {
     detail: {
       summary: "Create a new room",
       description: "Add a new room to the system",
