@@ -10,7 +10,7 @@ export default class RoomController {
     const filter: Record<string, any> = {};
 
     if (isAvailable !== undefined) {
-      filter.isAvailable = isAvailable === 'true';
+      filter.isAvailable = isAvailable === "true";
     }
 
     if (priceRange) {
@@ -45,21 +45,25 @@ export default class RoomController {
   async getRoomsByHotelId(hotelId: string, query: any) {
     const hotel = await Hotel.findById(hotelId);
     if (!hotel) {
-      throw new Error(JSON.stringify({
-        message: "Hotel not found",
-        errors: [{
-          type: "NotFoundError",
-          path: ["hotelId"],
-          message: "Hotel not found"
-        }]
-      }));
+      throw new Error(
+        JSON.stringify({
+          message: "Hotel not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["hotelId"],
+              message: "Hotel not found",
+            },
+          ],
+        })
+      );
     }
 
     const { isAvailable, priceRange, roomType, capacity } = query;
-    const filter: Record<string, any> = { hotelId };
+    const filter: Record<string, any> = { hotel: hotelId };
 
     if (isAvailable !== undefined) {
-      filter.isAvailable = isAvailable === 'true';
+      filter.isAvailable = isAvailable === "true";
     }
 
     if (priceRange) {
