@@ -675,7 +675,6 @@ export default class HotelController {
       const booking = new Booking({
         userId: bookingData.userId,
         bookingType: "hotel",
-        bookingReference: `HB${Date.now()}`,
         startDate: bookingData.checkIn,
         endDate: bookingData.checkOut,
         hotelBooking: {
@@ -699,11 +698,6 @@ export default class HotelController {
             ) *
             1.1, // Including tax
         },
-        // contactInfo: {
-        //   name: bookingData.contactName,
-        //   email: bookingData.contactEmail,
-        //   phone: bookingData.contactPhone,
-        // },
         status: "Confirmed",
       });
 
