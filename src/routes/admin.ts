@@ -5,7 +5,6 @@ import AdminController from "../controllers/AdminController";
 const adminController = new AdminController();
 
 const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
-  .use(jwtConfig)
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -70,13 +69,13 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
                     currentPage: t.Number(),
                     totalPages: t.Number(),
                     totalItems: t.Number(),
-                    itemsPerPage: t.Number()
-                  })
-                })
-              }
-            }
-          }
-        }
+                    itemsPerPage: t.Number(),
+                  }),
+                }),
+              },
+            },
+          },
+        },
       },
       query: t.Object({
         page: t.Optional(t.Number()),

@@ -66,42 +66,33 @@ app.onError(({ error, code }) => {
 
   if (code === "NOT_FOUND") return;
 
-  let errorResponse = {
-    status: "error",
-    statusCode: error.status || 500,
-    message: "An unexpected error occurred",
-    errors: []
-  };
+  let errorMessage;
 
   try {
-    // Handle JSON string error messages
-    if (typeof error.message === "string" && error.message.startsWith("{")) {
-      const parsedError = JSON.parse(error.message);
-      errorResponse.message = parsedError.message;
-      errorResponse.errors = parsedError.errors || [];
-    } 
-    // Handle standard Error objects
-    else if (error instanceof Error) {
-      errorResponse.message = error.message;
-      if ('errors' in error && Array.isArray(error.errors)) {
-        errorResponse.errors = error.errors;
-      }
-    }
-
-    // Add request ID for tracking (optional)
-    errorResponse.requestId = crypto.randomUUID();
-
-    return errorResponse;
+    // Attempt to parse the error if it's in JSON format and matches your error structure
+    const parsedError = JSON.parse(error.message);
+    errorMessage = {
+      message: parsedError.message || "Validation failed",
+      data: parsedError.errors
+        ? parsedError.errors.map((err) => ({
+            type: err.type,
+            schema: err.schema,
+            path: err.path,
+            value: err.value,
+            message: err.message,
+            summary: err.summary,
+          }))
+        : null,
+    };
   } catch (e) {
-    // Fallback for unparseable errors
-    return {
-      status: "error",
-      statusCode: 500,
-      message: error.message || "An unexpected error occurred",
-      requestId: crypto.randomUUID(),
-      errors: []
+    // Fallback in case parsing fails
+    errorMessage = {
+      message: error.message || "An unknown error occurred",
+      data: null,
     };
   }
+  console.log(errorMessage);
+  return errorMessage;
 });
 
 app.get("/", () => {

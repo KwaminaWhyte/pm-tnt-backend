@@ -123,6 +123,27 @@ export default class BookingController {
   }
 
   /**
+   * Get bookings for a specific user
+   */
+  public async getUserBookings(
+    userId: string,
+    params: BookingSearchParams
+  ): Promise<ApiResponse<{ bookings: BookingInterface[]; totalPages: number }>> {
+    // Temporarily set the userId for this request
+    const originalUserId = this.userId;
+    this.userId = userId;
+
+    try {
+      // Use the existing getBookings method
+      const result = await this.getBookings(params);
+      return result;
+    } finally {
+      // Restore the original userId
+      this.userId = originalUserId;
+    }
+  }
+
+  /**
    * Create a new booking
    */
   public async createBooking(
