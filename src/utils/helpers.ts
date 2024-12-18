@@ -21,27 +21,6 @@ export function createResponse<T>(
 }
 
 /**
- * Extract user ID from request object
- */
-export function getUserId(request: { userId?: string }): string {
-  if (!request.userId) {
-    throw new Error(
-      JSON.stringify({
-        message: "Unauthorized",
-        errors: [
-          {
-            type: "AuthError",
-            path: ["authorization"],
-            message: "User ID not found in request",
-          },
-        ],
-      })
-    );
-  }
-  return request.userId;
-}
-
-/**
  * Calculate date difference in days
  */
 export function calculateDateDifference(

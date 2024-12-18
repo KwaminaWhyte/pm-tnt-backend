@@ -103,7 +103,7 @@ export default class PaymentController {
   > {
     try {
       const userController = new UserController(this.request);
-      const userId = userController.getUserId();
+      // const userId = userController.getUserId();
 
       const skipCount = (page - 1) * limit;
       const searchFilter: Record<string, any> = { user: userId };

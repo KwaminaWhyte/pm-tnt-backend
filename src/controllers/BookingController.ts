@@ -1,5 +1,4 @@
-import { Request, error } from "elysia";
-import { getUserId } from "../utils/helpers";
+import { error } from "elysia";
 import { type ApiResponse } from "../utils/types";
 import Booking from "../models/Booking";
 import Hotel from "../models/Hotel";
@@ -14,25 +13,16 @@ import {
 import mongoose from "mongoose";
 
 export default class BookingController {
-  private request: Request;
-  private path: string;
-  private userId: string;
-
-  constructor(request: Request) {
-    const url = new URL(request.url);
-    const path = url.pathname + url.search;
-
-    this.request = request;
-    this.path = path;
-    this.userId = getUserId(request);
-  }
+  constructor() {}
 
   /**
    * Retrieve all bookings with pagination and filtering
    */
   public async getBookings(
-    params: BookingSearchParams
-  ): Promise<ApiResponse<{ bookings: BookingInterface[]; totalPages: number }>> {
+    params: BookingSearchParams & { userId?: string }
+  ): Promise<
+    ApiResponse<{ bookings: BookingInterface[]; totalPages: number }>
+  > {
     try {
       const {
         page = 1,
@@ -43,9 +33,14 @@ export default class BookingController {
         endDate,
         sortBy = "bookingDate",
         sortOrder = "desc",
+        userId,
       } = params;
 
-      const filter: Record<string, any> = { userId: this.userId };
+      const filter: Record<string, any> = {};
+
+      if (userId) {
+        filter.userId = userId;
+      }
 
       if (status) {
         filter.status = status;
@@ -94,16 +89,27 @@ export default class BookingController {
   /**
    * Get a single booking by ID
    */
-  public async getBookingById(bookingId: string): Promise<ApiResponse<BookingInterface>> {
+  public async getBookingById(
+    bookingId: string,
+    userId?: string
+  ): Promise<ApiResponse<BookingInterface>> {
     try {
-      const booking = await Booking.findOne({
-        _id: bookingId,
-        userId: this.userId,
-      })
+      const filter: Record<string, any> = { _id: bookingId };
+      if (userId) {
+        filter.userId = userId;
+      }
+
+      const booking = await Booking.findOne(filter)
         .populate("hotelBooking.hotelId", "name location rating images")
         .populate("hotelBooking.roomIds", "type amenities price")
-        .populate("vehicleBooking.vehicleId", "make model year images specifications")
-        .populate("packageBooking.packageId", "name description price inclusions")
+        .populate(
+          "vehicleBooking.vehicleId",
+          "make model year images specifications"
+        )
+        .populate(
+          "packageBooking.packageId",
+          "name description price inclusions"
+        )
         .populate("packageBooking.customizations.itemId");
 
       if (!booking) {
@@ -128,47 +134,40 @@ export default class BookingController {
   public async getUserBookings(
     userId: string,
     params: BookingSearchParams
-  ): Promise<ApiResponse<{ bookings: BookingInterface[]; totalPages: number }>> {
-    // Temporarily set the userId for this request
-    const originalUserId = this.userId;
-    this.userId = userId;
-
-    try {
-      // Use the existing getBookings method
-      const result = await this.getBookings(params);
-      return result;
-    } finally {
-      // Restore the original userId
-      this.userId = originalUserId;
-    }
+  ): Promise<
+    ApiResponse<{ bookings: BookingInterface[]; totalPages: number }>
+  > {
+    return this.getBookings({ ...params, userId });
   }
 
   /**
    * Create a new booking
    */
   public async createBooking(
-    bookingData: CreateBookingDTO
+    bookingData: CreateBookingDTO & { userId: string }
   ): Promise<ApiResponse<BookingInterface>> {
     try {
+      await this.validateAvailability(bookingData);
+
+      const totalAmount = await this.calculateTotalAmount(bookingData);
+      const bookingReference = this.generateBookingReference();
+
       const booking = new Booking({
-        ...bookingData,
-        userId: this.userId,
-        bookingReference: this.generateBookingReference(),
+        userId: bookingData.userId,
+        bookingReference,
         status: "Pending",
         payment: {
           status: "Pending",
-          amount: await this.calculateTotalAmount(bookingData),
+          amount: totalAmount,
           currency: "USD",
         },
+        ...bookingData,
       });
 
       // Validate availability before creating booking
-      await this.validateAvailability(bookingData);
+      await this.updateInventory(booking, "reserve");
 
       const savedBooking = await booking.save();
-
-      // Update inventory for the booked items
-      await this.updateInventory(savedBooking, "reserve");
 
       return {
         success: true,
@@ -187,13 +186,16 @@ export default class BookingController {
    */
   public async updateBooking(
     bookingId: string,
-    updateData: UpdateBookingDTO
+    updateData: UpdateBookingDTO,
+    userId?: string
   ): Promise<ApiResponse<BookingInterface>> {
     try {
-      const booking = await Booking.findOne({
-        _id: bookingId,
-        userId: this.userId,
-      });
+      const filter: Record<string, any> = { _id: bookingId };
+      if (userId) {
+        filter.userId = userId;
+      }
+
+      const booking = await Booking.findOne(filter);
 
       if (!booking) {
         return error(404, { message: "Booking not found" });
@@ -213,7 +215,10 @@ export default class BookingController {
       // Update inventory if items changed
       if (this.itemsChanged(booking, updateData)) {
         await this.updateInventory(booking, "release");
-        await this.updateInventory({ ...booking.toObject(), ...updateData }, "reserve");
+        await this.updateInventory(
+          { ...booking.toObject(), ...updateData },
+          "reserve"
+        );
       }
 
       const updatedBooking = await Booking.findByIdAndUpdate(
@@ -240,12 +245,17 @@ export default class BookingController {
   /**
    * Cancel a booking
    */
-  public async cancelBooking(bookingId: string): Promise<ApiResponse<BookingInterface>> {
+  public async cancelBooking(
+    bookingId: string,
+    userId?: string
+  ): Promise<ApiResponse<BookingInterface>> {
     try {
-      const booking = await Booking.findOne({
-        _id: bookingId,
-        userId: this.userId,
-      });
+      const filter: Record<string, any> = { _id: bookingId };
+      if (userId) {
+        filter.userId = userId;
+      }
+
+      const booking = await Booking.findOne(filter);
 
       if (!booking) {
         return error(404, { message: "Booking not found" });
@@ -292,23 +302,30 @@ export default class BookingController {
   public async updateItineraryProgress(
     bookingId: string,
     activityId: string,
-    status: "completed" | "upcoming"
+    status: "completed" | "upcoming",
+    userId?: string
   ): Promise<ApiResponse<BookingInterface>> {
     try {
-      const booking = await Booking.findOne({
-        _id: bookingId,
-        userId: this.userId,
-      });
+      const filter: Record<string, any> = { _id: bookingId };
+      if (userId) {
+        filter.userId = userId;
+      }
+
+      const booking = await Booking.findOne(filter);
 
       if (!booking) {
         return error(404, { message: "Booking not found" });
       }
 
       if (status === "completed") {
-        booking.itinerary.progress.completedActivities.push(new mongoose.Types.ObjectId(activityId));
-        const nextActivityIndex = booking.itinerary.progress.completedActivities.length;
+        booking.itinerary.progress.completedActivities.push(
+          new mongoose.Types.ObjectId(activityId)
+        );
+        const nextActivityIndex =
+          booking.itinerary.progress.completedActivities.length;
         if (booking.packageBooking?.customizations?.[nextActivityIndex]) {
-          booking.itinerary.progress.nextActivity = booking.packageBooking.customizations[nextActivityIndex].itemId;
+          booking.itinerary.progress.nextActivity =
+            booking.packageBooking.customizations[nextActivityIndex].itemId;
         }
       }
 
@@ -329,10 +346,15 @@ export default class BookingController {
   // Private helper methods
 
   private generateBookingReference(): string {
-    return `BK${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    return `BK${Date.now().toString(36).toUpperCase()}${Math.random()
+      .toString(36)
+      .substring(2, 7)
+      .toUpperCase()}`;
   }
 
-  private async calculateTotalAmount(bookingData: CreateBookingDTO): Promise<number> {
+  private async calculateTotalAmount(
+    bookingData: CreateBookingDTO
+  ): Promise<number> {
     let total = 0;
 
     if (bookingData.hotelBooking) {
@@ -344,7 +366,9 @@ export default class BookingController {
     }
 
     if (bookingData.vehicleBooking) {
-      const vehicle = await Vehicle.findById(bookingData.vehicleBooking.vehicleId);
+      const vehicle = await Vehicle.findById(
+        bookingData.vehicleBooking.vehicleId
+      );
       if (vehicle) {
         // Add vehicle rental costs
         total += vehicle.rentalPrice * bookingData.vehicleBooking.numberOfDays;
@@ -357,14 +381,18 @@ export default class BookingController {
         // Add package base price
         total += pkg.basePrice;
         // Add customization costs
-        total += this.calculateCustomizationsCost(bookingData.packageBooking.customizations);
+        total += this.calculateCustomizationsCost(
+          bookingData.packageBooking.customizations
+        );
       }
     }
 
     return total;
   }
 
-  private async validateAvailability(bookingData: CreateBookingDTO | UpdateBookingDTO): Promise<void> {
+  private async validateAvailability(
+    bookingData: CreateBookingDTO | UpdateBookingDTO
+  ): Promise<void> {
     if (bookingData.hotelBooking) {
       const isHotelAvailable = await this.checkHotelAvailability(
         bookingData.hotelBooking.hotelId,
@@ -372,7 +400,9 @@ export default class BookingController {
         bookingData.hotelBooking.checkOut
       );
       if (!isHotelAvailable) {
-        throw new Error("Selected hotel rooms are not available for the specified dates");
+        throw new Error(
+          "Selected hotel rooms are not available for the specified dates"
+        );
       }
     }
 
@@ -383,7 +413,9 @@ export default class BookingController {
         bookingData.vehicleBooking.returnDate
       );
       if (!isVehicleAvailable) {
-        throw new Error("Selected vehicle is not available for the specified dates");
+        throw new Error(
+          "Selected vehicle is not available for the specified dates"
+        );
       }
     }
 
@@ -394,7 +426,9 @@ export default class BookingController {
         bookingData.packageBooking.participants
       );
       if (!isPackageAvailable) {
-        throw new Error("Selected package is not available for the specified dates and participants");
+        throw new Error(
+          "Selected package is not available for the specified dates and participants"
+        );
       }
     }
   }
@@ -409,11 +443,14 @@ export default class BookingController {
     return !nonCancellableStatuses.includes(booking.status);
   }
 
-  private async calculateRefundAmount(booking: BookingInterface): Promise<number> {
+  private async calculateRefundAmount(
+    booking: BookingInterface
+  ): Promise<number> {
     const cancellationDate = new Date();
     const bookingStartDate = new Date(booking.bookingDate);
     const daysUntilBooking = Math.ceil(
-      (bookingStartDate.getTime() - cancellationDate.getTime()) / (1000 * 60 * 60 * 24)
+      (bookingStartDate.getTime() - cancellationDate.getTime()) /
+        (1000 * 60 * 60 * 24)
     );
 
     let refundPercentage = 0;
@@ -430,7 +467,10 @@ export default class BookingController {
     return (booking.payment.amount * refundPercentage) / 100;
   }
 
-  private async updateInventory(booking: BookingInterface, action: "reserve" | "release"): Promise<void> {
+  private async updateInventory(
+    booking: BookingInterface,
+    action: "reserve" | "release"
+  ): Promise<void> {
     if (booking.hotelBooking) {
       await this.updateHotelInventory(booking.hotelBooking, action);
     }
@@ -452,11 +492,19 @@ export default class BookingController {
     );
   }
 
-  private itemsChanged(oldBooking: BookingInterface, newData: UpdateBookingDTO): boolean {
+  private itemsChanged(
+    oldBooking: BookingInterface,
+    newData: UpdateBookingDTO
+  ): boolean {
     return !!(
-      (newData.hotelBooking && oldBooking.hotelBooking?.hotelId !== newData.hotelBooking.hotelId) ||
-      (newData.vehicleBooking && oldBooking.vehicleBooking?.vehicleId !== newData.vehicleBooking.vehicleId) ||
-      (newData.packageBooking && oldBooking.packageBooking?.packageId !== newData.packageBooking.packageId)
+      (newData.hotelBooking &&
+        oldBooking.hotelBooking?.hotelId !== newData.hotelBooking.hotelId) ||
+      (newData.vehicleBooking &&
+        oldBooking.vehicleBooking?.vehicleId !==
+          newData.vehicleBooking.vehicleId) ||
+      (newData.packageBooking &&
+        oldBooking.packageBooking?.packageId !==
+          newData.packageBooking.packageId)
     );
   }
 }

@@ -21,9 +21,12 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
         })
       );
     }
+    console.log(token);
 
     try {
       const data = await jwt_auth.verify(token);
+      console.log(data);
+
       return { userId: data?.id };
     } catch (error) {
       throw new Error(
@@ -42,9 +45,9 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
   })
   .get(
     "/",
-    async ({ request, query }) => {
-      const bookingController = new BookingController(request);
-      return bookingController.getBookings(query);
+    async ({ request, query, userId }) => {
+      const bookingController = new BookingController();
+      return bookingController.getBookings({ ...query, userId });
     },
     {
       detail: {
@@ -67,9 +70,9 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
   )
   .get(
     "/:id",
-    async ({ request, params: { id } }) => {
-      const bookingController = new BookingController(request);
-      return bookingController.getBookingById(id);
+    async ({ request, params: { id }, userId }) => {
+      const bookingController = new BookingController();
+      return bookingController.getBookingById(id, userId);
     },
     {
       detail: {
@@ -81,9 +84,9 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
   )
   .post(
     "/",
-    async ({ request, body }) => {
-      const bookingController = new BookingController(request);
-      return bookingController.createBooking(body);
+    async ({ request, body, userId }) => {
+      const bookingController = new BookingController();
+      return bookingController.createBooking({ ...body, userId });
     },
     {
       detail: {
@@ -174,9 +177,9 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
   )
   .put(
     "/:id",
-    async ({ request, params: { id }, body }) => {
-      const bookingController = new BookingController(request);
-      return bookingController.updateBooking(id, body);
+    async ({ request, params: { id }, body, userId }) => {
+      const bookingController = new BookingController();
+      return bookingController.updateBooking(id, body, userId);
     },
     {
       detail: {
@@ -236,9 +239,9 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
   )
   .post(
     "/:id/cancel",
-    async ({ request, params: { id } }) => {
-      const bookingController = new BookingController(request);
-      return bookingController.cancelBooking(id);
+    async ({ request, params: { id }, userId }) => {
+      const bookingController = new BookingController();
+      return bookingController.cancelBooking(id, userId);
     },
     {
       detail: {
@@ -251,12 +254,13 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
   )
   .post(
     "/:id/itinerary/progress",
-    async ({ request, params: { id }, body }) => {
-      const bookingController = new BookingController(request);
+    async ({ request, params: { id }, body, userId }) => {
+      const bookingController = new BookingController();
       return bookingController.updateItineraryProgress(
         id,
         body.activityId,
-        body.status
+        body.status,
+        userId
       );
     },
     {
@@ -275,7 +279,7 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
   .get(
     "/my-bookings",
     async ({ request, query, userId }) => {
-      const bookingController = new BookingController(request);
+      const bookingController = new BookingController();
       return bookingController.getUserBookings(userId, query);
     },
     {
