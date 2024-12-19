@@ -47,12 +47,12 @@ export default class BookingController {
         filter.status = status;
       }
 
-      if (paymentStatus) {
-        filter["payment.status"] = paymentStatus;
-      }
-
       if (bookingType) {
         filter.bookingType = bookingType;
+      }
+
+      if (paymentStatus) {
+        filter["payment.status"] = paymentStatus;
       }
 
       if (startDate || endDate) {
