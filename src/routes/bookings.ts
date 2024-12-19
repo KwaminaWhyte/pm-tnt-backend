@@ -299,13 +299,17 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
         endDate: t.Optional(t.String()),
         sortBy: t.Optional(t.String()),
         sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
-        bookingType: t.Optional(
-          t.Union([
-            t.Literal("hotel"),
-            t.Literal("vehicle"),
-            t.Literal("package"),
-          ])
-        ),
+        bookingType: t.String({
+          description: "Type of item to bookings",
+          enum: ["hotel", "vehicle", "package"],
+        }),
+        // bookingType: t.Optional(
+        //   t.Union([
+        //     t.Literal("hotel"),
+        //     t.Literal("vehicle"),
+        //     t.Literal("package"),
+        //   ])
+        // ),
       }),
     }
   );
