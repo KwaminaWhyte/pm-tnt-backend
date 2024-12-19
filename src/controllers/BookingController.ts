@@ -34,6 +34,7 @@ export default class BookingController {
         sortBy = "bookingDate",
         sortOrder = "desc",
         userId,
+        bookingType,
       } = params;
 
       const filter: Record<string, any> = {};
@@ -48,6 +49,10 @@ export default class BookingController {
 
       if (paymentStatus) {
         filter["payment.status"] = paymentStatus;
+      }
+
+      if (bookingType) {
+        filter.bookingType = bookingType;
       }
 
       if (startDate || endDate) {
