@@ -67,9 +67,9 @@ export default class BookingController {
         .sort(sort)
         .skip((page - 1) * limit)
         .limit(limit)
-        .populate("hotelBooking.hotelId", "name location rating")
-        .populate("vehicleBooking.vehicleId", "make model year")
-        .populate("packageBooking.packageId", "name description price");
+        .populate("hotelBooking.hotelId")
+        .populate("vehicleBooking.vehicleId")
+        .populate("packageBooking.packageId");
 
       return {
         success: true,
