@@ -5,7 +5,7 @@ import {
   VehicleRatingDTO,
 } from "../utils/types";
 import Vehicle from "../models/Vehicle";
-import { error } from 'elysia';
+import { error } from "elysia";
 
 export default class VehicleController {
   /**
@@ -37,6 +37,8 @@ export default class VehicleController {
     sortBy?: "pricePerDay" | "capacity" | "rating";
     sortOrder?: "asc" | "desc";
   }) {
+    console.log("getting vehicles");
+
     try {
       if (page < 1 || limit < 1) {
         return error(400, {
@@ -126,8 +128,8 @@ export default class VehicleController {
           currentPage: page,
           totalPages,
           totalItems: totalCount,
-          itemsPerPage: limit
-        }
+          itemsPerPage: limit,
+        },
       };
     } catch (err) {
       if (err instanceof Error && err.message.includes("status")) {
@@ -140,9 +142,7 @@ export default class VehicleController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -182,9 +182,7 @@ export default class VehicleController {
             type: "ServerError",
             path: ["id"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -224,9 +222,7 @@ export default class VehicleController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -291,9 +287,7 @@ export default class VehicleController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -335,9 +329,7 @@ export default class VehicleController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -405,9 +397,7 @@ export default class VehicleController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -512,9 +502,7 @@ export default class VehicleController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -588,9 +576,7 @@ export default class VehicleController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });

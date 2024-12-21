@@ -29,6 +29,8 @@ export default class HotelController {
     sortBy?: "pricePerNight" | "capacity" | "rating";
     sortOrder?: "asc" | "desc";
   }) {
+    console.log("getting hotels");
+
     try {
       if (page < 1 || limit < 1) {
         return error(404, {
@@ -672,9 +674,11 @@ export default class HotelController {
       const user = await User.findById(bookingData.userId);
 
       // Generate booking reference
-      const prefix = 'H'; // H for hotel
+      const prefix = "H"; // H for hotel
       const date = new Date().toISOString().slice(2, 8).replace(/-/g, ""); // YYMMDD
-      const random = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
+      const random = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, "0");
       const bookingReference = `${prefix}${date}${random}`;
 
       // Create booking (assuming we have a Booking model)
