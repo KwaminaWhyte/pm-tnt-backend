@@ -1,6 +1,6 @@
 import { type Model, Schema } from "mongoose";
-import mongoose from "~/utils/mongoose";
-import { AmenityInterface } from "~/utils/types";
+import mongoose from "../mongoose";
+import { AmenityInterface } from "../utils/types";
 
 const schema = new Schema<AmenityInterface>(
   {

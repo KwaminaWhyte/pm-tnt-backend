@@ -1,5 +1,5 @@
 import { Schema } from "mongoose";
-import mongoose from "../mongoose";
+import mongoose from "~/mongoose";
 const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
 
 const schema = new Schema<ApplicationInterface>(
