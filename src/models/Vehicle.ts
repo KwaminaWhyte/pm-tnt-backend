@@ -169,8 +169,6 @@ schema.index({
 });
 schema.index({ pricePerDay: 1 });
 schema.index({ capacity: 1 });
-schema.index({ "details.licensePlate": 1 });
-schema.index({ "details.vin": 1 });
 
 // Virtuals
 schema.virtual("averageRating").get(function () {
