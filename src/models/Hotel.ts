@@ -1,5 +1,4 @@
-import { type Model, Schema } from "mongoose";
-import mongoose from "../mongoose";
+import mongoose, { type Model, Schema } from "mongoose";
 import { HotelInterface } from "../utils/types";
 
 const locationSchema = new Schema(

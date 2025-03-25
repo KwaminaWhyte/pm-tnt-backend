@@ -1,6 +1,7 @@
 import cors from "@elysiajs/cors";
 import swagger from "@elysiajs/swagger";
 import { Elysia } from "elysia";
+import mongoose from "mongoose";
 
 import { jwtConfig } from "./utils/jwt.config";
 import userAuthRoutes from "./routes/user-auth";
@@ -17,6 +18,12 @@ import destinationRoutes from "./routes/destinations";
 import favoritesRoutes from "./routes/favorites";
 import bookingRoutes from "./routes/bookings";
 
+// Connect to MongoDB
+mongoose
+  .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/pm-tnt")
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB connection error:", err));
+
 const app = new Elysia()
   .use(
     cors({
@@ -26,6 +33,13 @@ const app = new Elysia()
       credentials: false,
     })
   )
+  // Add request logging
+  .onRequest(({ request }) => {
+    const timestamp = new Date().toISOString();
+    const method = request.method;
+    const url = request.url;
+    console.log(`[${timestamp}] ${method} ${url}`);
+  })
   .use(
     swagger({
       documentation: {

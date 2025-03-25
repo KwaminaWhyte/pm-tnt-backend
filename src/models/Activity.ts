@@ -1,5 +1,4 @@
-import { Schema } from "mongoose";
-import mongoose from "~/mongoose";
+import mongoose, { Schema } from "mongoose";
 
 export interface ActivityInterface {
   name: string;

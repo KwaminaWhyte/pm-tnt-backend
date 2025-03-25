@@ -1,5 +1,4 @@
-import { Schema } from "mongoose";
-import mongoose from "../mongoose";
+import mongoose, { Schema } from "mongoose";
 
 export interface PackageTemplateInterface {
   userId: Schema.Types.ObjectId;
@@ -133,14 +132,16 @@ const packageTemplateSchema = new Schema<PackageTemplateInterface>(
         included: [{ type: Schema.Types.ObjectId, ref: "activities" }],
         excluded: [{ type: Schema.Types.ObjectId, ref: "activities" }],
         preferences: {
-          type: [{
-            difficulty: { type: [String], default: [] },
-            duration: { type: [String], default: [] },
-            type: { type: [String], default: [] },
-            timeOfDay: { type: [String], default: [] }
-          }],
-          default: []
-        }
+          type: [
+            {
+              difficulty: { type: [String], default: [] },
+              duration: { type: [String], default: [] },
+              type: { type: [String], default: [] },
+              timeOfDay: { type: [String], default: [] },
+            },
+          ],
+          default: [],
+        },
       },
       meals: {
         included: {

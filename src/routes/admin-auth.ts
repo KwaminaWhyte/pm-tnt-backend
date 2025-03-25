@@ -5,7 +5,7 @@ import AdminController from "../controllers/AdminController";
 const controller = new AdminController();
 
 const adminAuthRoutes = new Elysia({ prefix: "/api/v1/admin-auth" }).post(
-  "/login/email",
+  "/login",
   async ({ body, jwt_auth }) => await controller.login(body, jwt_auth),
   {
     body: t.Object({

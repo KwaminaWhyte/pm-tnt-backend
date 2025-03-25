@@ -1,10 +1,9 @@
-import { Schema } from "mongoose";
-import mongoose from "../mongoose";
+import mongoose, { Schema } from "mongoose";
 
 export interface ReviewInterface {
   userId: Schema.Types.ObjectId;
   itemId: Schema.Types.ObjectId;
-  itemType: 'hotel' | 'destination' | 'package' | 'vehicle';
+  itemType: "hotel" | "destination" | "package" | "vehicle";
   rating: number;
   title?: string;
   comment?: string;
@@ -17,55 +16,59 @@ export interface ReviewInterface {
     respondedAt: Date;
     respondedBy: Schema.Types.ObjectId;
   };
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   createdAt: Date;
   updatedAt: Date;
 }
 
 const reviewSchema = new Schema<ReviewInterface>(
   {
-    userId: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'users', 
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "users",
       required: true,
-      index: true
+      index: true,
     },
-    itemId: { 
-      type: Schema.Types.ObjectId, 
+    itemId: {
+      type: Schema.Types.ObjectId,
       required: true,
-      index: true
+      index: true,
     },
-    itemType: { 
-      type: String, 
-      enum: ['hotel', 'destination', 'package', 'vehicle'],
+    itemType: {
+      type: String,
+      enum: ["hotel", "destination", "package", "vehicle"],
       required: true,
-      index: true
+      index: true,
     },
-    rating: { 
-      type: Number, 
-      required: true, 
-      min: 1, 
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
       max: 5,
-      index: true
+      index: true,
     },
     title: String,
     comment: String,
-    images: [{
-      type: String,
-      validate: {
-        validator: function(v: string) {
-          return /^https?:\/\/.+/.test(v);
+    images: [
+      {
+        type: String,
+        validate: {
+          validator: function (v: string) {
+            return /^https?:\/\/.+/.test(v);
+          },
+          message: "Image URL must be a valid URL",
         },
-        message: "Image URL must be a valid URL"
-      }
-    }],
-    helpful: [{ 
-      type: Schema.Types.ObjectId, 
-      ref: 'users'
-    }],
+      },
+    ],
+    helpful: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "users",
+      },
+    ],
     verified: {
       type: Boolean,
-      default: false
+      default: false,
     },
     visitDate: Date,
     response: {
@@ -73,18 +76,18 @@ const reviewSchema = new Schema<ReviewInterface>(
       respondedAt: Date,
       respondedBy: {
         type: Schema.Types.ObjectId,
-        ref: 'users'
-      }
+        ref: "users",
+      },
     },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending',
-      index: true
-    }
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+      index: true,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
@@ -94,19 +97,22 @@ reviewSchema.index({ userId: 1, createdAt: -1 });
 reviewSchema.index({ status: 1, createdAt: -1 });
 
 // Create text index for search
-reviewSchema.index({ 
-  title: 'text', 
-  comment: 'text' 
-}, {
-  weights: {
-    title: 10,
-    comment: 5
+reviewSchema.index(
+  {
+    title: "text",
+    comment: "text",
+  },
+  {
+    weights: {
+      title: 10,
+      comment: 5,
+    },
   }
-});
+);
 
 // Add validation to ensure itemId exists in the referenced collection
-reviewSchema.pre('save', async function(next) {
-  const Model = mongoose.model(this.itemType + 's');
+reviewSchema.pre("save", async function (next) {
+  const Model = mongoose.model(this.itemType + "s");
   const item = await Model.findById(this.itemId);
   if (!item) {
     throw new Error(`${this.itemType} with id ${this.itemId} does not exist`);
@@ -116,9 +122,9 @@ reviewSchema.pre('save', async function(next) {
 
 let Review;
 try {
-  Review = mongoose.model('reviews');
+  Review = mongoose.model("reviews");
 } catch (error) {
-  Review = mongoose.model('reviews', reviewSchema);
+  Review = mongoose.model("reviews", reviewSchema);
 }
 
 export default Review;
