@@ -1,50 +1,16 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../utils/jwt.config";
 import AdminController from "../controllers/AdminController";
+import { requireAdmin, requireSuperAdmin } from "../middleware/auth";
 
 const adminController = new AdminController();
 
 const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
-  .derive(async ({ headers, jwt_auth }) => {
-    const auth = headers["authorization"];
-    const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
-
-    if (!token) {
-      throw new Error(
-        JSON.stringify({
-          message: "Unauthorized",
-          errors: [
-            {
-              type: "AuthError",
-              path: ["authorization"],
-              message: "Token is missing",
-            },
-          ],
-        })
-      );
-    }
-
-    try {
-      const data = await jwt_auth.verify(token);
-      return { userId: data?.id };
-    } catch (error) {
-      throw new Error(
-        JSON.stringify({
-          message: "Unauthorized",
-          errors: [
-            {
-              type: "AuthError",
-              path: ["authorization"],
-              message: "Invalid or expired token",
-            },
-          ],
-        })
-      );
-    }
-  })
+  .derive(requireAdmin)
   .guard({
     detail: {
-      description: "Require user to be logged in",
+      description: "Require admin privileges",
+      tags: ["Admins"],
+      security: [{ bearerAuth: [] }],
     },
   })
   .get(
@@ -54,9 +20,13 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
       return adminController.getAdmins({ page, limit, searchTerm });
     },
     {
+      query: t.Object({
+        page: t.Optional(t.Number()),
+        limit: t.Optional(t.Number()),
+        searchTerm: t.Optional(t.String()),
+      }),
       detail: {
         summary: "List all admins",
-        tags: ["Admins"],
         responses: {
           200: {
             description: "List of admins with pagination",
@@ -77,23 +47,16 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
           },
         },
       },
-      query: t.Object({
-        page: t.Optional(t.Number()),
-        limit: t.Optional(t.Number()),
-        searchTerm: t.Optional(t.String()),
-      }),
     }
   )
   .get("/me", async ({ userId }) => await adminController.getAdmin(userId), {
     detail: {
       summary: "Get current admin profile",
-      tags: ["Admins"],
     },
   })
   .get("/:id", async ({ params: { id } }) => adminController.getAdmin(id), {
     detail: {
       summary: "Get admin details",
-      tags: ["Admins"],
     },
     params: t.Object({
       id: t.String(),
@@ -102,8 +65,8 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
   .post("/", async ({ body }) => adminController.createAdmin(body), {
     detail: {
       summary: "Create a new admin",
-      tags: ["Admins"],
     },
+    beforeHandle: [requireSuperAdmin],
     body: t.Object({
       fullName: t.String(),
       email: t.String(),

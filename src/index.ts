@@ -27,10 +27,14 @@ mongoose
 const app = new Elysia()
   .use(
     cors({
-      origin: "*",
-      methods: "*",
+      origin:
+        process.env.NODE_ENV === "production"
+          ? ["https://pm-tnt.com", "https://admin.pm-tnt.com"]
+          : ["http://localhost:3000", "http://localhost:3001"],
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],
-      credentials: false,
+      credentials: true,
+      maxAge: 86400, // 24 hours
     })
   )
   // Add request logging
