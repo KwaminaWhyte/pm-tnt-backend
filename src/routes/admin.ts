@@ -14,7 +14,7 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
     },
   })
   .get(
-    "/",
+    "",
     async ({ query }) => {
       const { page, limit, searchTerm } = query;
       return adminController.getAdmins({ page, limit, searchTerm });
