@@ -80,7 +80,6 @@ export default class RoomController {
     }
 
     const rooms = await Room.find(filter);
-    console.log({ filter, rooms });
     return rooms;
   }
 }

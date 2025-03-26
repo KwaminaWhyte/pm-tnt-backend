@@ -21,11 +21,9 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
         })
       );
     }
-    console.log(token);
 
     try {
       const data = await jwt_auth.verify(token);
-      console.log(data);
 
       return { userId: data?.id };
     } catch (error) {

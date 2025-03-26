@@ -133,8 +133,6 @@ export default class UserController {
    * @throws {Error} 500 - SMS service error
    */
   async requestOTP(phone: string) {
-    console.log(phone);
-
     if (!phone) {
       return error(404, {
         message: "Invalid input data",
@@ -773,7 +771,6 @@ export default class UserController {
    */
   async updateUser(id: string, updateData: UpdateUserDTO) {
     const user = await User.findById(id);
-    console.log(user);
 
     if (!user) {
       throw new Error(

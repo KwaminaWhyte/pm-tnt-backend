@@ -37,8 +37,6 @@ export default class VehicleController {
     sortBy?: "pricePerDay" | "capacity" | "rating";
     sortOrder?: "asc" | "desc";
   }) {
-    console.log("getting vehicles");
-
     try {
       if (page < 1 || limit < 1) {
         return error(400, {

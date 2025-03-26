@@ -29,8 +29,6 @@ export default class HotelController {
     sortBy?: "pricePerNight" | "capacity" | "rating";
     sortOrder?: "asc" | "desc";
   }) {
-    console.log("getting hotels");
-
     try {
       if (page < 1 || limit < 1) {
         return error(404, {

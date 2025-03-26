@@ -109,7 +109,6 @@ app.onError(({ error, code }) => {
       data: null,
     };
   }
-  console.log(errorMessage);
   return errorMessage;
 });
 
