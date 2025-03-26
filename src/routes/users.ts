@@ -265,6 +265,26 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
         },
       },
     }
+  )
+
+  .put(
+    "/:id",
+    async ({ params: { id }, body }) => userController.updateUser(id, body),
+    {
+      detail: {
+        summary: "Update an user",
+        tags: ["Users"],
+      },
+      params: t.Object({
+        id: t.String(),
+      }),
+      body: t.Object({
+        fullName: t.Optional(t.String()),
+        email: t.Optional(t.String()),
+        phone: t.Optional(t.String()),
+        status: t.Optional(t.String()),
+      }),
+    }
   );
 
 export default userRoutes;

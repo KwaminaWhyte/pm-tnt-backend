@@ -49,11 +49,7 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
       },
     }
   )
-  .get("/me", async ({ userId }) => await adminController.getAdmin(userId), {
-    detail: {
-      summary: "Get current admin profile",
-    },
-  })
+
   .get("/:id", async ({ params: { id } }) => adminController.getAdmin(id), {
     detail: {
       summary: "Get admin details",
@@ -74,6 +70,7 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
       role: t.Optional(t.Union([t.Literal("admin"), t.Literal("super_admin")])),
     }),
   })
+
   .put(
     "/:id",
     async ({ params: { id }, body }) => adminController.updateAdmin(id, body),

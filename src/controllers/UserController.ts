@@ -765,4 +765,67 @@ export default class UserController {
       );
     }
   }
+
+  /**
+   * Update user profile
+   * @throws {Error} 404 - User not found
+   * @throws {Error} 400 - Validation error or duplicate data
+   */
+  async updateUser(id: string, updateData: UpdateUserDTO) {
+    const user = await User.findById(id);
+    console.log(user);
+
+    if (!user) {
+      throw new Error(
+        JSON.stringify({
+          message: "User not found",
+        })
+      );
+    }
+
+    const errors = [];
+
+    if (updateData.phone && updateData.phone !== user.phone) {
+      const phoneExists = await User.findOne({
+        phone: updateData.phone,
+        _id: { $ne: id },
+      });
+      if (phoneExists) {
+        errors.push({
+          type: "DuplicateError",
+          path: ["phone"],
+          message: "Phone number already in use",
+        });
+      }
+    }
+
+    if (updateData.email && updateData.email !== user.email) {
+      const emailExists = await User.findOne({
+        email: updateData.email,
+        _id: { $ne: id },
+      });
+      if (emailExists) {
+        errors.push({
+          type: "DuplicateError",
+          path: ["email"],
+          message: "Email already in use",
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new Error(JSON.stringify({ message: "Validation failed", errors }));
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { ...updateData, updatedAt: new Date() },
+      { new: true }
+    ).select("-password -otp");
+
+    return {
+      message: "User updated successfully",
+      user: updatedUser,
+    };
+  }
 }
