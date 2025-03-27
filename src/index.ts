@@ -17,6 +17,7 @@ import packageRoutes from "./routes/packages";
 import destinationRoutes from "./routes/destinations";
 import favoritesRoutes from "./routes/favorites";
 import bookingRoutes from "./routes/bookings";
+import settingsRoutes from "./routes/settings";
 
 // Connect to MongoDB
 mongoose
@@ -77,7 +78,8 @@ const app = new Elysia()
   .use(packageRoutes)
   .use(bookingRoutes)
   .use(favoritesRoutes)
-  .use(destinationRoutes);
+  .use(destinationRoutes)
+  .use(settingsRoutes);
 
 app.onError(({ error, code }) => {
   console.log(error, code);
@@ -123,6 +125,7 @@ app.get("/", () => {
       users: "/api/v1/users",
       vehicles: "/api/v1/vehicles",
       admin: "/api/v1/admins",
+      settings: "/api/v1/settings",
     },
   };
 });
