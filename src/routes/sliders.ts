@@ -7,7 +7,7 @@ import {
   deleteSlider,
   getSliderById,
 } from "../controllers/slider";
-import { isAuthenticated, isAdmin } from "../middlewares/auth";
+import { jwtConfig } from "../utils/jwt.config";
 
 const sliderRoutes = new Elysia({ prefix: "/api/v1/sliders" })
   // Public routes
@@ -16,20 +16,166 @@ const sliderRoutes = new Elysia({ prefix: "/api/v1/sliders" })
   })
 
   // Admin routes (protected)
-  .get("/admin", isAuthenticated, isAdmin, async () => {
-    return await getAllSliders();
+  .use(jwtConfig)
+  .get("/admin", async ({ headers, jwt_auth }) => {
+    // Verify token
+    const auth = headers["authorization"];
+    const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+    if (!token) {
+      throw new Error(
+        JSON.stringify({
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Token is missing",
+            },
+          ],
+        })
+      );
+    }
+
+    try {
+      const data = await jwt_auth.verify(token);
+      if (!data.isAdmin) {
+        throw new Error(
+          JSON.stringify({
+            message: "Forbidden",
+            errors: [
+              {
+                type: "AuthError",
+                path: ["authorization"],
+                message: "Admin privileges required",
+              },
+            ],
+          })
+        );
+      }
+      return await getAllSliders();
+    } catch (error) {
+      throw new Error(
+        JSON.stringify({
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Invalid or expired token",
+            },
+          ],
+        })
+      );
+    }
   })
 
-  .get("/:id", isAuthenticated, isAdmin, async ({ params: { id } }) => {
-    return await getSliderById(id);
+  .get("/:id", async ({ headers, jwt_auth, params }) => {
+    // Verify token
+    const auth = headers["authorization"];
+    const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+    if (!token) {
+      throw new Error(
+        JSON.stringify({
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Token is missing",
+            },
+          ],
+        })
+      );
+    }
+
+    try {
+      const data = await jwt_auth.verify(token);
+      if (!data.isAdmin) {
+        throw new Error(
+          JSON.stringify({
+            message: "Forbidden",
+            errors: [
+              {
+                type: "AuthError",
+                path: ["authorization"],
+                message: "Admin privileges required",
+              },
+            ],
+          })
+        );
+      }
+      return await getSliderById(params.id);
+    } catch (error) {
+      throw new Error(
+        JSON.stringify({
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Invalid or expired token",
+            },
+          ],
+        })
+      );
+    }
   })
 
   .post(
     "/",
-    isAuthenticated,
-    isAdmin,
-    async ({ body }) => {
-      return await createSlider(body);
+    async ({ headers, jwt_auth, body }) => {
+      // Verify token
+      const auth = headers["authorization"];
+      const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+      if (!token) {
+        throw new Error(
+          JSON.stringify({
+            message: "Unauthorized",
+            errors: [
+              {
+                type: "AuthError",
+                path: ["authorization"],
+                message: "Token is missing",
+              },
+            ],
+          })
+        );
+      }
+
+      try {
+        const data = await jwt_auth.verify(token);
+        if (!data.isAdmin) {
+          throw new Error(
+            JSON.stringify({
+              message: "Forbidden",
+              errors: [
+                {
+                  type: "AuthError",
+                  path: ["authorization"],
+                  message: "Admin privileges required",
+                },
+              ],
+            })
+          );
+        }
+        return await createSlider(body);
+      } catch (error) {
+        throw new Error(
+          JSON.stringify({
+            message: "Unauthorized",
+            errors: [
+              {
+                type: "AuthError",
+                path: ["authorization"],
+                message: "Invalid or expired token",
+              },
+            ],
+          })
+        );
+      }
     },
     {
       body: t.Object({
@@ -46,10 +192,57 @@ const sliderRoutes = new Elysia({ prefix: "/api/v1/sliders" })
 
   .put(
     "/:id",
-    isAuthenticated,
-    isAdmin,
-    async ({ params: { id }, body }) => {
-      return await updateSlider(id, body);
+    async ({ headers, jwt_auth, params, body }) => {
+      // Verify token
+      const auth = headers["authorization"];
+      const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+      if (!token) {
+        throw new Error(
+          JSON.stringify({
+            message: "Unauthorized",
+            errors: [
+              {
+                type: "AuthError",
+                path: ["authorization"],
+                message: "Token is missing",
+              },
+            ],
+          })
+        );
+      }
+
+      try {
+        const data = await jwt_auth.verify(token);
+        if (!data.isAdmin) {
+          throw new Error(
+            JSON.stringify({
+              message: "Forbidden",
+              errors: [
+                {
+                  type: "AuthError",
+                  path: ["authorization"],
+                  message: "Admin privileges required",
+                },
+              ],
+            })
+          );
+        }
+        return await updateSlider(params.id, body);
+      } catch (error) {
+        throw new Error(
+          JSON.stringify({
+            message: "Unauthorized",
+            errors: [
+              {
+                type: "AuthError",
+                path: ["authorization"],
+                message: "Invalid or expired token",
+              },
+            ],
+          })
+        );
+      }
     },
     {
       body: t.Object({
@@ -64,8 +257,57 @@ const sliderRoutes = new Elysia({ prefix: "/api/v1/sliders" })
     }
   )
 
-  .delete("/:id", isAuthenticated, isAdmin, async ({ params: { id } }) => {
-    return await deleteSlider(id);
+  .delete("/:id", async ({ headers, jwt_auth, params }) => {
+    // Verify token
+    const auth = headers["authorization"];
+    const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+    if (!token) {
+      throw new Error(
+        JSON.stringify({
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Token is missing",
+            },
+          ],
+        })
+      );
+    }
+
+    try {
+      const data = await jwt_auth.verify(token);
+      if (!data.isAdmin) {
+        throw new Error(
+          JSON.stringify({
+            message: "Forbidden",
+            errors: [
+              {
+                type: "AuthError",
+                path: ["authorization"],
+                message: "Admin privileges required",
+              },
+            ],
+          })
+        );
+      }
+      return await deleteSlider(params.id);
+    } catch (error) {
+      throw new Error(
+        JSON.stringify({
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Invalid or expired token",
+            },
+          ],
+        })
+      );
+    }
   });
 
 export default sliderRoutes;
