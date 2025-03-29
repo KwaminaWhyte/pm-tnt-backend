@@ -520,4 +520,78 @@ export default class BookingController {
           newData.packageBooking.packageId)
     );
   }
+
+  /**
+   * Check if a package is available for the specified dates and participants
+   */
+  private async checkPackageAvailability(
+    packageId: string,
+    startDate: string,
+    participants: Array<{ type: string; count: number }>
+  ): Promise<boolean> {
+    try {
+      // Get the package from the database
+      // const PackageModel = require("../models/Package").default;
+      const pkg = await Package.findById(packageId);
+
+      if (!pkg) {
+        return false;
+      }
+
+      // Check if the package is active
+      if (!pkg.isActive) {
+        return false;
+      }
+
+      // Check if the package is available for the specified dates
+      const bookingStartDate = new Date(startDate);
+
+      // Check if the package has availability constraints
+      if (
+        pkg.availability &&
+        pkg.availability.startDate &&
+        pkg.availability.endDate
+      ) {
+        const packageStartDate = new Date(pkg.availability.startDate);
+        const packageEndDate = new Date(pkg.availability.endDate);
+
+        if (
+          bookingStartDate < packageStartDate ||
+          bookingStartDate > packageEndDate
+        ) {
+          return false;
+        }
+      }
+
+      // Check max participants if specified
+      if (pkg.maxParticipants) {
+        const totalParticipants = participants.reduce((total, participant) => {
+          return total + participant.count;
+        }, 0);
+
+        if (totalParticipants > pkg.maxParticipants) {
+          return false;
+        }
+      }
+
+      // Check if there are any conflicting bookings for this package
+      const BookingModel = require("../models/Booking").default;
+      const conflictingBookings = await BookingModel.countDocuments({
+        "packageBooking.packageId": packageId,
+        status: { $in: ["Pending", "Confirmed"] },
+        // For simplicity, just check if the exact same date is booked
+        "packageBooking.startDate": startDate,
+      });
+
+      // If the package has limited spots and they're all taken
+      if (pkg.spotsPerDay && conflictingBookings >= pkg.spotsPerDay) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error checking package availability:", error);
+      return false;
+    }
+  }
 }

@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Model, Schema } from "mongoose";
 
 export interface PackageInterface {
   name: string;
@@ -315,7 +315,7 @@ packageSchema.index({ "destinations.destinationId": 1 });
 packageSchema.index({ price: 1, "duration.days": 1 });
 packageSchema.index({ status: 1, "seasonalPricing.startDate": 1 });
 
-let Package;
+let Package: Model<PackageInterface>;
 try {
   Package = mongoose.model("packages");
 } catch (error) {
