@@ -186,6 +186,7 @@ export default class BookingController {
         data: savedBooking,
       };
     } catch (err) {
+      console.log(err);
       return error(500, {
         message: "Error creating booking",
         error: err,
