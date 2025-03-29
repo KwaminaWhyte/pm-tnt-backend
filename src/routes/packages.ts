@@ -640,6 +640,7 @@ const templateRoutes = new Elysia()
         basePackageId: t.String(),
         customizations: t.Any(),
         isPublic: t.Optional(t.Boolean()),
+        tags: t.Optional(t.Array(t.String())),
       }),
     }
   )
@@ -667,6 +668,7 @@ const templateRoutes = new Elysia()
         description: t.Optional(t.String()),
         customizations: t.Optional(t.Any()),
         isPublic: t.Optional(t.Boolean()),
+        tags: t.Optional(t.Array(t.String())),
       }),
     }
   )
