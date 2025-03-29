@@ -44,7 +44,14 @@ export default class BookingController {
       }
 
       if (status) {
-        filter.status = status;
+        if (status.includes(",")) {
+          // Handle multiple statuses
+          const statusArray = status.split(",").map((s) => s.trim());
+          filter.status = { $in: statusArray };
+        } else {
+          // Handle single status
+          filter.status = status;
+        }
       }
 
       if (bookingType && bookingType !== "all") {

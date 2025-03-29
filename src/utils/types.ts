@@ -416,7 +416,7 @@ interface BookingSearchParams {
   limit?: number;
   startDate?: Date;
   endDate?: Date;
-  status?: "Pending" | "Confirmed" | "Cancelled";
+  status?: string;
   paymentStatus?: "Paid" | "Partially Paid" | "Unpaid" | "Refunded";
   serviceType?: "hotel" | "vehicle" | "package";
   bookingType?: "hotel" | "vehicle" | "package" | "all" | string;
@@ -472,5 +472,4 @@ export {
   UpdateBookingDTO,
   BookingSearchParams,
   BookingPricingResponse,
-  ApiResponse,
 };
