@@ -282,6 +282,13 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
       // Create package booking data in the expected format
       const bookingData = {
         userId: String(userId),
+        startDate: body.startDate,
+        endDate: new Date(
+          new Date(body.startDate).getTime() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(), // Add 7 days by default
+        bookingDetails: {
+          specialRequests: body.specialRequests,
+        },
         packageBooking: {
           packageId: body.packageId,
           startDate: body.startDate,
@@ -330,11 +337,11 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
         }
 
         return result;
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error booking package:", error);
         return {
           success: false,
-          message: error.message || "Failed to book package",
+          message: error?.message || "Failed to book package",
           error,
         };
       }
