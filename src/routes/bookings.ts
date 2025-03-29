@@ -281,7 +281,7 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
 
       // Create package booking data in the expected format
       const bookingData = {
-        userId,
+        userId: String(userId),
         packageBooking: {
           packageId: body.packageId,
           startDate: body.startDate,
@@ -294,31 +294,50 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
         },
       };
 
-      const result = await bookingController.createBooking(bookingData);
+      try {
+        const result = await bookingController.createBooking(bookingData);
 
-      // If booking was successful, create a notification
-      if (result.success && result.data) {
-        try {
-          const NotificationController =
-            require("../controllers/NotificationController").default;
-          const notificationController = new NotificationController();
+        // If booking was successful, create a notification
+        if (result.success && result.data) {
+          try {
+            const NotificationController =
+              require("../controllers/NotificationController").default;
+            const notificationController = new NotificationController();
 
-          // Find package name from booking data
-          const packageName =
-            result.data.packageBooking?.packageId?.name || "Package";
+            // Get package name or use a default
+            let packageName = "Package";
+            if (
+              result.data.packageBooking &&
+              result.data.packageBooking.packageId
+            ) {
+              const packageId = result.data.packageBooking.packageId;
+              packageName = packageId.name || "Package";
+            }
 
-          await notificationController.createBookingConfirmation(userId, {
-            name: packageName,
-            type: "package",
-            bookingReference: result.data.bookingReference,
-          });
-        } catch (error) {
-          console.error("Error creating notification:", error);
-          // Continue even if notification creation fails
+            // Create notification
+            await notificationController.createBookingConfirmation(
+              String(userId),
+              {
+                name: packageName,
+                type: "package",
+                reference: result.data.bookingReference || "N/A",
+              }
+            );
+          } catch (error) {
+            console.error("Error creating notification:", error);
+            // Continue even if notification creation fails
+          }
         }
-      }
 
-      return result;
+        return result;
+      } catch (error) {
+        console.error("Error booking package:", error);
+        return {
+          success: false,
+          message: error.message || "Failed to book package",
+          error,
+        };
+      }
     },
     {
       detail: {

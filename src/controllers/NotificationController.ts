@@ -1,5 +1,5 @@
+import { ApiResponse, error } from "~/utils/apiResponse";
 import Notification from "../models/Notification";
-import { ApiResponse, error } from "../utils/apiResponse";
 
 export interface NotificationData {
   userId: string;
@@ -116,14 +116,14 @@ export default class NotificationController {
    */
   public async createBookingConfirmation(
     userId: string,
-    bookingDetails: any
+    bookingDetails: { name: string; type: string; reference: string }
   ): Promise<void> {
     try {
       const notificationData: NotificationData = {
         userId,
         type: "booking_confirmed",
         title: "Booking Confirmed",
-        message: `Your booking for ${bookingDetails.name} has been confirmed.`,
+        message: `Your booking for ${bookingDetails.name} has been confirmed. Reference: ${bookingDetails.reference}`,
       };
 
       await this.createNotification(notificationData);

@@ -2,9 +2,19 @@ import { Elysia, t } from "elysia";
 import { jwtConfig } from "../utils/jwt.config";
 import NotificationController from "../controllers/NotificationController";
 
+const notificationController = new NotificationController();
+
 // Define routes for notifications
 const notificationRoutes = new Elysia({ prefix: "/api/v1/notifications" })
   .use(jwtConfig)
+  .guard({
+    detail: {
+      tags: ["Notifications"],
+      security: [{ BearerAuth: [] }],
+      description:
+        "Routes for managing notifications. Requires authentication.",
+    },
+  })
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -26,12 +36,12 @@ const notificationRoutes = new Elysia({ prefix: "/api/v1/notifications" })
 
     try {
       const data = await jwt_auth.verify(token);
-
-      if (!data || typeof data === "boolean") {
-        throw new Error("Invalid token data");
+      if (!data) {
+        throw new Error("Invalid token");
       }
 
-      return { userId: data.id };
+      // Cast data.id to string to ensure compatible types
+      return { userId: String(data.id) };
     } catch (error) {
       throw new Error(
         JSON.stringify({
@@ -50,45 +60,39 @@ const notificationRoutes = new Elysia({ prefix: "/api/v1/notifications" })
   .get(
     "/",
     async ({ userId }) => {
-      const notificationController = new NotificationController();
       return notificationController.getUserNotifications(userId);
     },
     {
       detail: {
-        tags: ["Notifications"],
         summary: "Get user notifications",
         description: "Retrieve all notifications for the authenticated user",
-        security: [{ bearerAuth: [] }],
       },
     }
   )
   .patch(
     "/:id/read",
     async ({ params: { id }, userId }) => {
-      const notificationController = new NotificationController();
       return notificationController.markAsRead(id, userId);
     },
     {
+      params: t.Object({
+        id: t.String(),
+      }),
       detail: {
-        tags: ["Notifications"],
         summary: "Mark notification as read",
         description: "Mark a specific notification as read",
-        security: [{ bearerAuth: [] }],
       },
     }
   )
   .patch(
     "/mark-all-read",
     async ({ userId }) => {
-      const notificationController = new NotificationController();
       return notificationController.markAllAsRead(userId);
     },
     {
       detail: {
-        tags: ["Notifications"],
         summary: "Mark all notifications as read",
         description: "Mark all user's notifications as read",
-        security: [{ bearerAuth: [] }],
       },
     }
   );
