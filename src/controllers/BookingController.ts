@@ -531,34 +531,35 @@ export default class BookingController {
   ): Promise<boolean> {
     try {
       // Get the package from the database
-      // const PackageModel = require("../models/Package").default;
       const pkg = await Package.findById(packageId);
 
       if (!pkg) {
+        console.log(`Package with ID ${packageId} not found`);
         return false;
       }
 
-      // Check if the package is active
-      if (!pkg.isActive) {
+      // Check if the package is active (status = Active)
+      if (pkg.status !== "Active") {
+        console.log(
+          `Package with ID ${packageId} is not active. Status: ${pkg.status}`
+        );
         return false;
       }
 
       // Check if the package is available for the specified dates
       const bookingStartDate = new Date(startDate);
 
-      // Check if the package has availability constraints
-      if (
-        pkg.availability &&
-        pkg.availability.startDate &&
-        pkg.availability.endDate
-      ) {
-        const packageStartDate = new Date(pkg.availability.startDate);
-        const packageEndDate = new Date(pkg.availability.endDate);
+      // Check if the package has specific start dates and if the booking date is one of them
+      if (pkg.startDates && pkg.startDates.length > 0) {
+        const validStartDate = pkg.startDates.some((date) => {
+          const packageDate = new Date(date);
+          return packageDate.toDateString() === bookingStartDate.toDateString();
+        });
 
-        if (
-          bookingStartDate < packageStartDate ||
-          bookingStartDate > packageEndDate
-        ) {
+        if (!validStartDate) {
+          console.log(
+            `Booking date ${bookingStartDate} is not in the package's available start dates`
+          );
           return false;
         }
       }
@@ -570,21 +571,33 @@ export default class BookingController {
         }, 0);
 
         if (totalParticipants > pkg.maxParticipants) {
+          console.log(
+            `Total participants ${totalParticipants} exceeds maximum allowed ${pkg.maxParticipants}`
+          );
           return false;
         }
       }
 
       // Check if there are any conflicting bookings for this package
-      const BookingModel = require("../models/Booking").default;
-      const conflictingBookings = await BookingModel.countDocuments({
+      const Booking = require("../models/Booking").default;
+      const conflictingBookings = await Booking.countDocuments({
         "packageBooking.packageId": packageId,
         status: { $in: ["Pending", "Confirmed"] },
         // For simplicity, just check if the exact same date is booked
         "packageBooking.startDate": startDate,
       });
 
-      // If the package has limited spots and they're all taken
-      if (pkg.spotsPerDay && conflictingBookings >= pkg.spotsPerDay) {
+      // For packages, we could check against max spots
+      // Since spotsPerDay is not in the Package schema, we'll use maxParticipants as a limit
+      // on concurrent bookings if not explicitly checking for available slots
+      if (
+        pkg.maxParticipants &&
+        !pkg.minParticipants &&
+        conflictingBookings >= 1
+      ) {
+        console.log(
+          `Package with ID ${packageId} is already booked for date ${startDate}`
+        );
         return false;
       }
 
