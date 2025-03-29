@@ -220,6 +220,68 @@ export default class BookingController {
       const totalAmount = await this.calculateTotalAmount(bookingData);
       const bookingReference = this.generateBookingReference();
 
+      // Ensure required fields are present
+      if (!bookingData.bookingType) {
+        // Determine booking type based on provided booking data
+        if (bookingData.packageBooking) {
+          bookingData.bookingType = "package";
+        } else if (bookingData.hotelBooking) {
+          bookingData.bookingType = "hotel";
+        } else if (bookingData.vehicleBooking) {
+          bookingData.bookingType = "vehicle";
+        } else {
+          return error(400, { message: "Booking type is required" });
+        }
+      }
+
+      // Set start and end dates if not provided
+      if (!bookingData.startDate) {
+        if (bookingData.packageBooking?.startDate) {
+          bookingData.startDate = bookingData.packageBooking.startDate;
+        } else if (bookingData.hotelBooking?.checkIn) {
+          bookingData.startDate = bookingData.hotelBooking.checkIn;
+        } else if (bookingData.vehicleBooking?.pickupDate) {
+          bookingData.startDate = bookingData.vehicleBooking.pickupDate;
+        }
+      }
+
+      if (!bookingData.endDate) {
+        if (bookingData.hotelBooking?.checkOut) {
+          bookingData.endDate = bookingData.hotelBooking.checkOut;
+        } else if (bookingData.vehicleBooking?.returnDate) {
+          bookingData.endDate = bookingData.vehicleBooking.returnDate;
+        } else if (bookingData.startDate) {
+          // Default end date is 7 days after start date
+          const startDate = new Date(bookingData.startDate);
+          const endDate = new Date(
+            startDate.getTime() + 7 * 24 * 60 * 60 * 1000
+          );
+          bookingData.endDate = endDate.toISOString();
+        }
+      }
+
+      // Ensure pricing information is present
+      if (!bookingData.pricing) {
+        bookingData.pricing = {
+          basePrice: totalAmount * 0.9, // 90% of total is base price
+          taxes: totalAmount * 0.1, // 10% is taxes
+          totalPrice: totalAmount,
+          fees: [],
+          discounts: [],
+        };
+      } else {
+        // If pricing object exists but required fields are missing
+        if (!bookingData.pricing.basePrice) {
+          bookingData.pricing.basePrice = totalAmount * 0.9;
+        }
+        if (!bookingData.pricing.taxes) {
+          bookingData.pricing.taxes = totalAmount * 0.1;
+        }
+        if (!bookingData.pricing.totalPrice) {
+          bookingData.pricing.totalPrice = totalAmount;
+        }
+      }
+
       const booking = new Booking({
         userId: bookingData.userId,
         bookingReference,
@@ -863,5 +925,30 @@ export default class BookingController {
       `${action === "reserve" ? "Reserved" : "Released"} package spot`,
       packageBooking
     );
+
+    // If we're reserving a package, ensure the itinerary is properly set up
+    if (action === "reserve") {
+      try {
+        // Initialize itinerary structure if not present
+        if (!packageBooking.itinerary) {
+          packageBooking.itinerary = {
+            progress: {
+              completedActivities: [],
+            },
+            status: "NotStarted",
+          };
+        }
+
+        // Make sure customizations object is properly structured
+        if (!packageBooking.customizations) {
+          packageBooking.customizations = {
+            preferences: [],
+            dietaryRestrictions: [],
+          };
+        }
+      } catch (error) {
+        console.error("Error setting up package itinerary:", error);
+      }
+    }
   }
 }

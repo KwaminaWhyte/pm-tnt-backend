@@ -348,6 +348,7 @@ interface CreateBookingDTO {
   // Required fields
   startDate: string;
   endDate: string;
+  bookingType?: "hotel" | "vehicle" | "package";
   bookingDetails: {
     numberOfGuests?: number;
     specialRequests?: string;
@@ -380,6 +381,21 @@ interface CreateBookingDTO {
   roomIds?: string[];
   vehicleId?: string;
   packageId?: string;
+
+  // Optional pricing information
+  pricing?: {
+    basePrice: number;
+    taxes: number;
+    fees?: Array<{
+      name: string;
+      amount: number;
+    }>;
+    discounts?: Array<{
+      type: string;
+      amount: number;
+    }>;
+    totalPrice: number;
+  };
 }
 
 interface UpdateBookingDTO {

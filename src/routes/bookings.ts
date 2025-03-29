@@ -282,6 +282,7 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
       // Create package booking data in the expected format
       const bookingData = {
         userId: String(userId),
+        bookingType: "package", // Required field
         startDate: body.startDate,
         endDate: new Date(
           new Date(body.startDate).getTime() + 7 * 24 * 60 * 60 * 1000
@@ -299,9 +300,35 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
             },
           ],
         },
+        // Add required pricing fields
+        pricing: {
+          basePrice: 0, // Will be calculated by the controller
+          taxes: 0, // Will be calculated by the controller
+          totalPrice: 0, // Will be calculated by the controller
+        },
       };
 
       try {
+        // Calculate pricing before creating the booking
+        const Package = require("../models/Package").default;
+        const pkg = await Package.findById(body.packageId);
+
+        if (pkg) {
+          // Calculate base price based on participants
+          const basePrice = pkg.basePrice * body.participants;
+          // Calculate taxes (assuming 10% tax rate)
+          const taxes = basePrice * 0.1;
+          // Set total price
+          const totalPrice = basePrice + taxes;
+
+          // Update the booking data with calculated prices
+          bookingData.pricing = {
+            basePrice,
+            taxes,
+            totalPrice,
+          };
+        }
+
         const result = await bookingController.createBooking(bookingData);
 
         // If booking was successful, create a notification
