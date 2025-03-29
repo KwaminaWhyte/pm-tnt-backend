@@ -379,7 +379,7 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
         sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
         bookingType: t.String({
           description: "Type of item to bookings",
-          enum: ["hotel", "vehicle", "package"],
+          enum: ["hotel", "vehicle", "package", "all"],
         }),
         // bookingType: t.Optional(
         //   t.Union([

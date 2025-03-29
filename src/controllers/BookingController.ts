@@ -47,7 +47,7 @@ export default class BookingController {
         filter.status = status;
       }
 
-      if (bookingType) {
+      if (bookingType && bookingType !== "all") {
         filter.bookingType = bookingType;
       }
 

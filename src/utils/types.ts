@@ -45,7 +45,7 @@ interface LocationInterface {
   city: string;
   country: string;
   coordinates: {
-    type: 'Point';
+    type: "Point";
     coordinates: [number, number]; // [longitude, latitude]
   };
 }
@@ -78,7 +78,7 @@ interface HotelInterface {
     capacity: number;
     features: string[];
     isAvailable: boolean;
-    maintenanceStatus: 'Available' | 'Cleaning' | 'Maintenance';
+    maintenanceStatus: "Available" | "Cleaning" | "Maintenance";
     images: string[];
   }>;
   images: string[];
@@ -107,8 +107,8 @@ interface VehicleInterface {
   details: {
     color: string;
     licensePlate: string;
-    transmission: 'Automatic' | 'Manual';
-    fuelType: 'Petrol' | 'Diesel' | 'Electric' | 'Hybrid';
+    transmission: "Automatic" | "Manual";
+    fuelType: "Petrol" | "Diesel" | "Electric" | "Hybrid";
     mileage: number;
     vin: string;
     insurance: {
@@ -135,7 +135,7 @@ interface VehicleInterface {
   maintenance: {
     lastService: Date;
     nextService: Date;
-    status: 'Available' | 'In Service' | 'Repairs Needed';
+    status: "Available" | "In Service" | "Repairs Needed";
     history: Array<{
       date: Date;
       type: string;
@@ -202,8 +202,8 @@ interface CreateVehicleDTO {
   details: {
     color: string;
     licensePlate: string;
-    transmission: 'Automatic' | 'Manual';
-    fuelType: 'Petrol' | 'Diesel' | 'Electric' | 'Hybrid';
+    transmission: "Automatic" | "Manual";
+    fuelType: "Petrol" | "Diesel" | "Electric" | "Hybrid";
     mileage: number;
     vin: string;
     insurance: {
@@ -240,18 +240,18 @@ interface CreateVehicleDTO {
   policies: string;
 }
 
-interface UpdateHotelDTO extends Partial<Omit<CreateHotelDTO, 'rooms'>> {
+interface UpdateHotelDTO extends Partial<Omit<CreateHotelDTO, "rooms">> {
   rooms?: Array<{
     roomNumber: string;
     isAvailable?: boolean;
-    maintenanceStatus?: 'Available' | 'Cleaning' | 'Maintenance';
+    maintenanceStatus?: "Available" | "Cleaning" | "Maintenance";
     pricePerNight?: number;
   }>;
 }
 
 interface UpdateVehicleDTO extends Partial<CreateVehicleDTO> {
-  'availability.isAvailable'?: boolean;
-  'maintenance.status'?: 'Available' | 'In Service' | 'Repairs Needed';
+  "availability.isAvailable"?: boolean;
+  "maintenance.status"?: "Available" | "In Service" | "Repairs Needed";
 }
 
 interface VehicleSearchParams {
@@ -287,7 +287,7 @@ interface BookingInterface {
     roomIds?: string[];
     numberOfGuests?: number;
     specialRequests?: string;
-    
+
     // Vehicle specific
     pickupLocation?: {
       address: string;
@@ -326,14 +326,14 @@ interface BookingInterface {
     totalPrice: number;
   };
   payment: {
-    method?: 'Credit Card' | 'Debit Card' | 'PayPal' | 'Bank Transfer';
+    method?: "Credit Card" | "Debit Card" | "PayPal" | "Bank Transfer";
     transactionId?: string;
     paidAmount?: number;
     paidAt?: Date;
-    refundStatus: 'None' | 'Pending' | 'Refunded' | 'Denied';
+    refundStatus: "None" | "Pending" | "Refunded" | "Denied";
   };
-  status: 'Pending' | 'Confirmed' | 'Cancelled';
-  paymentStatus: 'Paid' | 'Partially Paid' | 'Unpaid' | 'Refunded';
+  status: "Pending" | "Confirmed" | "Cancelled";
+  paymentStatus: "Paid" | "Partially Paid" | "Unpaid" | "Refunded";
   cancellation?: {
     cancelledAt: Date;
     reason: string;
@@ -374,7 +374,7 @@ interface CreateBookingDTO {
       expiryDate: string;
     };
   };
-  
+
   // Optional service selections (at least one required)
   hotelId?: string;
   roomIds?: string[];
@@ -407,8 +407,8 @@ interface UpdateBookingDTO {
       };
     };
   };
-  status?: 'Pending' | 'Confirmed' | 'Cancelled';
-  paymentStatus?: 'Paid' | 'Partially Paid' | 'Unpaid' | 'Refunded';
+  status?: "Pending" | "Confirmed" | "Cancelled";
+  paymentStatus?: "Paid" | "Partially Paid" | "Unpaid" | "Refunded";
 }
 
 interface BookingSearchParams {
@@ -416,12 +416,13 @@ interface BookingSearchParams {
   limit?: number;
   startDate?: Date;
   endDate?: Date;
-  status?: 'Pending' | 'Confirmed' | 'Cancelled';
-  paymentStatus?: 'Paid' | 'Partially Paid' | 'Unpaid' | 'Refunded';
-  serviceType?: 'hotel' | 'vehicle' | 'package';
+  status?: "Pending" | "Confirmed" | "Cancelled";
+  paymentStatus?: "Paid" | "Partially Paid" | "Unpaid" | "Refunded";
+  serviceType?: "hotel" | "vehicle" | "package";
+  bookingType?: "hotel" | "vehicle" | "package" | "all" | string;
   location?: string;
-  sortBy?: 'bookingDate' | 'startDate' | 'totalPrice' | 'status';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "bookingDate" | "startDate" | "totalPrice" | "status";
+  sortOrder?: "asc" | "desc";
 }
 
 interface BookingPricingResponse {
@@ -471,5 +472,5 @@ export {
   UpdateBookingDTO,
   BookingSearchParams,
   BookingPricingResponse,
-  ApiResponse
+  ApiResponse,
 };
