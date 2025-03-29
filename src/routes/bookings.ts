@@ -274,6 +274,67 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
       }),
     }
   )
+  .post(
+    "/packages",
+    async ({ request, body, userId }) => {
+      const bookingController = new BookingController();
+
+      // Create package booking data in the expected format
+      const bookingData = {
+        userId,
+        packageBooking: {
+          packageId: body.packageId,
+          startDate: body.startDate,
+          participants: [
+            {
+              type: "adult",
+              count: body.participants,
+            },
+          ],
+        },
+      };
+
+      const result = await bookingController.createBooking(bookingData);
+
+      // If booking was successful, create a notification
+      if (result.success && result.data) {
+        try {
+          const NotificationController =
+            require("../controllers/NotificationController").default;
+          const notificationController = new NotificationController();
+
+          // Find package name from booking data
+          const packageName =
+            result.data.packageBooking?.packageId?.name || "Package";
+
+          await notificationController.createBookingConfirmation(userId, {
+            name: packageName,
+            type: "package",
+            bookingReference: result.data.bookingReference,
+          });
+        } catch (error) {
+          console.error("Error creating notification:", error);
+          // Continue even if notification creation fails
+        }
+      }
+
+      return result;
+    },
+    {
+      detail: {
+        tags: ["Bookings"],
+        summary: "Create a package booking",
+        description: "Create a new booking for a travel package",
+        security: [{ bearerAuth: [] }],
+      },
+      body: t.Object({
+        packageId: t.String(),
+        startDate: t.String(),
+        participants: t.Number(),
+        specialRequests: t.Optional(t.String()),
+      }),
+    }
+  )
   .get(
     "/my-bookings",
     async ({ request, query, userId }) => {

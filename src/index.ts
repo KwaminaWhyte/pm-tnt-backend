@@ -20,6 +20,7 @@ import bookingRoutes from "./routes/bookings";
 import settingsRoutes from "./routes/settings";
 import reviewsRoutes from "./routes/reviews";
 import sliderRoutes from "./routes/sliders";
+import notificationRoutes from "./routes/notifications";
 
 // Connect to MongoDB
 mongoose
@@ -83,7 +84,8 @@ const app = new Elysia()
   .use(destinationRoutes)
   .use(settingsRoutes)
   .use(reviewsRoutes)
-  .use(sliderRoutes);
+  .use(sliderRoutes)
+  .use(notificationRoutes);
 
 app.onError(({ error, code }) => {
   console.log(error, code);
