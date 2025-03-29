@@ -12,6 +12,56 @@ import {
 } from "../utils/types";
 import mongoose from "mongoose";
 
+// Define the booking type interfaces to clarify typings
+interface HotelBookingType {
+  hotelId: string;
+  roomIds: string[];
+  checkIn: string | Date;
+  checkOut: string | Date;
+  numberOfNights: number;
+}
+
+interface VehicleBookingType {
+  vehicleId: string;
+  pickupDate: string | Date;
+  returnDate: string | Date;
+  numberOfDays: number;
+}
+
+interface PackageBookingType {
+  packageId: string;
+  startDate: string | Date;
+  participants: Array<{ type: string; count: number }>;
+  customizations?: Array<{ itemId: string; type: string; price: number }>;
+}
+
+// Extended interfaces for our DTOs
+interface ExtendedCreateBookingDTO extends CreateBookingDTO {
+  userId: string;
+  hotelBooking?: HotelBookingType;
+  vehicleBooking?: VehicleBookingType;
+  packageBooking?: PackageBookingType;
+}
+
+interface ExtendedUpdateBookingDTO extends UpdateBookingDTO {
+  hotelBooking?: Partial<HotelBookingType>;
+  vehicleBooking?: Partial<VehicleBookingType>;
+  packageBooking?: Partial<PackageBookingType>;
+}
+
+// Extended BookingInterface for our internal usage
+interface ExtendedBookingInterface extends BookingInterface {
+  hotelBooking?: HotelBookingType;
+  vehicleBooking?: VehicleBookingType;
+  packageBooking?: PackageBookingType;
+  itinerary?: {
+    progress: {
+      completedActivities: mongoose.Types.ObjectId[];
+      nextActivity?: mongoose.Types.ObjectId;
+    };
+  };
+}
+
 export default class BookingController {
   constructor() {}
 
@@ -85,6 +135,9 @@ export default class BookingController {
 
       return {
         success: true,
+        statusCode: 200,
+        message: "Bookings retrieved successfully",
+        timestamp: new Date(),
         data: {
           bookings,
           totalPages,
@@ -130,6 +183,9 @@ export default class BookingController {
 
       return {
         success: true,
+        statusCode: 200,
+        message: "Booking retrieved successfully",
+        timestamp: new Date(),
         data: booking,
       };
     } catch (err) {
@@ -156,7 +212,7 @@ export default class BookingController {
    * Create a new booking
    */
   public async createBooking(
-    bookingData: CreateBookingDTO & { userId: string }
+    bookingData: ExtendedCreateBookingDTO
   ): Promise<ApiResponse<BookingInterface>> {
     try {
       await this.validateAvailability(bookingData);
@@ -177,12 +233,18 @@ export default class BookingController {
       });
 
       // Validate availability before creating booking
-      await this.updateInventory(booking, "reserve");
+      await this.updateInventory(
+        booking as ExtendedBookingInterface,
+        "reserve"
+      );
 
       const savedBooking = await booking.save();
 
       return {
         success: true,
+        statusCode: 201,
+        message: "Booking created successfully",
+        timestamp: new Date(),
         data: savedBooking,
       };
     } catch (err) {
@@ -199,7 +261,7 @@ export default class BookingController {
    */
   public async updateBooking(
     bookingId: string,
-    updateData: UpdateBookingDTO,
+    updateData: ExtendedUpdateBookingDTO,
     userId?: string
   ): Promise<ApiResponse<BookingInterface>> {
     try {
@@ -226,12 +288,19 @@ export default class BookingController {
       }
 
       // Update inventory if items changed
-      if (this.itemsChanged(booking, updateData)) {
-        await this.updateInventory(booking, "release");
+      if (this.itemsChanged(booking as ExtendedBookingInterface, updateData)) {
         await this.updateInventory(
-          { ...booking.toObject(), ...updateData },
-          "reserve"
+          booking as ExtendedBookingInterface,
+          "release"
         );
+
+        // Create a typed merged object for inventory update
+        const mergedBooking: ExtendedBookingInterface = {
+          ...booking.toObject(),
+          ...(updateData as any), // Type assertion to avoid incompatibility
+        };
+
+        await this.updateInventory(mergedBooking, "reserve");
       }
 
       const updatedBooking = await Booking.findByIdAndUpdate(
@@ -245,7 +314,10 @@ export default class BookingController {
 
       return {
         success: true,
-        data: updatedBooking,
+        statusCode: 200,
+        message: "Booking updated successfully",
+        timestamp: new Date(),
+        data: updatedBooking || undefined,
       };
     } catch (err) {
       return error(500, {
@@ -285,20 +357,28 @@ export default class BookingController {
 
       // Update booking status
       booking.status = "Cancelled";
-      booking.cancellation = {
-        date: new Date(),
-        reason: "Customer requested cancellation",
-        refundAmount,
-        refundStatus: refundAmount > 0 ? "Pending" : "NotApplicable",
-      };
+      if (!booking.cancellation) {
+        booking.cancellation = {} as any;
+      }
+      booking.cancellation.cancelledAt = new Date();
+      booking.cancellation.reason = "Customer requested cancellation";
+      booking.cancellation.refundAmount = refundAmount;
+      booking.cancellation.cancellationFee =
+        (booking.payment.paidAmount || 0) - refundAmount;
 
       // Release inventory
-      await this.updateInventory(booking, "release");
+      await this.updateInventory(
+        booking as ExtendedBookingInterface,
+        "release"
+      );
 
       const updatedBooking = await booking.save();
 
       return {
         success: true,
+        statusCode: 200,
+        message: "Booking cancelled successfully",
+        timestamp: new Date(),
         data: updatedBooking,
       };
     } catch (err) {
@@ -324,28 +404,49 @@ export default class BookingController {
         filter.userId = userId;
       }
 
-      const booking = await Booking.findOne(filter);
+      const booking = (await Booking.findOne(
+        filter
+      )) as ExtendedBookingInterface;
 
       if (!booking) {
         return error(404, { message: "Booking not found" });
       }
 
       if (status === "completed") {
+        if (!booking.itinerary) {
+          booking.itinerary = {
+            progress: {
+              completedActivities: [],
+            },
+          };
+        }
+
+        if (!booking.itinerary.progress) {
+          booking.itinerary.progress = {
+            completedActivities: [],
+          };
+        }
+
         booking.itinerary.progress.completedActivities.push(
           new mongoose.Types.ObjectId(activityId)
         );
+
         const nextActivityIndex =
           booking.itinerary.progress.completedActivities.length;
+
         if (booking.packageBooking?.customizations?.[nextActivityIndex]) {
-          booking.itinerary.progress.nextActivity =
-            booking.packageBooking.customizations[nextActivityIndex].itemId;
+          booking.itinerary.progress.nextActivity = booking.packageBooking
+            .customizations[nextActivityIndex].itemId as any;
         }
       }
 
-      const updatedBooking = await booking.save();
+      const updatedBooking = await (booking as any).save();
 
       return {
         success: true,
+        statusCode: 200,
+        message: "Itinerary progress updated successfully",
+        timestamp: new Date(),
         data: updatedBooking,
       };
     } catch (err) {
@@ -366,7 +467,7 @@ export default class BookingController {
   }
 
   private async calculateTotalAmount(
-    bookingData: CreateBookingDTO
+    bookingData: ExtendedCreateBookingDTO
   ): Promise<number> {
     let total = 0;
 
@@ -374,7 +475,8 @@ export default class BookingController {
       const hotel = await Hotel.findById(bookingData.hotelBooking.hotelId);
       if (hotel) {
         // Add hotel room costs
-        total += hotel.basePrice * bookingData.hotelBooking.numberOfNights;
+        const basePrice = hotel.basePrice || 0;
+        total += basePrice * bookingData.hotelBooking.numberOfNights;
       }
     }
 
@@ -384,7 +486,8 @@ export default class BookingController {
       );
       if (vehicle) {
         // Add vehicle rental costs
-        total += vehicle.rentalPrice * bookingData.vehicleBooking.numberOfDays;
+        const rentalPrice = vehicle.rentalPrice || 0;
+        total += rentalPrice * bookingData.vehicleBooking.numberOfDays;
       }
     }
 
@@ -404,7 +507,7 @@ export default class BookingController {
   }
 
   private async validateAvailability(
-    bookingData: CreateBookingDTO | UpdateBookingDTO
+    bookingData: ExtendedCreateBookingDTO | ExtendedUpdateBookingDTO
   ): Promise<void> {
     if (bookingData.hotelBooking) {
       const isHotelAvailable = await this.checkHotelAvailability(
@@ -435,7 +538,7 @@ export default class BookingController {
     if (bookingData.packageBooking) {
       const isPackageAvailable = await this.checkPackageAvailability(
         bookingData.packageBooking.packageId,
-        bookingData.packageBooking.startDate,
+        bookingData.packageBooking.startDate as string,
         bookingData.packageBooking.participants
       );
       if (!isPackageAvailable) {
@@ -477,11 +580,16 @@ export default class BookingController {
       refundPercentage = 25;
     }
 
-    return (booking.payment.amount * refundPercentage) / 100;
+    // Safe property access with fallback
+    const amount =
+      booking.payment && booking.payment.paidAmount
+        ? booking.payment.paidAmount
+        : 0;
+    return (amount * refundPercentage) / 100;
   }
 
   private async updateInventory(
-    booking: BookingInterface,
+    booking: ExtendedBookingInterface,
     action: "reserve" | "release"
   ): Promise<void> {
     if (booking.hotelBooking) {
@@ -495,7 +603,9 @@ export default class BookingController {
     }
   }
 
-  private requiresAvailabilityCheck(updateData: UpdateBookingDTO): boolean {
+  private requiresAvailabilityCheck(
+    updateData: ExtendedUpdateBookingDTO
+  ): boolean {
     return !!(
       updateData.hotelBooking?.checkIn ||
       updateData.hotelBooking?.checkOut ||
@@ -506,8 +616,8 @@ export default class BookingController {
   }
 
   private itemsChanged(
-    oldBooking: BookingInterface,
-    newData: UpdateBookingDTO
+    oldBooking: ExtendedBookingInterface,
+    newData: ExtendedUpdateBookingDTO
   ): boolean {
     return !!(
       (newData.hotelBooking &&
@@ -521,18 +631,133 @@ export default class BookingController {
     );
   }
 
-  /**
-   * Check if a package is available for the specified dates and participants
-   */
+  private calculateCustomizationsCost(
+    customizations?: Array<{ itemId: string; type: string; price: number }>
+  ): number {
+    if (!customizations || !customizations.length) {
+      return 0;
+    }
+
+    return customizations.reduce((total, item) => total + (item.price || 0), 0);
+  }
+
+  private async checkHotelAvailability(
+    hotelId: string,
+    checkIn: string | Date,
+    checkOut: string | Date
+  ): Promise<boolean> {
+    try {
+      const hotel = await Hotel.findById(hotelId);
+      if (!hotel) {
+        return false;
+      }
+
+      const checkInDate = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+
+      // Check if hotel is available for the specified date range
+      // This is a simplified check - in a real application, you would query the availability system
+      // or check existing bookings that overlap with the requested dates
+
+      const existingBookings = await Booking.find({
+        "hotelBooking.hotelId": hotelId,
+        status: { $in: ["Confirmed", "Pending"] },
+        $or: [
+          {
+            // Booking that starts during our period
+            "hotelBooking.checkIn": {
+              $gte: checkInDate,
+              $lt: checkOutDate,
+            },
+          },
+          {
+            // Booking that ends during our period
+            "hotelBooking.checkOut": {
+              $gt: checkInDate,
+              $lte: checkOutDate,
+            },
+          },
+          {
+            // Booking that spans our entire period
+            $and: [
+              { "hotelBooking.checkIn": { $lte: checkInDate } },
+              { "hotelBooking.checkOut": { $gte: checkOutDate } },
+            ],
+          },
+        ],
+      });
+
+      // Check if there's room availability
+      const bookedCount = existingBookings.length;
+      const maxCapacity = hotel.totalRooms || 10; // Default to 10 if not specified
+
+      return bookedCount < maxCapacity;
+    } catch (err) {
+      console.error("Error checking hotel availability:", err);
+      return false;
+    }
+  }
+
+  private async checkVehicleAvailability(
+    vehicleId: string,
+    pickupDate: string | Date,
+    returnDate: string | Date
+  ): Promise<boolean> {
+    try {
+      const vehicle = await Vehicle.findById(vehicleId);
+      if (!vehicle) {
+        return false;
+      }
+
+      const pickupDateTime = new Date(pickupDate);
+      const returnDateTime = new Date(returnDate);
+
+      // Check if vehicle is available for the specified date range
+      const existingBookings = await Booking.find({
+        "vehicleBooking.vehicleId": vehicleId,
+        status: { $in: ["Confirmed", "Pending"] },
+        $or: [
+          {
+            // Booking that starts during our period
+            "vehicleBooking.pickupDate": {
+              $gte: pickupDateTime,
+              $lt: returnDateTime,
+            },
+          },
+          {
+            // Booking that ends during our period
+            "vehicleBooking.returnDate": {
+              $gt: pickupDateTime,
+              $lte: returnDateTime,
+            },
+          },
+          {
+            // Booking that spans our entire period
+            $and: [
+              { "vehicleBooking.pickupDate": { $lte: pickupDateTime } },
+              { "vehicleBooking.returnDate": { $gte: returnDateTime } },
+            ],
+          },
+        ],
+      });
+
+      // Check if there's vehicle availability
+      // For simplicity, assuming each vehicle has 1 quantity.
+      // If it's a fleet, you'd check against the vehicle.quantity
+      return existingBookings.length === 0;
+    } catch (err) {
+      console.error("Error checking vehicle availability:", err);
+      return false;
+    }
+  }
+
   private async checkPackageAvailability(
     packageId: string,
     startDate: string,
     participants: Array<{ type: string; count: number }>
   ): Promise<boolean> {
     try {
-      // Get the package from the database
       const pkg = await Package.findById(packageId);
-
       if (!pkg) {
         console.log(`Package with ID ${packageId} not found`);
         return false;
@@ -579,7 +804,6 @@ export default class BookingController {
       }
 
       // Check if there are any conflicting bookings for this package
-      const Booking = require("../models/Booking").default;
       const conflictingBookings = await Booking.countDocuments({
         "packageBooking.packageId": packageId,
         status: { $in: ["Pending", "Confirmed"] },
@@ -588,8 +812,6 @@ export default class BookingController {
       });
 
       // For packages, we could check against max spots
-      // Since spotsPerDay is not in the Package schema, we'll use maxParticipants as a limit
-      // on concurrent bookings if not explicitly checking for available slots
       if (
         pkg.maxParticipants &&
         !pkg.minParticipants &&
@@ -606,5 +828,40 @@ export default class BookingController {
       console.error("Error checking package availability:", error);
       return false;
     }
+  }
+
+  private async updateHotelInventory(
+    hotelBooking: HotelBookingType,
+    action: "reserve" | "release"
+  ): Promise<void> {
+    // Update hotel inventory based on the booking action
+    // In a real application, this would interact with an inventory management system
+    // For now, we'll just log the action
+    console.log(
+      `${action === "reserve" ? "Reserved" : "Released"} hotel room`,
+      hotelBooking
+    );
+  }
+
+  private async updateVehicleInventory(
+    vehicleBooking: VehicleBookingType,
+    action: "reserve" | "release"
+  ): Promise<void> {
+    // Update vehicle inventory based on the booking action
+    console.log(
+      `${action === "reserve" ? "Reserved" : "Released"} vehicle`,
+      vehicleBooking
+    );
+  }
+
+  private async updatePackageInventory(
+    packageBooking: PackageBookingType,
+    action: "reserve" | "release"
+  ): Promise<void> {
+    // Update package inventory based on the booking action
+    console.log(
+      `${action === "reserve" ? "Reserved" : "Released"} package spot`,
+      packageBooking
+    );
   }
 }
