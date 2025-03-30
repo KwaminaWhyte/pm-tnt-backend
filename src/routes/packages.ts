@@ -545,8 +545,8 @@ const templateRoutes = new Elysia()
     }
   )
   // Protected routes
-  .derive(({ request }) => {
-    const auth = request.headers.get("authorization");
+  .derive(async ({ headers, jwt_auth }) => {
+    const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
 
     if (!token) {
@@ -565,10 +565,8 @@ const templateRoutes = new Elysia()
     }
 
     try {
-      // In a real implementation, you would verify the token
-      // This is a placeholder - replace with actual JWT verification
-      const userId = "mock-user-id"; // replace with actual user ID from JWT
-      return { userId };
+      const data = await jwt_auth.verify(token);
+      return { userId: data?.id };
     } catch (error) {
       throw new Error(
         JSON.stringify({
