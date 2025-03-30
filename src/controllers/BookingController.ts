@@ -31,8 +31,14 @@ interface VehicleBookingType {
 interface PackageBookingType {
   packageId: string;
   startDate: string | Date;
-  participants: Array<{ type: string; count: number }>;
-  customizations?: Array<{ itemId: string; type: string; price: number }>;
+  participants: number | Array<{ type: string; count: number }>;
+  specialRequests?: string;
+  customizations?:
+    | Array<{ itemId: string; type: string; price: number }>
+    | {
+        preferences?: string[];
+        dietaryRestrictions?: string[];
+      };
 }
 
 // Extended interfaces for our DTOs
@@ -555,17 +561,35 @@ export default class BookingController {
 
     if (bookingData.packageBooking) {
       const pkg = await Package.findById(bookingData.packageBooking.packageId);
+      console.log("Package data for pricing:", pkg);
       if (pkg) {
-        // Add package base price
-        total += pkg.basePrice;
+        // Add package base price - fallback to price if basePrice isn't available
+        if (pkg.basePrice !== undefined && pkg.basePrice > 0) {
+          total += pkg.basePrice;
+          console.log(`Using package basePrice: ${pkg.basePrice}`);
+        } else if (pkg.price !== undefined && pkg.price > 0) {
+          total += pkg.price;
+          console.log(`Using package price: ${pkg.price}`);
+        } else {
+          console.log("No valid price found for package!");
+        }
+
         // Add customization costs
-        total += this.calculateCustomizationsCost(
+        const customizationCost = this.calculateCustomizationsCost(
           bookingData.packageBooking.customizations
+        );
+        console.log(`Customization cost: ${customizationCost}`);
+        total += customizationCost;
+      } else {
+        console.log(
+          `Package not found with ID: ${bookingData.packageBooking.packageId}`
         );
       }
     }
 
-    return total;
+    console.log(`Final calculated total: ${total}`);
+    // Make sure we don't return NaN
+    return isNaN(total) ? 0 : total;
   }
 
   private async validateAvailability(
@@ -816,7 +840,7 @@ export default class BookingController {
   private async checkPackageAvailability(
     packageId: string,
     startDate: string,
-    participants: Array<{ type: string; count: number }>
+    participants: number | Array<{ type: string; count: number }>
   ): Promise<boolean> {
     try {
       const pkg = await Package.findById(packageId);
@@ -838,7 +862,7 @@ export default class BookingController {
 
       // Check if the package has specific start dates and if the booking date is one of them
       if (pkg.startDates && pkg.startDates.length > 0) {
-        const validStartDate = pkg.startDates.some((date) => {
+        const validStartDate = pkg.startDates.some((date: string) => {
           const packageDate = new Date(date);
           return packageDate.toDateString() === bookingStartDate.toDateString();
         });
@@ -853,9 +877,15 @@ export default class BookingController {
 
       // Check max participants if specified
       if (pkg.maxParticipants) {
-        const totalParticipants = participants.reduce((total, participant) => {
-          return total + participant.count;
-        }, 0);
+        let totalParticipants = 0;
+
+        if (typeof participants === "number") {
+          totalParticipants = participants;
+        } else {
+          totalParticipants = participants.reduce((total, participant) => {
+            return total + participant.count;
+          }, 0);
+        }
 
         if (totalParticipants > pkg.maxParticipants) {
           console.log(
@@ -929,22 +959,34 @@ export default class BookingController {
     // If we're reserving a package, ensure the itinerary is properly set up
     if (action === "reserve") {
       try {
-        // Initialize itinerary structure if not present
-        if (!packageBooking.itinerary) {
-          packageBooking.itinerary = {
-            progress: {
-              completedActivities: [],
+        // Convert participants to the array format if it's a number
+        if (typeof packageBooking.participants === "number") {
+          // @ts-ignore - We're explicitly changing the type
+          packageBooking.participants = [
+            {
+              type: "adult",
+              count: packageBooking.participants,
             },
-            status: "NotStarted",
-          };
+          ];
         }
 
-        // Make sure customizations object is properly structured
+        // Initialize itinerary structure if not already present
+        // This will be handled by the document schema now
+
+        // Initialize customizations properly if not present or convert if it's in the wrong format
         if (!packageBooking.customizations) {
           packageBooking.customizations = {
             preferences: [],
             dietaryRestrictions: [],
           };
+        } else if (Array.isArray(packageBooking.customizations)) {
+          // Leave it as is if it's already in the array format
+        } else {
+          // It's already in the object format, make sure required fields exist
+          const customObj = packageBooking.customizations as any;
+          if (!customObj.preferences) customObj.preferences = [];
+          if (!customObj.dietaryRestrictions)
+            customObj.dietaryRestrictions = [];
         }
       } catch (error) {
         console.error("Error setting up package itinerary:", error);
