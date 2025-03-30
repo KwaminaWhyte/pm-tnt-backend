@@ -54,16 +54,37 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
     async ({ params: { id }, body, userId }) => {
       const bookingController = new BookingController();
       return bookingController.createBooking({
-        vehicleId: id,
         userId,
-        startDate: new Date(body.startDate),
-        endDate: new Date(body.endDate),
-        totalPrice: body.totalPrice,
-        bookingDetails: {
-          pickupLocation: body.pickupLocation,
-          dropoffLocation: body.dropoffLocation,
+        vehicleBooking: {
+          vehicleId: id,
+          pickupDate: body.startDate,
+          returnDate: body.endDate,
+          numberOfDays: Math.ceil(
+            (new Date(body.endDate).getTime() -
+              new Date(body.startDate).getTime()) /
+              (1000 * 60 * 60 * 24)
+          ),
+          pickupLocation: {
+            address: body.pickupLocation.address || "Not provided",
+            city: body.pickupLocation.city,
+            country: body.pickupLocation.country,
+            coordinates: body.pickupLocation.coordinates,
+          },
+          dropoffLocation: {
+            address: body.dropoffLocation.address || "Not provided",
+            city: body.dropoffLocation.city,
+            country: body.dropoffLocation.country,
+            coordinates: body.dropoffLocation.coordinates,
+          },
           driverDetails: body.driverDetails,
         },
+        pricing: {
+          totalPrice: body.totalPrice,
+          basePrice: body.totalPrice * 0.9,
+          taxes: body.totalPrice * 0.1,
+        },
+        startDate: body.startDate,
+        endDate: body.endDate,
       });
     },
     {
@@ -79,6 +100,7 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
         endDate: t.String(),
         totalPrice: t.Number(),
         pickupLocation: t.Object({
+          address: t.Optional(t.String()),
           city: t.String(),
           country: t.String(),
           coordinates: t.Optional(
@@ -89,6 +111,7 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
           ),
         }),
         dropoffLocation: t.Object({
+          address: t.Optional(t.String()),
           city: t.String(),
           country: t.String(),
           coordinates: t.Optional(
