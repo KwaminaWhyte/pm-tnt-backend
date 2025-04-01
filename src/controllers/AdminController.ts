@@ -149,9 +149,7 @@ export default class AdminController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -188,9 +186,7 @@ export default class AdminController {
             type: "ServerError",
             path: ["id"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -238,9 +234,7 @@ export default class AdminController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -304,9 +298,7 @@ export default class AdminController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -345,9 +337,7 @@ export default class AdminController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
@@ -410,9 +400,7 @@ export default class AdminController {
             type: "ServerError",
             path: ["server"],
             message:
-              err instanceof Error
-                ? err.message
-                : "Unknown error occurred",
+              err instanceof Error ? err.message : "Unknown error occurred",
           },
         ],
       });
