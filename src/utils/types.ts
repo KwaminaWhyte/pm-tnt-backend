@@ -1,3 +1,5 @@
+import { Schema } from "mongoose";
+
 interface OTP {
   code: string;
   expiresAt: Date;
@@ -466,6 +468,54 @@ export interface ApiResponse<T> {
     type?: string;
   }>;
   timestamp: string;
+}
+
+export interface DestinationInterface {
+  name: string;
+  country: string;
+  city: string;
+  description: string;
+  highlights: string[];
+  price: number;
+  discount?: number;
+  images: string[];
+  location: {
+    type: string;
+    coordinates: number[];
+  };
+  bestTimeToVisit: {
+    startMonth: number;
+    endMonth: number;
+  };
+  climate: "Tropical" | "Dry" | "Temperate" | "Continental" | "Polar";
+  popularActivities: string[];
+  localCuisine: string[];
+  culturalEvents: Array<{
+    name: string;
+    description: string;
+    date?: {
+      month: number;
+      day?: number;
+    };
+  }>;
+  relatedDestinations: Array<{
+    destinationId: Schema.Types.ObjectId;
+    relationshipType: "NearBy" | "SimilarClimate" | "PopularCombination";
+  }>;
+  seasonalPricing: Array<{
+    startMonth: number;
+    endMonth: number;
+    priceMultiplier: number;
+  }>;
+  travelTips: string[];
+  visaRequirements?: string;
+  languages: string[];
+  currency: string;
+  timeZone: string;
+  status: "Active" | "Inactive" | "Seasonal";
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export {

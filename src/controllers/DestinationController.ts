@@ -1,6 +1,5 @@
 import { error } from "elysia";
-import Destination from "../models/Destination";
-import { DestinationInterface } from "../utils/types";
+import Destination, { DestinationInterface } from "../models/Destination";
 
 export default class DestinationController {
   /**
@@ -64,7 +63,7 @@ export default class DestinationController {
       // Location filters
       if (country) filter.country = { $regex: country, $options: "i" };
       if (city) filter.city = { $regex: city, $options: "i" };
-      if (climate) filter.climate = climate;
+      if (climate && climate !== "all") filter.climate = climate;
 
       // Price range filter
       if (minPrice !== undefined || maxPrice !== undefined) {
@@ -73,27 +72,31 @@ export default class DestinationController {
         if (maxPrice !== undefined) filter.price.$lte = maxPrice;
       }
 
-      // Geospatial search
-      if (nearLocation) {
-        filter.location = {
-          $near: {
-            $geometry: {
-              type: "Point",
-              coordinates: [nearLocation.longitude, nearLocation.latitude],
-            },
-            $maxDistance: nearLocation.maxDistance * 1000, // Convert km to meters
-          },
-        };
+      // Create a MongoDB query
+      let query = Destination.find(filter);
+
+      // Handle geospatial search separately, using $geoWithin instead of $near
+      if (nearLocation && nearLocation.maxDistance > 0) {
+        query = query.where("location").within({
+          center: [nearLocation.longitude, nearLocation.latitude],
+          radius: nearLocation.maxDistance / 6371, // Convert km to radians by dividing by Earth's radius
+          spherical: true,
+        });
       }
 
+      // Apply sorting
       const sort: Record<string, 1 | -1> = {};
-      if (sortBy) {
+      if (sortBy && sortBy !== "all") {
         sort[sortBy] = sortOrder === "asc" ? 1 : -1;
       }
+      query = query.sort(sort);
 
+      // Apply pagination
       const skipCount = (page - 1) * limit;
+
+      // Execute query with pagination
       const [destinations, totalCount] = await Promise.all([
-        Destination.find(filter).sort(sort).skip(skipCount).limit(limit),
+        query.skip(skipCount).limit(limit),
         Destination.countDocuments(filter),
       ]);
 
@@ -127,7 +130,10 @@ export default class DestinationController {
    */
   async getDestination(id: string) {
     try {
-      const destination = await Destination.findOne({ _id: id, isActive: true });
+      const destination = await Destination.findOne({
+        _id: id,
+        isActive: true,
+      });
 
       if (!destination) {
         return error(404, {
@@ -187,7 +193,8 @@ export default class DestinationController {
       // Validate best time to visit
       if (
         destinationData.bestTimeToVisit &&
-        destinationData.bestTimeToVisit.startMonth > destinationData.bestTimeToVisit.endMonth
+        destinationData.bestTimeToVisit.startMonth >
+          destinationData.bestTimeToVisit.endMonth
       ) {
         return error(400, {
           message: "Invalid best time to visit",
@@ -237,7 +244,10 @@ export default class DestinationController {
   /**
    * Update destination by ID
    */
-  async updateDestination(id: string, updateData: Partial<DestinationInterface>) {
+  async updateDestination(
+    id: string,
+    updateData: Partial<DestinationInterface>
+  ) {
     try {
       // Check if destination exists
       const existingDestination = await Destination.findById(id);
@@ -277,8 +287,12 @@ export default class DestinationController {
 
       // Validate best time to visit if being updated
       if (updateData.bestTimeToVisit) {
-        const startMonth = updateData.bestTimeToVisit.startMonth ?? existingDestination.bestTimeToVisit.startMonth;
-        const endMonth = updateData.bestTimeToVisit.endMonth ?? existingDestination.bestTimeToVisit.endMonth;
+        const startMonth =
+          updateData.bestTimeToVisit.startMonth ??
+          existingDestination.bestTimeToVisit.startMonth;
+        const endMonth =
+          updateData.bestTimeToVisit.endMonth ??
+          existingDestination.bestTimeToVisit.endMonth;
 
         if (startMonth > endMonth) {
           return error(400, {

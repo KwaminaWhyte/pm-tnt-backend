@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Model } from "mongoose";
 
 export interface DestinationInterface {
   name: string;
@@ -43,6 +43,7 @@ export interface DestinationInterface {
   currency: string;
   timeZone: string;
   status: "Active" | "Inactive" | "Seasonal";
+  isActive?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -146,6 +147,7 @@ const schema = new Schema<DestinationInterface>(
       enum: ["Active", "Inactive", "Seasonal"],
       default: "Active",
     },
+    isActive: { type: Boolean, default: true },
   },
   {
     timestamps: true,
@@ -158,11 +160,8 @@ schema.index({ name: "text", description: "text" });
 schema.index({ price: 1, "bestTimeToVisit.startMonth": 1 });
 schema.index({ country: 1, city: 1 });
 
-let Destination;
-try {
-  Destination = mongoose.model("destinations");
-} catch (error) {
-  Destination = mongoose.model("destinations", schema);
-}
+const Destination: Model<DestinationInterface> =
+  mongoose.models.destinations ||
+  mongoose.model<DestinationInterface>("destinations", schema);
 
 export default Destination;
