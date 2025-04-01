@@ -10,8 +10,8 @@ import vehiclesPublicRoutes from "./routes/vehicles-public";
 import adminsRoutes from "./routes/admin";
 import usersRoutes from "./routes/users";
 import adminAuthRoutes from "./routes/admin-auth";
-import hotelsRoutes from "./routes/hotels";
-import hotelsPublicRoutes from "./routes/hotels-public";
+import hotelAdminRoutes from "./routes/hotels-admin";
+import hotelPublicRoutes from "./routes/hotels-public";
 import roomRoutes from "./routes/rooms";
 import packageRoutes from "./routes/packages";
 import destinationRoutes from "./routes/destinations";
@@ -75,8 +75,8 @@ const app = new Elysia()
   .use(vehiclesPublicRoutes)
   .use(adminsRoutes)
   .use(usersRoutes)
-  .use(hotelsPublicRoutes)
-  .use(hotelsRoutes)
+  .use(hotelPublicRoutes)
+  .use(hotelAdminRoutes)
   .use(roomRoutes)
   .use(packageRoutes)
   .use(bookingRoutes)
@@ -95,28 +95,44 @@ app.onError(({ error, code }) => {
   let errorMessage;
 
   try {
-    // Attempt to parse the error if it's in JSON format and matches your error structure
-    const parsedError = JSON.parse(error.message);
-    errorMessage = {
-      message: parsedError.message || "Validation failed",
-      data: parsedError.errors
-        ? parsedError.errors.map((err) => ({
-            type: err.type,
-            schema: err.schema,
-            path: err.path,
-            value: err.value,
-            message: err.message,
-            summary: err.summary,
-          }))
-        : null,
-    };
+    // Check if error message is a string (for custom JSON errors)
+    if (typeof error === "object" && error !== null && "message" in error) {
+      try {
+        // Attempt to parse the error if it's in JSON format
+        const parsedError = JSON.parse(error.message as string);
+        errorMessage = {
+          message: parsedError.message || "Validation failed",
+          data: parsedError.errors
+            ? parsedError.errors.map((err: any) => ({
+                type: err.type,
+                schema: err.schema,
+                path: err.path,
+                value: err.value,
+                message: err.message,
+                summary: err.summary,
+              }))
+            : null,
+        };
+      } catch (e) {
+        // Fallback in case parsing fails
+        errorMessage = {
+          message: error.message || "An unknown error occurred",
+          data: null,
+        };
+      }
+    } else {
+      errorMessage = {
+        message: "An unknown error occurred",
+        data: null,
+      };
+    }
   } catch (e) {
-    // Fallback in case parsing fails
     errorMessage = {
-      message: error.message || "An unknown error occurred",
+      message: "Error processing the request",
       data: null,
     };
   }
+
   return errorMessage;
 });
 
@@ -134,6 +150,10 @@ app.get("/", () => {
       settings: "/api/v1/settings",
       reviews: "/api/v1/reviews",
       sliders: "/api/v1/sliders",
+      hotels: {
+        public: "/api/v1/hotels/public",
+        admin: "/api/v1/hotels/admin",
+      },
     },
   };
 });
