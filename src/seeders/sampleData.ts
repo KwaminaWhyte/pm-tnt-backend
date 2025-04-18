@@ -7,6 +7,8 @@ import PackageTemplate from "../models/PackageTemplate";
 import Booking from "../models/Booking";
 import Review from "../models/Review";
 import Destination from "../models/Destination";
+import TripperPost from "../models/TripperPost";
+import { seedTripperPosts } from "./tripperPosts.seeder";
 
 export async function seedSampleData() {
   try {
@@ -20,6 +22,7 @@ export async function seedSampleData() {
       Booking.deleteMany({}),
       Review.deleteMany({}),
       Destination.deleteMany({}),
+      TripperPost.deleteMany({}),
     ]);
 
     // Create User
@@ -409,7 +412,7 @@ export async function seedSampleData() {
       contactInfo: {
         name: "John Doe",
         email: "john@example.com",
-        phone: "+12345678901"
+        phone: "+12345678901",
       },
       packageBooking: {
         packageId: travelPackage._id,
@@ -427,13 +430,13 @@ export async function seedSampleData() {
           hotelId: hotel._id,
           roomTypes: ["Deluxe Ocean View"],
           activities: activities.map((a) => a._id),
-        }
+        },
       },
       pricing: {
         basePrice: 1200,
         taxes: 120,
         totalPrice: 1320,
-        currency: "USD"
+        currency: "USD",
       },
       itinerary: {
         currentDestination: "Phuket",
@@ -469,7 +472,8 @@ export async function seedSampleData() {
       itemId: travelPackage._id,
       rating: 5,
       title: "Amazing family vacation!",
-      content: "Had a wonderful time with my family. The activities were perfect for kids and adults alike.",
+      content:
+        "Had a wonderful time with my family. The activities were perfect for kids and adults alike.",
       ratings: {
         accommodation: 5,
         activities: 5,
@@ -481,6 +485,9 @@ export async function seedSampleData() {
       createdAt: "2025-01-05T12:00:00Z",
       helpfulVotes: 12,
     });
+
+    // Seed tripper posts
+    await seedTripperPosts();
 
     console.log("Sample data seeded successfully!");
     return {
@@ -494,7 +501,7 @@ export async function seedSampleData() {
       destination,
     };
   } catch (error) {
-    console.error("Error seeding data:", error);
+    console.error("Error seeding sample data:", error);
     throw error;
   }
 }
