@@ -267,6 +267,72 @@ const userRoutes = new Elysia({ prefix: "/api/v1/users" })
     }
   )
 
+  // Create user (admin)
+  .post(
+    "/",
+    async ({ body }) => userController.createUser(body),
+    {
+      body: t.Object({
+        firstName: t.String(),
+        lastName: t.Optional(t.String()),
+        email: t.String({ format: "email" }),
+        phone: t.String({ pattern: "^\\+?[1-9]\\d{1,14}$" }), 
+        password: t.Optional(t.String({ minLength: 6 })),
+        position: t.Optional(t.String()),
+      }),
+      detail: {
+        summary: "Create a new user",
+        tags: ["Users"],
+      },
+    }
+  )
+
+  // Delete user (admin)
+  .delete(
+    "/:id",
+    async ({ params: { id } }) => userController.deleteUser(id),
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      detail: {
+        summary: "Delete a user",
+        tags: ["Users"],
+      },
+    }
+  )
+
+  // Admin reset user password
+  .put(
+    "/:id/password",
+    async ({ params: { id }, body }) => {
+      // Only admin can reset any user's password
+      const { password } = body;
+      if (!password || password.length < 6) {
+        return {
+          status: "error",
+          message: "Password must be at least 6 characters long",
+        };
+      }
+      const bcrypt = require("bcryptjs");
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await require("../models/User").default.findByIdAndUpdate(id, { password: hashedPassword });
+      return { message: "Password reset successfully" };
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      body: t.Object({
+        password: t.String({ minLength: 6 }),
+      }),
+      detail: {
+        summary: "Admin reset user password",
+        tags: ["Users"],
+      },
+    }
+  )
+
   .put(
     "/:id",
     async ({ params: { id }, body }) => userController.updateUser(id, body),

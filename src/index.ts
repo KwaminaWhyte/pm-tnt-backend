@@ -7,7 +7,7 @@ import { jwtConfig } from "./utils/jwt.config";
 import userAuthRoutes from "./routes/user-auth";
 import vehiclesRoutes from "./routes/vehicles";
 import vehiclesPublicRoutes from "./routes/vehicles-public";
-import adminsRoutes from "./routes/admin";
+import adminsRoutes from "./routes/admins";
 import usersRoutes from "./routes/users";
 import adminAuthRoutes from "./routes/admin-auth";
 import hotelAdminRoutes from "./routes/hotels-admin";
