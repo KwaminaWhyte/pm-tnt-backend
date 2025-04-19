@@ -1,0 +1,67 @@
+# PM-TNT Project Rules and Patterns
+
+## Backend (pm-tnt-backend)
+
+### API Structure
+
+- RESTful API with versioned endpoints (`/api/v1/[resource]`)
+- Routes organized by resource and access level (admin vs public)
+- Controllers implement business logic
+- Models define data structure and validation
+- Services abstract external dependencies
+
+### Authentication & Authorization
+
+- JWT for authentication
+- Route guards to enforce permissions
+- Middleware pattern for common checks
+
+### Response Format
+
+- Consistent response format with status, data, and pagination
+- Error responses include message and errors array
+- Pagination metadata included in list responses
+
+### CRUD Patterns
+
+- GET /api/v1/[resource] - List resources with filtering, sorting, pagination
+- GET /api/v1/[resource]/:id - Get resource by ID
+- POST /api/v1/[resource] - Create resource
+- PUT /api/v1/[resource]/:id - Update resource
+- DELETE /api/v1/[resource]/:id - Delete resource
+- Additional custom endpoints follow RESTful conventions
+
+### Code Patterns
+
+- TypeScript with strong typing
+- Asynchronous programming with async/await
+- Error handling with try/catch
+- Validation using schemas
+- Consistent logging
+
+## File Naming Conventions
+
+- Frontend routes: `[resource]/[action].tsx`
+- Layout files: `[resource]/layout.tsx`
+- Service files: `[resource]Service.ts`
+- Component files: `kebab-case.tsx`
+- Interface files: `types.ts`
+
+## Project-Specific Conventions
+
+### Hotels Module
+
+- Admin routes for management
+- Public routes for customer-facing features
+- Consistent schema between frontend and backend
+- Features include: hotel listing, details, rooms, availability
+- Search and filter patterns match other modules
+
+### Users Module
+
+- Admin-only management
+- CRUD operations for user accounts
+- Role-based access control
+- Password management with security considerations
+
+This document serves as a guide for maintaining consistency across the codebase. When implementing new features or fixing bugs, refer to these patterns to ensure your code aligns with the project's established practices.
