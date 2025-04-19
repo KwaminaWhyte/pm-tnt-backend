@@ -406,4 +406,46 @@ export default class AdminController {
       });
     }
   }
+
+  /**
+   * Reset admin password (super admin only)
+   * @param id
+   * @param data { password: string }
+   */
+  async resetPassword(id: string, data: { password: string }) {
+    try {
+      const admin = await Admin.findById(id);
+      if (!admin) {
+        return error(404, {
+          message: "Admin not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "Admin not found",
+            },
+          ],
+        });
+      }
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      await Admin.findByIdAndUpdate(id, {
+        password: hashedPassword,
+      });
+      return {
+        message: "Password reset successfully",
+      };
+    } catch (err) {
+      return error(500, {
+        message: "Failed to reset password",
+        errors: [
+          {
+            type: "ServerError",
+            path: ["server"],
+            message:
+              err instanceof Error ? err.message : "Unknown error occurred",
+          },
+        ],
+      });
+    }
+  }
 }

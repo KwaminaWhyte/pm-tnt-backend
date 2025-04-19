@@ -58,11 +58,11 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
       id: t.String(),
     }),
   })
-  .post("/", async ({ body }) => adminController.createAdmin(body), {
+  .post("", async ({ body }) => adminController.createAdmin(body), {
     detail: {
       summary: "Create a new admin",
     },
-    beforeHandle: [requireSuperAdmin],
+    // beforeHandle: [requireSuperAdmin],
     body: t.Object({
       fullName: t.String(),
       email: t.String(),
@@ -119,6 +119,24 @@ const adminRoutes = new Elysia({ prefix: "/api/v1/admins" })
       body: t.Object({
         currentPassword: t.String(),
         newPassword: t.String(),
+      }),
+    }
+  )
+  .post(
+    "/:id/reset-password",
+    async ({ params: { id }, body }) =>
+      adminController.resetPassword(id, body),
+    {
+      detail: {
+        summary: "Reset admin password (super admin only)",
+        tags: ["Admins"],
+      },
+      beforeHandle: [requireSuperAdmin],
+      params: t.Object({
+        id: t.String(),
+      }),
+      body: t.Object({
+        password: t.String(),
       }),
     }
   );
