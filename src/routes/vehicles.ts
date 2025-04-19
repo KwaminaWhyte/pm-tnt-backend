@@ -52,32 +52,70 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
       description: "Require user to be logged in",
     },
   })
-  .get(
-    "/bookings/history",
-    async ({ userId }) => {
-      const bookingController = new BookingController();
-      return bookingController.getBookings({
-        userId,
-        serviceType: "vehicle",
-      });
-    },
-    {
-      detail: {
-        summary: "Get vehicle booking history",
-        tags: ["Vehicles - Auth User"],
-      },
-    }
-  )
+
   .get(
     "/",
     async ({ query }) => {
-      // Convert string parameters to numbers
-      const parsedQuery = {
-        ...query,
-        page: query.page ? parseInt(query.page) : undefined,
-        limit: query.limit ? parseInt(query.limit) : undefined,
-        capacity: query.capacity ? parseInt(query.capacity) : undefined,
+      // Log raw query parameters for debugging
+      console.log("Raw query parameters:", query);
+
+      // Convert and parse parameters for controller
+      const parsedQuery: Record<string, any> = {
+        page: query.page ? parseInt(query.page) : 1,
+        limit: query.limit ? parseInt(query.limit) : 10,
+        searchTerm: query.searchTerm || undefined,
       };
+
+      // Handle capacity - must be numeric
+      if (query.capacity) {
+        parsedQuery.capacity = parseInt(query.capacity);
+      }
+
+      // Handle vehicle type
+      if (query.vehicleType) {
+        parsedQuery.vehicleType = query.vehicleType;
+      }
+
+      // Handle sorting options
+      if (query.sortBy) {
+        parsedQuery.sortBy = query.sortBy;
+      }
+
+      if (query.sortOrder) {
+        parsedQuery.sortOrder = query.sortOrder;
+      }
+
+      // Handle price range - only include if it has meaningful values
+      if (query.priceRange) {
+        const { min, max } = query.priceRange;
+        // Only add priceRange if min or max is greater than 0
+        if (min > 0 || max > 0) {
+          parsedQuery.priceRange = query.priceRange;
+        }
+      }
+
+      // Handle location filters
+      if (query.city) {
+        parsedQuery.city = query.city;
+      }
+
+      if (query.country) {
+        parsedQuery.country = query.country;
+      }
+
+      // Handle availability as a boolean - parse string representation
+      if (query.isAvailable !== undefined) {
+        // Convert string 'true'/'false' to boolean
+        parsedQuery.isAvailable = query.isAvailable === "true";
+        console.log(
+          "Parsed isAvailable:",
+          parsedQuery.isAvailable,
+          typeof parsedQuery.isAvailable
+        );
+      }
+
+      // Log parsed parameters for debugging
+      console.log("Parsed query parameters:", parsedQuery);
 
       return vehicleController.getVehicles(parsedQuery);
     },
@@ -90,7 +128,7 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
         page: t.Optional(t.String()),
         limit: t.Optional(t.String()),
         searchTerm: t.Optional(t.String()),
-        isAvailable: t.Optional(t.Boolean()),
+        isAvailable: t.Optional(t.String()), // Change to string since query params come as strings
         priceRange: t.Optional(
           t.Object({
             min: t.Number(),
@@ -112,12 +150,30 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
       }),
     }
   )
+  .get(
+    "/bookings/history",
+    async ({ userId }) => {
+      const bookingController = new BookingController();
+      return bookingController.getBookings({
+        userId,
+        serviceType: "vehicle",
+      });
+    },
+    {
+      detail: {
+        summary: "Get vehicle booking history",
+        tags: ["Vehicles - Auth User"],
+      },
+    }
+  )
 
   .group("/admin", (app) =>
     app
       .post(
         "/",
         async ({ body }) => {
+          console.log("Create vehicle request body:", body);
+
           // Adapt the body structure to match the CreateVehicleDTO interface
           const vehicleData = {
             vehicleType: body.vehicleType,
@@ -148,10 +204,14 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
             features: body.features,
             capacity: body.capacity,
             pricePerDay: body.pricePerDay,
+            // Location data for availability
             location: {
               city: body.city,
               country: body.country,
-              coordinates: body.coordinates,
+              coordinates: body.coordinates || {
+                latitude: 0,
+                longitude: 0,
+              },
             },
             rentalTerms: {
               minimumAge: body.minimumAge || 18,
@@ -174,6 +234,7 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
             policies: body.policies || "",
           };
 
+          console.log("Processed vehicle data:", vehicleData);
           return vehicleController.createVehicle(vehicleData);
         },
         {
@@ -229,16 +290,33 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
       .put(
         "/:id",
         async ({ params: { id }, body }) => {
-          // For update, we'll pass the properties directly to updateVehicle
-          // The controller will handle property mapping appropriately
+          console.log(`Update vehicle ${id} request:`, body);
+
+          // For update, we'll structure data to match the expected format
           const updateData: any = { ...body };
+
+          // Handle location data correctly
+          if (body.city || body.country) {
+            updateData.location = {
+              city: body.city,
+              country: body.country,
+            };
+            // Remove individual properties to avoid conflicts
+            delete updateData.city;
+            delete updateData.country;
+          }
 
           // Handle availability status if present
           if (body.isAvailable !== undefined) {
-            updateData["availability.isAvailable"] = body.isAvailable;
+            updateData["availability.isAvailable"] =
+              typeof body.isAvailable === "string"
+                ? body.isAvailable === "true"
+                : !!body.isAvailable;
+
             delete updateData.isAvailable;
           }
 
+          console.log("Processed update data:", updateData);
           return vehicleController.updateVehicle(id, updateData);
         },
         {

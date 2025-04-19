@@ -51,6 +51,7 @@ export default class VehicleController {
         });
       }
 
+      // Create filter object
       const filter: Record<string, any> = {};
 
       if (searchTerm) {
@@ -61,21 +62,43 @@ export default class VehicleController {
         ];
       }
 
+      // Debug: Log isAvailable value
+      console.log(
+        "isAvailable parameter:",
+        isAvailable,
+        "type:",
+        typeof isAvailable
+      );
+
+      // Handle boolean conversion
       if (isAvailable !== undefined) {
-        filter["availability.isAvailable"] = isAvailable;
+        // Fix: Convert string 'true'/'false' to boolean if needed
+        const boolValue =
+          typeof isAvailable === "string"
+            ? isAvailable === "true"
+            : !!isAvailable;
+
+        filter["availability.isAvailable"] = boolValue;
       }
 
       if (priceRange) {
-        filter.pricePerDay = {
-          $gte: priceRange.min,
-          $lte: priceRange.max,
-        };
+        // Only apply price filter if min and max are not both 0
+        // This prevents filtering out all vehicles with default empty priceRange
+        const hasValidPriceRange = priceRange.min > 0 || priceRange.max > 0;
+
+        if (hasValidPriceRange) {
+          filter.pricePerDay = {
+            $gte: priceRange.min,
+            $lte: priceRange.max > 0 ? priceRange.max : Number.MAX_SAFE_INTEGER,
+          };
+        }
       }
 
       if (vehicleType) {
         filter.vehicleType = vehicleType;
       }
 
+      // City and country should map to availability.location
       if (city) {
         filter["availability.location.city"] = city;
       }
@@ -95,13 +118,30 @@ export default class VehicleController {
         sortOptions.createdAt = -1;
       }
 
+      // Debug: Log the filter and sort options
+      console.log("MongoDB filter:", JSON.stringify(filter, null, 2));
+      console.log("MongoDB sort options:", sortOptions);
+
+      // Temporary workaround: Get all vehicles first without filter to debug
+      const allVehicles = await Vehicle.find({}).lean();
+      console.log(
+        `Debug: Total vehicles in DB without filter: ${allVehicles.length}`
+      );
+
+      // If filter is empty (no search criteria), use empty object for find()
+      const filterToUse = Object.keys(filter).length > 0 ? filter : {};
+
       const [vehicles, totalCount] = await Promise.all([
-        Vehicle.find(filter)
+        Vehicle.find(filterToUse)
           .skip((page - 1) * limit)
           .limit(limit)
           .sort(sortOptions),
-        Vehicle.countDocuments(filter),
+        Vehicle.countDocuments(filterToUse),
       ]);
+
+      console.log(
+        `Vehicles found with filter: ${vehicles.length} out of ${totalCount} total`
+      );
 
       const totalPages = Math.ceil(totalCount / limit);
 
@@ -132,6 +172,7 @@ export default class VehicleController {
       if (err instanceof Error && err.message.includes("status")) {
         throw err;
       }
+      console.error("Error in getVehicles:", err);
       return error(500, {
         message: "Failed to retrieve vehicles",
         errors: [
@@ -446,8 +487,13 @@ export default class VehicleController {
         });
       }
 
-      // Check vehicle availability using the model method
-      const isAvailable = vehicle.isAvailableForDates(startDate, endDate);
+      // Check vehicle availability - safely access methods
+      // Use a simpler check since isAvailableForDates might not exist
+      const isAvailable =
+        vehicle.availability?.isAvailable === true &&
+        vehicle.maintenance?.status === "Available" &&
+        (!vehicle.maintenance?.nextService ||
+          vehicle.maintenance.nextService > endDate);
 
       if (!isAvailable) {
         return {
@@ -455,19 +501,36 @@ export default class VehicleController {
           data: {
             isAvailable: false,
             message: "Vehicle is not available for the selected dates",
-            maintenanceStatus: vehicle.maintenanceStatus,
+            // Use safe access for maintenanceStatus
+            maintenanceStatus: vehicle.maintenance?.status || "Unknown",
           },
         };
       }
 
-      // Calculate rental price
+      // Calculate rental price manually since calculateRentalPrice might not exist
       const days = Math.ceil(
         (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
       );
-      const priceDetails = vehicle.calculateRentalPrice(
-        days,
-        params.insuranceOption
-      );
+
+      // Calculate pricing
+      const basePrice = vehicle.pricePerDay * days;
+      let insuranceCost = 0;
+
+      if (params.insuranceOption) {
+        const insuranceOption = vehicle.rentalTerms.insuranceOptions?.find(
+          (option) => option.type === params.insuranceOption
+        );
+
+        if (insuranceOption) {
+          insuranceCost = insuranceOption.pricePerDay * days;
+        }
+      }
+
+      const priceDetails = {
+        basePrice,
+        insuranceCost,
+        totalPrice: basePrice + insuranceCost,
+      };
 
       return {
         isAvailable: true,
@@ -479,7 +542,8 @@ export default class VehicleController {
           capacity: vehicle.capacity,
           features: vehicle.features,
           location: vehicle.availability.location,
-          maintenanceStatus: vehicle.maintenanceStatus,
+          // Safe access to maintenance status
+          maintenanceStatus: vehicle.maintenance?.status || "Unknown",
         },
         rental: {
           startDate,

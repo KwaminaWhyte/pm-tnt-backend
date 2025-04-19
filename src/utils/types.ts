@@ -218,6 +218,8 @@ interface CreateVehicleDTO {
   features: string[];
   capacity: number;
   pricePerDay: number;
+  city?: string;
+  country?: string;
   location: {
     city: string;
     country: string;
@@ -252,6 +254,8 @@ interface UpdateHotelDTO extends Partial<Omit<CreateHotelDTO, "rooms">> {
 }
 
 interface UpdateVehicleDTO extends Partial<CreateVehicleDTO> {
+  city?: string;
+  country?: string;
   "availability.isAvailable"?: boolean;
   "maintenance.status"?: "Available" | "In Service" | "Repairs Needed";
 }
