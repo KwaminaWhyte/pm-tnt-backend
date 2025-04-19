@@ -60,7 +60,6 @@ export default class VehicleController {
           { model: { $regex: searchTerm, $options: "i" } },
         ];
       }
-      console.log(isAvailable);
 
       if (isAvailable !== undefined) {
         filter["availability.isAvailable"] = isAvailable;

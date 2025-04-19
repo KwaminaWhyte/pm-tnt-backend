@@ -6,6 +6,7 @@ import BookingController from "../controllers/BookingController";
 const vehicleController = new VehicleController();
 
 const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
+  .use(jwtConfig)
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -27,7 +28,10 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
 
     try {
       const data = await jwt_auth.verify(token);
-      return { userId: data?.id };
+      if (!data || typeof data === "boolean") {
+        throw new Error("Invalid token data");
+      }
+      return { userId: data.id as string };
     } catch (error) {
       throw new Error(
         JSON.stringify({
@@ -51,9 +55,10 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
   .get(
     "/bookings/history",
     async ({ userId }) => {
-      const bookingController = new BookingController({ url: "", userId });
-      return bookingController.getMyBookings({
-        type: "vehicle",
+      const bookingController = new BookingController();
+      return bookingController.getBookings({
+        userId,
+        serviceType: "vehicle",
       });
     },
     {
@@ -63,81 +68,179 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
       },
     }
   )
-  .get("/", async ({ query }) => vehicleController.getVehicles(query), {
-    detail: {
-      summary: "Get all vehicles with pagination and filtering",
-      tags: ["Vehicles - Public"],
-      responses: {
-        200: {
-          description: "List of vehicles with pagination",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                success: t.Boolean(),
-                data: t.Array(t.Any()),
-                pagination: t.Object({
-                  currentPage: t.Number(),
-                  totalPages: t.Number(),
-                  totalItems: t.Number(),
-                  itemsPerPage: t.Number(),
-                }),
-              }),
-            },
-          },
-        },
-      },
+  .get(
+    "/",
+    async ({ query }) => {
+      // Convert string parameters to numbers
+      const parsedQuery = {
+        ...query,
+        page: query.page ? parseInt(query.page) : undefined,
+        limit: query.limit ? parseInt(query.limit) : undefined,
+        capacity: query.capacity ? parseInt(query.capacity) : undefined,
+      };
+
+      return vehicleController.getVehicles(parsedQuery);
     },
-    query: t.Object({
-      page: t.Optional(t.Number()),
-      limit: t.Optional(t.Number()),
-      searchTerm: t.Optional(t.String()),
-      isAvailable: t.Optional(t.Boolean()),
-      priceRange: t.Optional(
-        t.Object({
-          min: t.Number(),
-          max: t.Number(),
-        })
-      ),
-      vehicleType: t.Optional(t.String()),
-      city: t.Optional(t.String()),
-      country: t.Optional(t.String()),
-      capacity: t.Optional(t.Number()),
-      sortBy: t.Optional(
-        t.Union([
-          t.Literal("pricePerDay"),
-          t.Literal("capacity"),
-          t.Literal("rating"),
-        ])
-      ),
-      sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
-    }),
-  })
+    {
+      detail: {
+        summary: "Get all vehicles with pagination and filtering",
+        tags: ["Vehicles - Public"],
+      },
+      query: t.Object({
+        page: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
+        searchTerm: t.Optional(t.String()),
+        isAvailable: t.Optional(t.Boolean()),
+        priceRange: t.Optional(
+          t.Object({
+            min: t.Number(),
+            max: t.Number(),
+          })
+        ),
+        vehicleType: t.Optional(t.String()),
+        city: t.Optional(t.String()),
+        country: t.Optional(t.String()),
+        capacity: t.Optional(t.String()),
+        sortBy: t.Optional(
+          t.Union([
+            t.Literal("pricePerDay"),
+            t.Literal("capacity"),
+            t.Literal("rating"),
+          ])
+        ),
+        sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+      }),
+    }
+  )
 
   .group("/admin", (app) =>
     app
-      .post("/", async ({ body }) => vehicleController.createVehicle(body), {
-        detail: {
-          summary: "Create a new vehicle",
-          tags: ["Vehicles - Admin"],
+      .post(
+        "/",
+        async ({ body }) => {
+          // Adapt the body structure to match the CreateVehicleDTO interface
+          const vehicleData = {
+            vehicleType: body.vehicleType,
+            make: body.make,
+            model: body.model,
+            year: body.year || new Date().getFullYear(),
+            details: {
+              color: body.color || "Unknown",
+              licensePlate: body.licensePlate || "",
+              transmission: (body.transmission || "Automatic") as
+                | "Automatic"
+                | "Manual",
+              fuelType: (body.fuelType || "Petrol") as
+                | "Petrol"
+                | "Diesel"
+                | "Electric"
+                | "Hybrid",
+              mileage: body.mileage || 0,
+              vin: body.vin || "",
+              insurance: {
+                provider: body.insuranceProvider || "",
+                policyNumber: body.insurancePolicyNumber || "",
+                expiryDate:
+                  body.insuranceExpiryDate || new Date().toISOString(),
+                coverage: body.insuranceCoverage || "Basic",
+              },
+            },
+            features: body.features,
+            capacity: body.capacity,
+            pricePerDay: body.pricePerDay,
+            location: {
+              city: body.city,
+              country: body.country,
+              coordinates: body.coordinates,
+            },
+            rentalTerms: {
+              minimumAge: body.minimumAge || 18,
+              requiredDocuments: body.requiredDocuments || [
+                "Driver's License",
+                "Credit Card",
+              ],
+              securityDeposit: body.securityDeposit || 0,
+              mileageLimit: body.mileageLimit || 0,
+              additionalDrivers: body.additionalDrivers || false,
+              insuranceOptions: body.insuranceOptions || [
+                {
+                  type: "Basic",
+                  coverage: "Collision Damage Waiver",
+                  pricePerDay: 10,
+                },
+              ],
+            },
+            images: body.images,
+            policies: body.policies || "",
+          };
+
+          return vehicleController.createVehicle(vehicleData);
         },
-        body: t.Object({
-          vehicleType: t.String(),
-          make: t.String(),
-          model: t.String(),
-          year: t.Optional(t.Number()),
-          features: t.Array(t.String()),
-          capacity: t.Number(),
-          pricePerDay: t.Number(),
-          city: t.String(),
-          country: t.String(),
-          images: t.Array(t.String()),
-          policies: t.Optional(t.String()),
-        }),
-      })
+        {
+          detail: {
+            summary: "Create a new vehicle",
+            tags: ["Vehicles - Admin"],
+          },
+          body: t.Object({
+            vehicleType: t.String(),
+            make: t.String(),
+            model: t.String(),
+            year: t.Optional(t.Number()),
+            features: t.Array(t.String()),
+            capacity: t.Number(),
+            pricePerDay: t.Number(),
+            city: t.String(),
+            country: t.String(),
+            images: t.Array(t.String()),
+            policies: t.Optional(t.String()),
+            color: t.Optional(t.String()),
+            licensePlate: t.Optional(t.String()),
+            transmission: t.Optional(t.String()),
+            fuelType: t.Optional(t.String()),
+            mileage: t.Optional(t.Number()),
+            vin: t.Optional(t.String()),
+            insuranceProvider: t.Optional(t.String()),
+            insurancePolicyNumber: t.Optional(t.String()),
+            insuranceExpiryDate: t.Optional(t.String()),
+            insuranceCoverage: t.Optional(t.String()),
+            minimumAge: t.Optional(t.Number()),
+            requiredDocuments: t.Optional(t.Array(t.String())),
+            securityDeposit: t.Optional(t.Number()),
+            mileageLimit: t.Optional(t.Number()),
+            additionalDrivers: t.Optional(t.Boolean()),
+            insuranceOptions: t.Optional(
+              t.Array(
+                t.Object({
+                  type: t.String(),
+                  coverage: t.String(),
+                  pricePerDay: t.Number(),
+                })
+              )
+            ),
+            coordinates: t.Optional(
+              t.Object({
+                latitude: t.Number(),
+                longitude: t.Number(),
+              })
+            ),
+          }),
+        }
+      )
       .put(
         "/:id",
-        async ({ params: { id }, body }) =>
-          vehicleController.updateVehicle(id, body),
+        async ({ params: { id }, body }) => {
+          // For update, we'll pass the properties directly to updateVehicle
+          // The controller will handle property mapping appropriately
+          const updateData: any = { ...body };
+
+          // Handle availability status if present
+          if (body.isAvailable !== undefined) {
+            updateData["availability.isAvailable"] = body.isAvailable;
+            delete updateData.isAvailable;
+          }
+
+          return vehicleController.updateVehicle(id, updateData);
+        },
         {
           detail: {
             summary: "Update a vehicle",
@@ -159,6 +262,9 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
             images: t.Optional(t.Array(t.String())),
             policies: t.Optional(t.String()),
             isAvailable: t.Optional(t.Boolean()),
+            status: t.Optional(t.String()),
+            color: t.Optional(t.String()),
+            licensePlate: t.Optional(t.String()),
           }),
         }
       )
