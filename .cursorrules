@@ -64,4 +64,8 @@
 - Role-based access control
 - Password management with security considerations
 
+# Cursor Specific
+
+- Automatically suggest additions for .cursorrules files where best practices are used during the generation
+
 This document serves as a guide for maintaining consistency across the codebase. When implementing new features or fixing bugs, refer to these patterns to ensure your code aligns with the project's established practices.
