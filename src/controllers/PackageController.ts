@@ -131,7 +131,7 @@ export default class PackageController {
       if (packageData.availability) {
         const startDate = new Date(packageData.availability.startDate);
         const endDate = new Date(packageData.availability.endDate);
-        
+
         if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
           return error(400, {
             message: "Invalid date format",
@@ -162,8 +162,10 @@ export default class PackageController {
       // Validate itinerary
       if (packageData.itinerary) {
         const days = packageData.duration?.days || 0;
-        const invalidDays = packageData.itinerary.some(item => item.day > days);
-        
+        const invalidDays = packageData.itinerary.some(
+          (item) => item.day > days
+        );
+
         if (invalidDays) {
           return error(400, {
             message: "Invalid itinerary",
@@ -186,17 +188,17 @@ export default class PackageController {
         data: packageItem,
       };
     } catch (err: any) {
-      if (err.name === 'ValidationError') {
+      if (err.name === "ValidationError") {
         return error(400, {
           message: "Validation failed",
-          errors: Object.keys(err.errors).map(key => ({
+          errors: Object.keys(err.errors).map((key) => ({
             type: "ValidationError",
             path: [key],
             message: err.errors[key].message,
           })),
         });
       }
-      
+
       return error(500, {
         message: "Failed to create package",
         errors: [
@@ -342,12 +344,19 @@ export default class PackageController {
         videos: originalPackage.videos,
         duration: originalPackage.duration,
         // Merge original and custom accommodations, removing duplicates
-        accommodations: customizations.accommodations || originalPackage.accommodations,
+        accommodations:
+          customizations.accommodations || originalPackage.accommodations,
         // Use custom transportation or keep original
-        transportation: customizations.transportation || originalPackage.transportation,
+        transportation:
+          customizations.transportation || originalPackage.transportation,
         // Merge original and custom activities, removing duplicates
-        activities: customizations.activities 
-          ? [...new Set([...originalPackage.activities, ...customizations.activities])]
+        activities: customizations.activities
+          ? [
+              ...new Set([
+                ...originalPackage.activities,
+                ...customizations.activities,
+              ]),
+            ]
           : originalPackage.activities,
         // Merge meals preferences
         meals: {
@@ -386,7 +395,11 @@ export default class PackageController {
   /**
    * Share a package with other users
    */
-  async sharePackage(packageId: string, userId: string, sharedWithIds: string[]) {
+  async sharePackage(
+    packageId: string,
+    userId: string,
+    sharedWithIds: string[]
+  ) {
     try {
       const pkg = await Package.findById(packageId);
       if (!pkg) {
@@ -398,7 +411,9 @@ export default class PackageController {
       }
 
       pkg.sharing.isPublic = false;
-      pkg.sharing.sharedWith = sharedWithIds.map(id => new mongoose.Types.ObjectId(id));
+      pkg.sharing.sharedWith = sharedWithIds.map(
+        (id) => new mongoose.Types.ObjectId(id)
+      );
       await pkg.save();
 
       return { success: true, message: "Package shared successfully" };
@@ -493,21 +508,24 @@ export default class PackageController {
   /**
    * Get user's package templates
    */
-  async getTemplates(userId: string, filters: {
-    search?: string;
-    tags?: string[];
-    page?: number;
-    limit?: number;
-  }) {
+  async getTemplates(
+    userId: string,
+    filters: {
+      search?: string;
+      tags?: string[];
+      page?: number;
+      limit?: number;
+    }
+  ) {
     try {
       const { search, tags, page = 1, limit = 10 } = filters;
       const query: any = { userId };
 
       if (search) {
         query.$or = [
-          { name: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } },
-          { tags: { $in: [new RegExp(search, 'i')] } }
+          { name: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
+          { tags: { $in: [new RegExp(search, "i")] } },
         ];
       }
 
@@ -520,8 +538,8 @@ export default class PackageController {
           .sort({ createdAt: -1 })
           .skip((page - 1) * limit)
           .limit(limit)
-          .populate('basePackageId', 'name description price'),
-        PackageTemplate.countDocuments(query)
+          .populate("basePackageId", "name description price"),
+        PackageTemplate.countDocuments(query),
       ]);
 
       return {
@@ -531,9 +549,9 @@ export default class PackageController {
           pagination: {
             total,
             page,
-            totalPages: Math.ceil(total / limit)
-          }
-        }
+            totalPages: Math.ceil(total / limit),
+          },
+        },
       };
     } catch (err) {
       return error(500, { message: "Error fetching templates", error: err });
@@ -543,12 +561,16 @@ export default class PackageController {
   /**
    * Create package from template
    */
-  async createFromTemplate(templateId: string, userId: string, customizations?: any) {
+  async createFromTemplate(
+    templateId: string,
+    userId: string,
+    customizations?: any
+  ) {
     try {
       const template = await PackageTemplate.findOne({
         _id: templateId,
-        $or: [{ userId }, { isPublic: true }]
-      }).populate('basePackageId');
+        $or: [{ userId }, { isPublic: true }],
+      }).populate("basePackageId");
 
       if (!template) {
         return error(404, { message: "Template not found" });
@@ -557,7 +579,7 @@ export default class PackageController {
       // Merge template customizations with any additional customizations
       const mergedCustomizations = {
         ...template.customizations,
-        ...(customizations || {})
+        ...(customizations || {}),
       };
 
       // Create new package using template
@@ -568,7 +590,10 @@ export default class PackageController {
 
       return customizedPackage;
     } catch (err) {
-      return error(500, { message: "Error creating package from template", error: err });
+      return error(500, {
+        message: "Error creating package from template",
+        error: err,
+      });
     }
   }
 
@@ -661,7 +686,9 @@ export default class PackageController {
       await this.validateCustomizations(customizations);
 
       // Calculate price adjustments based on customizations
-      const priceAdjustments = await this.calculatePriceAdjustments(customizations);
+      const priceAdjustments = await this.calculatePriceAdjustments(
+        customizations
+      );
 
       // Create customized package
       const customizedPackage = {
@@ -670,20 +697,32 @@ export default class PackageController {
         description: originalPackage.description,
         images: originalPackage.images,
         duration: originalPackage.duration,
-        accommodations: await this.mergeAccommodations(originalPackage.accommodations, customizations.accommodations),
-        transportation: this.mergeTransportation(originalPackage.transportation, customizations.transportation),
-        activities: await this.mergeActivities(originalPackage.activities, customizations.activities),
+        accommodations: await this.mergeAccommodations(
+          originalPackage.accommodations,
+          customizations.accommodations
+        ),
+        transportation: this.mergeTransportation(
+          originalPackage.transportation,
+          customizations.transportation
+        ),
+        activities: await this.mergeActivities(
+          originalPackage.activities,
+          customizations.activities
+        ),
         meals: this.mergeMeals(originalPackage.meals, customizations.meals),
-        itinerary: await this.mergeItinerary(originalPackage.itinerary, customizations.itinerary),
+        itinerary: await this.mergeItinerary(
+          originalPackage.itinerary,
+          customizations.itinerary
+        ),
         accessibility: {
           ...originalPackage.accessibility,
-          ...customizations.accessibility
+          ...customizations.accessibility,
         },
         priceBreakdown: {
           base: originalPackage.basePrice,
           adjustments: priceAdjustments.breakdown,
-          total: originalPackage.basePrice + priceAdjustments.total
-        }
+          total: originalPackage.basePrice + priceAdjustments.total,
+        },
       };
 
       const newPackage = new Package(customizedPackage);
@@ -691,7 +730,7 @@ export default class PackageController {
 
       return {
         success: true,
-        data: newPackage
+        data: newPackage,
       };
     } catch (err) {
       return error(400, { message: "Failed to customize package", error: err });
@@ -726,13 +765,17 @@ export default class PackageController {
     const breakdown: Record<string, number> = {};
 
     if (customizations.accommodations?.hotelIds) {
-      const hotelPrices = await this.calculateHotelPrices(customizations.accommodations.hotelIds);
+      const hotelPrices = await this.calculateHotelPrices(
+        customizations.accommodations.hotelIds
+      );
       breakdown.accommodations = hotelPrices;
       total += hotelPrices;
     }
 
     if (customizations.activities?.included) {
-      const activityPrices = await this.calculateActivityPrices(customizations.activities.included);
+      const activityPrices = await this.calculateActivityPrices(
+        customizations.activities.included
+      );
       breakdown.activities = activityPrices;
       total += activityPrices;
     }
@@ -751,7 +794,7 @@ export default class PackageController {
 
     return {
       hotels,
-      preferences: custom.preferences || {}
+      preferences: custom.preferences || {},
     };
   }
 
@@ -765,7 +808,7 @@ export default class PackageController {
     return {
       included,
       excluded: custom.excluded || [],
-      preferences: custom.preferences || {}
+      preferences: custom.preferences || {},
     };
   }
 
@@ -778,9 +821,9 @@ export default class PackageController {
       customDays: await Promise.all(
         (custom.customDays || []).map(async (day: any) => ({
           ...day,
-          activities: await Activity.find({ _id: { $in: day.activities } })
+          activities: await Activity.find({ _id: { $in: day.activities } }),
         }))
-      )
+      ),
     };
   }
 }

@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Model } from "mongoose";
 
 export interface ActivityInterface {
   name: string;
@@ -135,11 +135,9 @@ activitySchema.index(
   }
 );
 
-let Activity;
-try {
-  Activity = mongoose.model("activities");
-} catch (error) {
-  Activity = mongoose.model("activities", activitySchema);
-}
+// Define and export the Activity model with proper typing
+const Activity: Model<ActivityInterface> =
+  mongoose.models.activities ||
+  mongoose.model<ActivityInterface>("activities", activitySchema);
 
 export default Activity;

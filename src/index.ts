@@ -22,6 +22,7 @@ import reviewsRoutes from "./routes/reviews";
 import sliderRoutes from "./routes/sliders";
 import notificationRoutes from "./routes/notifications";
 import trippersRoutes from "./routes/trippers";
+import activitiesRoutes from "./routes/activities";
 
 // Connect to MongoDB
 mongoose
@@ -87,7 +88,8 @@ const app = new Elysia()
   .use(reviewsRoutes)
   .use(sliderRoutes)
   .use(notificationRoutes)
-  .use(trippersRoutes);
+  .use(trippersRoutes)
+  .use(activitiesRoutes);
 
 app.onError(({ error, code }) => {
   console.log(error, code);
@@ -156,6 +158,10 @@ app.get("/", () => {
       hotels: {
         public: "/api/v1/hotels/public",
         admin: "/api/v1/hotels/admin",
+      },
+      activities: {
+        public: "/api/v1/activities/public",
+        admin: "/api/v1/activities/admin",
       },
     },
   };
