@@ -237,6 +237,12 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
     async ({ body, userId }) => {
       // Handle the file upload
       try {
+        console.log("File upload request received:", {
+          fileType: body.file.type,
+          fileSize: `${(body.file.size / (1024 * 1024)).toFixed(2)}MB`,
+          fileName: body.file.name,
+        });
+
         // Create storage directory if it doesn't exist
         const baseDir = "storage/trippers";
         if (!fs.existsSync(baseDir)) {
@@ -244,17 +250,61 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         }
 
         // Generate a secure unique filename
-        const fileExtension = body.file.name.split(".").pop() || "unknown";
+        const fileExtension =
+          body.file.name.split(".").pop()?.toLowerCase() || "unknown";
+        const allowedVideoExtensions = ["mp4", "mov", "avi"];
+        const allowedImageExtensions = ["jpg", "jpeg", "png", "gif"];
+
+        // Determine appropriate extension
+        let finalExtension = fileExtension;
+        if (body.file.type.startsWith("video/")) {
+          // If it's a video but has wrong extension, ensure it's mp4
+          if (!allowedVideoExtensions.includes(fileExtension)) {
+            finalExtension = "mp4";
+          }
+        } else if (body.file.type.startsWith("image/")) {
+          // If it's an image but has wrong extension, use appropriate one
+          if (!allowedImageExtensions.includes(fileExtension)) {
+            if (
+              body.file.type === "image/jpeg" ||
+              body.file.type === "image/jpg"
+            ) {
+              finalExtension = "jpg";
+            } else if (body.file.type === "image/png") {
+              finalExtension = "png";
+            } else {
+              finalExtension = "jpg"; // Default
+            }
+          }
+        }
+
         const uniqueId = crypto.randomUUID();
-        const newFileName = `${uniqueId}.${fileExtension}`;
+        const newFileName = `${uniqueId}.${finalExtension}`;
         const filePath = path.join(baseDir, newFileName);
 
+        console.log(`Processing file: ${body.file.name} -> ${newFileName}`);
+
         // Get the file content and write it to storage
-        const fileContent = await body.file.arrayBuffer();
-        await fs.promises.writeFile(filePath, new Uint8Array(fileContent));
+        try {
+          const fileContent = await body.file.arrayBuffer();
+          await fs.promises.writeFile(filePath, new Uint8Array(fileContent));
+          console.log(
+            `File saved successfully (${fileContent.byteLength} bytes)`
+          );
+        } catch (writeError) {
+          console.error("Error writing file:", writeError);
+          return {
+            status: false,
+            message: "Failed to write file to storage",
+            error:
+              writeError instanceof Error
+                ? writeError.message
+                : "Unknown error",
+          };
+        }
 
         // Get the server domain from environment or use default
-        const domain = process.env.API_URL || "http://localhost:3000";
+        const domain = process.env.API_URL || "http://localhost:3310";
 
         // Use the new dynamic path format for file URLs
         const fileUrl = `${domain}/storage/trippers/${newFileName}`;
@@ -281,8 +331,14 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
     {
       body: t.Object({
         file: t.File({
-          format: ["image/jpeg", "image/png", "image/gif", "video/mp4"],
-          maxSize: 10 * 1024 * 1024, // 10MB max size
+          format: [
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "video/mp4",
+            "video/quicktime",
+          ],
+          maxSize: 15 * 1024 * 1024, // Increase to 15MB max size for videos
         }),
       }),
     }
