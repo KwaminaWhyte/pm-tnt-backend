@@ -21,7 +21,7 @@ import settingsRoutes from "./routes/settings";
 import reviewsRoutes from "./routes/reviews";
 import sliderRoutes from "./routes/sliders";
 import notificationRoutes from "./routes/notifications";
-import trippersRoutes from "./routes/trippers";
+import tripperRoutes from "./routes/trippers";
 import activitiesRoutes from "./routes/activities";
 
 // Connect to MongoDB
@@ -88,7 +88,7 @@ const app = new Elysia()
   .use(reviewsRoutes)
   .use(sliderRoutes)
   .use(notificationRoutes)
-  .use(trippersRoutes)
+  .use(tripperRoutes)
   .use(activitiesRoutes);
 
 app.onError(({ error, code }) => {
