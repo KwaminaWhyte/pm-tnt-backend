@@ -133,10 +133,9 @@ export class TripperController {
         };
       }
 
-      const post = await TripperPost.findById(id).populate(
-        "user",
-        "firstName lastName photo"
-      );
+      const post = await TripperPost.findById(id)
+        .populate("user", "firstName lastName photo")
+        .populate("comments.user", "firstName lastName photo");
 
       if (!post) {
         return {
