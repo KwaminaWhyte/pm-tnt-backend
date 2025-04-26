@@ -2,8 +2,6 @@ import mongoose, { Schema, Document } from "mongoose";
 
 interface ITripperPostComment extends Document {
   user: mongoose.Types.ObjectId;
-  userName: string;
-  userAvatar: string;
   text: string;
   createdAt: Date;
   likes: number;
@@ -11,8 +9,6 @@ interface ITripperPostComment extends Document {
 
 export interface ITripperPost extends Document {
   user: mongoose.Types.ObjectId;
-  userName: string;
-  userAvatar: string;
   caption: string;
   mediaUrl: string;
   mediaType: "image" | "video";
@@ -26,8 +22,6 @@ export interface ITripperPost extends Document {
 const TripperPostCommentSchema = new Schema<ITripperPostComment>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    userName: { type: String, required: true },
-    userAvatar: { type: String, required: true },
     text: { type: String, required: true },
     likes: { type: Number, default: 0 },
   },
@@ -41,8 +35,6 @@ const TripperPostSchema = new Schema<ITripperPost>(
       ref: "User",
       required: true,
     },
-    userName: { type: String, required: true },
-    userAvatar: { type: String, required: true },
     caption: { type: String, required: true },
     mediaUrl: { type: String, required: true },
     mediaType: { type: String, enum: ["image", "video"], required: true },
