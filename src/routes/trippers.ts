@@ -197,7 +197,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
   // Add a new endpoint for media upload
   .post(
     "/upload/media",
-    async ({ body, userId, request }) => {
+    async ({ body, userId }) => {
       // Handle the file upload
       try {
         // Create storage directory if it doesn't exist
@@ -216,15 +216,10 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         const fileContent = await body.file.arrayBuffer();
         await fs.promises.writeFile(filePath, new Uint8Array(fileContent));
 
-        // Get the server domain from environment or request headers
-        const apiUrl =
-          process.env.API_URL ||
-          `${
-            request.headers.get("x-forwarded-proto") || "http"
-          }://${request.headers.get("host")}`;
-
-        // Generate the URL pointing to our file serving endpoint
-        const fileUrl = `${apiUrl}/api/v1/trippers/files/${newFileName}`;
+        // Get the server domain from environment or use default
+        const domain =
+          process.env.STORAGE_DOMAIN || "https://storage.pmtnt.com";
+        const fileUrl = `${domain}/${baseDir}/${newFileName}`;
 
         return {
           status: true,
