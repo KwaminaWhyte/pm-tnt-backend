@@ -71,6 +71,7 @@ export class TripperController {
 
       const posts = await TripperPost.find(filter)
         .populate("user", "firstName lastName photo")
+        .populate("comments.user", "firstName lastName photo")
         .sort(sortOption)
         .skip(skip)
         .limit(limitNum);
