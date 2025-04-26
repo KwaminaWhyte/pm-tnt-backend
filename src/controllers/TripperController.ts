@@ -90,7 +90,7 @@ export class TripperController {
 
       // Add hasLiked property if userId is provided
       let formattedPosts = posts;
-      console.log("userId", userId);
+
       if (userId) {
         formattedPosts = posts.map((post) => {
           const postObj = post.toObject();
@@ -100,8 +100,6 @@ export class TripperController {
           return postObj;
         });
       }
-
-      console.log("formattedPosts", formattedPosts);
 
       return {
         status: true,
