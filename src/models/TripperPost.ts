@@ -5,6 +5,7 @@ interface ITripperPostComment extends Document {
   text: string;
   createdAt: Date;
   likes: number;
+  likedBy: mongoose.Types.ObjectId[];
 }
 
 interface ITripperMedia {
@@ -20,6 +21,8 @@ export interface ITripperPost extends Document {
   createdAt: Date;
   likes: number;
   dislikes: number;
+  likedBy: mongoose.Types.ObjectId[];
+  dislikedBy: mongoose.Types.ObjectId[];
   comments: ITripperPostComment[];
 }
 
@@ -28,6 +31,7 @@ const TripperPostCommentSchema = new Schema<ITripperPostComment>(
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     text: { type: String, required: true },
     likes: { type: Number, default: 0 },
+    likedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
@@ -49,6 +53,8 @@ const TripperPostSchema = new Schema<ITripperPost>(
     location: { type: String, required: true },
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },
+    likedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    dislikedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
     comments: [TripperPostCommentSchema],
   },
   { timestamps: true }

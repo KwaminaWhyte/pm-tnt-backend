@@ -32,6 +32,7 @@ export class TripperController {
         type?: string;
         location?: string;
         user?: string;
+        userId?: string;
       };
     }>
   ) {
@@ -43,6 +44,7 @@ export class TripperController {
         type,
         location,
         user,
+        userId,
       } = context.query;
 
       // Build filter query
@@ -79,14 +81,36 @@ export class TripperController {
       const totalPosts = await TripperPost.countDocuments(filter);
       const totalPages = Math.ceil(totalPosts / limitNum);
 
+      // Get unique countries from all posts
+      const uniqueCountries = await TripperPost.distinct("location");
+
+      // Get unique users count
+      const uniqueUsers = await TripperPost.distinct("user");
+      const uniqueUsersCount = uniqueUsers.length;
+
+      // Add hasLiked property if userId is provided
+      let formattedPosts = posts;
+      if (userId) {
+        formattedPosts = posts.map((post) => {
+          const postObj = post.toObject();
+          postObj.hasLiked =
+            post.likedBy &&
+            post.likedBy.some((id: any) => id.toString() === userId);
+          return postObj;
+        });
+      }
+
       return {
         status: true,
-        data: posts,
+        data: formattedPosts,
         meta: {
           currentPage: pageNum,
           totalPages,
           totalCount: totalPosts,
           hasNextPage: pageNum < totalPages,
+          uniqueUsersCount,
+          uniqueCountriesCount: uniqueCountries.length,
+          uniqueCountries,
         },
       };
     } catch (error: any) {
@@ -248,6 +272,7 @@ export class TripperController {
     try {
       const { id } = context.params;
       const { action } = context.body;
+      const userId = context.userId;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return {
@@ -265,11 +290,48 @@ export class TripperController {
         };
       }
 
-      // Update likes or dislikes
-      if (action === "like") {
+      // Check if user has already reacted to the post
+
+      const alreadyLiked =
+        post.likedBy && post.likedBy.some((id) => id.toString() === userId);
+
+      if (alreadyLiked) {
+        // User already liked this post, remove their like
+        post.likes = Math.max(0, post.likes - 1);
+        post.likedBy = post.likedBy.filter((id) => id.toString() !== userId);
+
+        await post.save();
+
+        return {
+          status: true,
+          message: "Like removed successfully",
+          data: {
+            ...post.toObject(),
+            hasLiked: false,
+          },
+        };
+      } else {
+        // New like - add user to likedBy array
         post.likes += 1;
-      } else if (action === "dislike") {
-        post.dislikes += 1;
+
+        // Initialize likedBy array if it doesn't exist
+        if (!post.likedBy) {
+          post.likedBy = [];
+        }
+
+        // Add user to likedBy
+        post.likedBy.push(userId as any);
+
+        // If the user previously disliked, remove from dislikedBy
+        if (
+          post.dislikedBy &&
+          post.dislikedBy.some((id) => id.toString() === userId)
+        ) {
+          post.dislikes = Math.max(0, post.dislikes - 1);
+          post.dislikedBy = post.dislikedBy.filter(
+            (id) => id.toString() !== userId
+          );
+        }
       }
 
       await post.save();
@@ -280,10 +342,20 @@ export class TripperController {
         "firstName lastName photo"
       );
 
+      // Add hasLiked and hasDisliked flags for the requesting user
+      const result = populatedPost?.toObject();
+      result.hasLiked =
+        populatedPost?.likedBy?.some((id) => id.toString() === userId) || false;
+      result.hasDisliked =
+        populatedPost?.dislikedBy?.some((id) => id.toString() === userId) ||
+        false;
+
       return {
         status: true,
-        message: `Post ${action}d successfully`,
-        data: populatedPost,
+        message: `Post ${
+          action === "like" ? "liked" : "disliked"
+        } successfully`,
+        data: result,
       };
     } catch (error: any) {
       return {
