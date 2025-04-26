@@ -3,6 +3,9 @@ import swagger from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
 import { staticPlugin } from "@elysiajs/static";
+import * as path from "path";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
 
 import { jwtConfig } from "./utils/jwt.config";
 import userAuthRoutes from "./routes/user-auth";
@@ -44,12 +47,19 @@ const app = new Elysia()
       maxAge: 86400, // 24 hours
     })
   )
-  .use(
-    staticPlugin({
-      prefix: "/storage",
-      assets: "storage",
-    })
-  )
+  // .use(
+  //   staticPlugin({
+  //     prefix: "/storage",
+  //     assets: "storage",
+  //   })
+  // )
+  // Add dynamic file serving route
+  .get("/storage/:folder/:filename", ({ params }) => {
+    const { folder, filename } = params;
+    console.log({ folder, filename });
+
+    return Bun.file(`storage/${folder}/${filename}`);
+  })
   // Add request logging
   .onRequest(({ request }) => {
     const timestamp = new Date().toISOString();
@@ -174,7 +184,13 @@ app.get("/", () => {
   };
 });
 
-app.listen(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3310;
+const HOST = process.env.HOST || "0.0.0.0";
+
+app.listen({
+  port: Number(PORT),
+  hostname: HOST,
+});
 
 console.log(
   `🦊 Elysia is running at http://${app.server?.hostname}:${app.server?.port}`

@@ -629,9 +629,9 @@ packageSchema.statics.createFromTemplate = async function (
 
 let Package: Model<PackageInterface>;
 try {
-  Package = mongoose.model("packages");
+  Package = mongoose.model("Package");
 } catch (error) {
-  Package = mongoose.model("packages", packageSchema);
+  Package = mongoose.model("Package", packageSchema);
 }
 
 export default Package;

@@ -7,11 +7,15 @@ interface ITripperPostComment extends Document {
   likes: number;
 }
 
+interface ITripperMedia {
+  url: string;
+  type: "image" | "video";
+}
+
 export interface ITripperPost extends Document {
   user: mongoose.Types.ObjectId;
   caption: string;
-  mediaUrl: string;
-  mediaType: "image" | "video";
+  media: ITripperMedia[];
   location: string;
   createdAt: Date;
   likes: number;
@@ -28,6 +32,11 @@ const TripperPostCommentSchema = new Schema<ITripperPostComment>(
   { timestamps: true }
 );
 
+const TripperMediaSchema = new Schema({
+  url: { type: String, required: true },
+  type: { type: String, enum: ["image", "video"], required: true },
+});
+
 const TripperPostSchema = new Schema<ITripperPost>(
   {
     user: {
@@ -36,8 +45,7 @@ const TripperPostSchema = new Schema<ITripperPost>(
       required: true,
     },
     caption: { type: String, required: true },
-    mediaUrl: { type: String, required: true },
-    mediaType: { type: String, enum: ["image", "video"], required: true },
+    media: { type: [TripperMediaSchema], required: true },
     location: { type: String, required: true },
     likes: { type: Number, default: 0 },
     dislikes: { type: Number, default: 0 },

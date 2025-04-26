@@ -47,7 +47,7 @@ export class TripperController {
 
       // Build filter query
       const filter: any = {};
-      if (type) filter.mediaType = type;
+      if (type) filter["media.type"] = type;
       if (location) filter.location = { $regex: location, $options: "i" };
       if (user) filter.user = user;
 
@@ -147,7 +147,7 @@ export class TripperController {
         )
       );
 
-      const { caption, mediaUrl, mediaType, location } = context.body;
+      const { caption, media, location } = context.body;
       const userId = context.userId;
 
       if (!userId) {
@@ -166,14 +166,37 @@ export class TripperController {
         };
       }
 
-      // Instead of trying to use the model directly, just create the post
-      console.log(`Creating post for user ${userId} without validation`);
+      // Validate media array
+      if (!Array.isArray(media) || media.length === 0) {
+        return {
+          status: false,
+          message: "At least one media item is required",
+        };
+      }
+
+      // Check if each media item has the required properties
+      for (const item of media) {
+        if (
+          !item.url ||
+          !item.type ||
+          !["image", "video"].includes(item.type)
+        ) {
+          return {
+            status: false,
+            message:
+              "Each media item must have a valid url and type (image or video)",
+          };
+        }
+      }
+
+      console.log(
+        `Creating post for user ${userId} with ${media.length} media items`
+      );
 
       const newPost = new TripperPost({
         user: userId,
         caption,
-        mediaUrl,
-        mediaType,
+        media,
         location,
         likes: 0,
         dislikes: 0,
@@ -186,8 +209,7 @@ export class TripperController {
           {
             user: userId,
             caption,
-            mediaUrl,
-            mediaType,
+            media,
             location,
           },
           null,

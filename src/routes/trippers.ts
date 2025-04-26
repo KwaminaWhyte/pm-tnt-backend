@@ -73,8 +73,6 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         throw new Error("User ID not found in token");
       }
 
-      console.log("JWT verified, extracted userId:", userId);
-
       return { userId };
     } catch (error) {
       console.error("JWT verification error:", error);
@@ -124,8 +122,12 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
     {
       body: t.Object({
         caption: t.String(),
-        mediaUrl: t.String(),
-        mediaType: t.Union([t.Literal("image"), t.Literal("video")]),
+        media: t.Array(
+          t.Object({
+            url: t.String(),
+            type: t.Union([t.Literal("image"), t.Literal("video")]),
+          })
+        ),
         location: t.String(),
       }),
     }
@@ -181,7 +183,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
       }),
     }
   )
-  // Add a new endpoint for media upload
+  // Add a new endpoint for media upload (supports multiple files)
   .post(
     "/upload/media",
     async ({ body, userId }) => {
@@ -204,10 +206,9 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         await fs.promises.writeFile(filePath, new Uint8Array(fileContent));
 
         // Get the server domain from environment or use default
-        const domain =
-          process.env.STORAGE_DOMAIN || "https://pmtnt-backend.adamusgh.com";
+        const domain = process.env.API_URL || "http://localhost:3000";
 
-        // Use the correct format for URL - static files are served from /storage prefix
+        // Use the new dynamic path format for file URLs
         const fileUrl = `${domain}/storage/trippers/${newFileName}`;
 
         console.log(`File saved to ${filePath}, accessible at ${fileUrl}`);
@@ -235,6 +236,82 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
           format: ["image/jpeg", "image/png", "image/gif", "video/mp4"],
           maxSize: 10 * 1024 * 1024, // 10MB max size
         }),
+      }),
+    }
+  )
+  // Add a new endpoint for multiple media upload
+  .post(
+    "/upload/multiple",
+    async ({ body, userId }) => {
+      try {
+        // Create storage directory if it doesn't exist
+        const baseDir = "storage/trippers";
+        if (!fs.existsSync(baseDir)) {
+          fs.mkdirSync(baseDir, { recursive: true });
+        }
+
+        const files = Array.isArray(body.files) ? body.files : [body.files];
+        const results = [];
+
+        for (const file of files) {
+          // Generate a secure unique filename
+          const fileExtension = file.name.split(".").pop() || "unknown";
+          const uniqueId = crypto.randomUUID();
+          const newFileName = `${uniqueId}.${fileExtension}`;
+          const filePath = path.join(baseDir, newFileName);
+
+          // Determine file type (image or video)
+          const fileType = file.type.startsWith("image/") ? "image" : "video";
+
+          // Get the file content and write it to storage
+          const fileContent = await file.arrayBuffer();
+          await fs.promises.writeFile(filePath, new Uint8Array(fileContent));
+
+          // Get the server domain from environment or use default
+          const domain = process.env.API_URL || "http://localhost:3310";
+
+          // Use the new dynamic path format for file URLs
+          const fileUrl = `${domain}/storage/trippers/${newFileName}`;
+
+          console.log(`File saved to ${filePath}, accessible at ${fileUrl}`);
+
+          results.push({
+            url: fileUrl,
+            type: fileType,
+            fileName: newFileName,
+            fileSize: file.size,
+            fileType: file.type,
+          });
+        }
+
+        return {
+          status: true,
+          message: `${results.length} file(s) uploaded successfully`,
+          files: results,
+        };
+      } catch (error) {
+        console.error("Error uploading files:", error);
+        return {
+          status: false,
+          message: "Failed to upload files",
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
+      }
+    },
+    {
+      body: t.Object({
+        files: t.Union([
+          t.File({
+            format: ["image/jpeg", "image/png", "image/gif", "video/mp4"],
+            maxSize: 10 * 1024 * 1024, // 10MB max size
+          }),
+          t.Array(
+            t.File({
+              format: ["image/jpeg", "image/png", "image/gif", "video/mp4"],
+              maxSize: 10 * 1024 * 1024, // 10MB max size
+            })
+          ),
+        ]),
       }),
     }
   )

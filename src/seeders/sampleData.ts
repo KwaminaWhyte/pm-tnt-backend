@@ -44,7 +44,7 @@ export async function seedSampleData() {
     });
 
     // Create Destination
-    const destination = await mongoose.model("destinations").create({
+    const destination = await mongoose.model("Destination").create({
       name: "Phuket",
       country: "Thailand",
       city: "Phuket City",

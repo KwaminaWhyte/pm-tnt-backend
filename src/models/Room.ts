@@ -5,7 +5,7 @@ const schema = new Schema(
   {
     hotel: {
       type: Schema.Types.ObjectId,
-      ref: "hotels",
+      ref: "Hotel",
       required: true,
     },
     roomNumber: { type: String, required: true },

@@ -15,7 +15,7 @@ const locationSchema = new Schema(
 
 const ratingSchema = new Schema(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "users", required: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: String,
     createdAt: { type: Date, default: Date.now },

@@ -67,8 +67,6 @@ export default class UserController {
    * @throws {Error} 400 - Invalid input data
    */
   async loginWithEmail(data: LoginWithEmailDTO, jwt_auth?: any) {
-    console.log("login with email");
-
     const { email, password } = data;
 
     if (!email || !password) {

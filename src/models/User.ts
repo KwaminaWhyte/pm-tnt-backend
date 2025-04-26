@@ -1,5 +1,21 @@
 import mongoose, { type Model, Schema } from "mongoose";
 
+interface UserInterface {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phone: string;
+  otp: {
+    code: string;
+    expiresAt: Date;
+  };
+  position: string;
+  photo: string;
+  isPhoneVerified: boolean;
+  isEmailVerified: boolean;
+}
+
 const userSchema = new mongoose.Schema<UserInterface>(
   {
     firstName: {
@@ -52,9 +68,9 @@ const userSchema = new mongoose.Schema<UserInterface>(
 
 let User: mongoose.Model<UserInterface>;
 try {
-  User = mongoose.model<UserInterface>("users");
+  User = mongoose.model<UserInterface>("User");
 } catch (error) {
-  User = mongoose.model<UserInterface>("users", userSchema);
+  User = mongoose.model<UserInterface>("User", userSchema);
 }
 
 export default User;

@@ -105,7 +105,7 @@ const packageTemplateSchema = new Schema<PackageTemplateInterface>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "users",
+      ref: "User",
       required: true,
       index: true,
     },
@@ -120,7 +120,7 @@ const packageTemplateSchema = new Schema<PackageTemplateInterface>(
     },
     basePackageId: {
       type: Schema.Types.ObjectId,
-      ref: "packages",
+      ref: "Package",
       required: true,
     },
     customizations: {
@@ -330,7 +330,7 @@ packageTemplateSchema.methods.submitForReview =
     // This would be a full implementation in production
     if (template.basePackageId) {
       try {
-        const Package = mongoose.model("packages");
+        const Package = mongoose.model("Package");
         const basePackage = await Package.findById(template.basePackageId);
 
         if (basePackage) {
@@ -390,7 +390,7 @@ packageTemplateSchema.methods.publishAsPackage = async function (
   adminId: string
 ): Promise<any> {
   try {
-    const Package = mongoose.model("packages");
+    const Package = mongoose.model("Package");
 
     // Use static method from Package model
     const newPackage = await Package.createFromTemplate(this._id, {
@@ -419,7 +419,7 @@ packageTemplateSchema.methods.checkAvailability = async function (
 ): Promise<boolean> {
   try {
     // Check if base package is available
-    const Package = mongoose.model("packages");
+    const Package = mongoose.model("Package");
     const basePackage = await Package.findById(this.basePackageId);
 
     if (!basePackage) return false;

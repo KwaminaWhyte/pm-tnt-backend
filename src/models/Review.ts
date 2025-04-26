@@ -25,7 +25,7 @@ const reviewSchema = new Schema<ReviewInterface>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "users",
+      ref: "User",
       required: true,
       index: true,
     },
@@ -63,7 +63,7 @@ const reviewSchema = new Schema<ReviewInterface>(
     helpful: [
       {
         type: Schema.Types.ObjectId,
-        ref: "users",
+        ref: "User",
       },
     ],
     verified: {
@@ -76,7 +76,7 @@ const reviewSchema = new Schema<ReviewInterface>(
       respondedAt: Date,
       respondedBy: {
         type: Schema.Types.ObjectId,
-        ref: "users",
+        ref: "User",
       },
     },
     status: {
@@ -122,9 +122,9 @@ reviewSchema.pre("save", async function (next) {
 
 let Review;
 try {
-  Review = mongoose.model("reviews");
+  Review = mongoose.model("Review");
 } catch (error) {
-  Review = mongoose.model("reviews", reviewSchema);
+  Review = mongoose.model("Review", reviewSchema);
 }
 
 export default Review;
