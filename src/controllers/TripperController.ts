@@ -30,7 +30,7 @@ export class TripperController {
       const filter: any = {};
       if (type) filter.mediaType = type;
       if (location) filter.location = { $regex: location, $options: "i" };
-      if (userId) filter.userId = userId;
+      if (userId) filter.user = userId;
 
       // Calculate pagination
       const pageNum = parseInt(page);
@@ -72,7 +72,9 @@ export class TripperController {
     } catch (error) {
       return {
         status: false,
-        message: `Error fetching tripper posts: ${error.message}`,
+        message: `Error fetching tripper posts: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }
@@ -89,7 +91,10 @@ export class TripperController {
         };
       }
 
-      const post = await TripperPost.findById(id);
+      const post = await TripperPost.findById(id).populate(
+        "user",
+        "firstName lastName photo"
+      );
 
       if (!post) {
         return {
@@ -105,7 +110,9 @@ export class TripperController {
     } catch (error) {
       return {
         status: false,
-        message: `Error fetching post: ${error.message}`,
+        message: `Error fetching post: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }
@@ -122,18 +129,15 @@ export class TripperController {
         mediaType: "image" | "video";
         location: string;
       };
+      userId: string;
     }>
   ) {
     try {
-      const {
-        userId,
-        userName,
-        userAvatar,
-        caption,
-        mediaUrl,
-        mediaType,
-        location,
-      } = context.body;
+      const { caption, mediaUrl, mediaType, location, userAvatar } =
+        context.body;
+
+      // Use the authenticated userId from the context instead of the one from the body
+      const userId = context.userId;
 
       if (!mongoose.Types.ObjectId.isValid(userId)) {
         return {
@@ -143,8 +147,7 @@ export class TripperController {
       }
 
       const newPost = new TripperPost({
-        userId,
-        userName,
+        user: userId,
         userAvatar,
         caption,
         mediaUrl,
@@ -156,16 +159,22 @@ export class TripperController {
       });
 
       const savedPost = await newPost.save();
+      const populatedPost = await TripperPost.findById(savedPost._id).populate(
+        "user",
+        "firstName lastName photo"
+      );
 
       return {
         status: true,
         message: "Post created successfully",
-        data: savedPost,
+        data: populatedPost,
       };
     } catch (error) {
       return {
         status: false,
-        message: `Error creating post: ${error.message}`,
+        message: `Error creating post: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }
@@ -175,11 +184,13 @@ export class TripperController {
     context: Context<{
       params: { id: string };
       body: { action: "like" | "dislike" };
+      userId: string;
     }>
   ) {
     try {
       const { id } = context.params;
       const { action } = context.body;
+      const userId = context.userId;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return {
@@ -214,7 +225,9 @@ export class TripperController {
     } catch (error) {
       return {
         status: false,
-        message: `Error updating reactions: ${error.message}`,
+        message: `Error updating reactions: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }
@@ -229,11 +242,14 @@ export class TripperController {
         userAvatar: string;
         text: string;
       };
+      userId: string;
     }>
   ) {
     try {
       const { id } = context.params;
-      const { userId, userName, userAvatar, text } = context.body;
+      const { text, userAvatar } = context.body;
+      // Use the authenticated userId from the context
+      const userId = context.userId;
 
       if (
         !mongoose.Types.ObjectId.isValid(id) ||
@@ -254,15 +270,15 @@ export class TripperController {
         };
       }
 
-      const newComment = {
-        userId,
-        userName,
+      // Create a comment using the proper format for the mongoose schema
+      post.comments.push({
+        user: new mongoose.Types.ObjectId(userId),
         userAvatar,
         text,
         likes: 0,
-      };
+        createdAt: new Date(),
+      } as any); // Using 'as any' to bypass type checking for now
 
-      post.comments.push(newComment);
       await post.save();
 
       return {
@@ -273,7 +289,9 @@ export class TripperController {
     } catch (error) {
       return {
         status: false,
-        message: `Error adding comment: ${error.message}`,
+        message: `Error adding comment: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }
@@ -282,10 +300,12 @@ export class TripperController {
   async likeComment(
     context: Context<{
       params: { id: string; commentId: string };
+      userId: string;
     }>
   ) {
     try {
       const { id, commentId } = context.params;
+      const userId = context.userId;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return {
@@ -303,16 +323,20 @@ export class TripperController {
         };
       }
 
-      const comment = post.comments.id(commentId);
+      // Find comment by commentId (need to handle this differently since id() doesn't exist on Array)
+      const commentIndex = post.comments.findIndex(
+        (comment) => comment._id.toString() === commentId
+      );
 
-      if (!comment) {
+      if (commentIndex === -1) {
         return {
           status: false,
           message: "Comment not found",
         };
       }
 
-      comment.likes += 1;
+      // Increment likes on the found comment
+      post.comments[commentIndex].likes += 1;
       await post.save();
 
       return {
@@ -323,15 +347,23 @@ export class TripperController {
     } catch (error) {
       return {
         status: false,
-        message: `Error liking comment: ${error.message}`,
+        message: `Error liking comment: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }
 
   // Delete a post
-  async deletePost(context: Context<{ params: { id: string } }>) {
+  async deletePost(
+    context: Context<{
+      params: { id: string };
+      userId: string;
+    }>
+  ) {
     try {
       const { id } = context.params;
+      const userId = context.userId;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return {
@@ -340,14 +372,25 @@ export class TripperController {
         };
       }
 
-      const deletedPost = await TripperPost.findByIdAndDelete(id);
+      // First check if the post exists and belongs to the user
+      const post = await TripperPost.findById(id);
 
-      if (!deletedPost) {
+      if (!post) {
         return {
           status: false,
           message: "Post not found",
         };
       }
+
+      // Check if the user is the owner of the post
+      if (post.user.toString() !== userId) {
+        return {
+          status: false,
+          message: "Unauthorized: You can only delete your own posts",
+        };
+      }
+
+      const deletedPost = await TripperPost.findByIdAndDelete(id);
 
       return {
         status: true,
@@ -356,7 +399,9 @@ export class TripperController {
     } catch (error) {
       return {
         status: false,
-        message: `Error deleting post: ${error.message}`,
+        message: `Error deleting post: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       };
     }
   }

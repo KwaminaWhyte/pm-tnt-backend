@@ -37,6 +37,43 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
       }),
     }
   )
+  // Add an endpoint to serve uploaded files
+  .get(
+    "/files/:fileName",
+    async ({ params }) => {
+      try {
+        const filePath = path.join("storage/trippers", params.fileName);
+
+        if (!fs.existsSync(filePath)) {
+          return new Response("File not found", { status: 404 });
+        }
+
+        const fileBuffer = await fs.promises.readFile(filePath);
+        const fileExtension = path.extname(params.fileName).toLowerCase();
+
+        let contentType = "application/octet-stream";
+        if (fileExtension === ".jpg" || fileExtension === ".jpeg")
+          contentType = "image/jpeg";
+        else if (fileExtension === ".png") contentType = "image/png";
+        else if (fileExtension === ".gif") contentType = "image/gif";
+        else if (fileExtension === ".mp4") contentType = "video/mp4";
+
+        return new Response(fileBuffer, {
+          headers: {
+            "Content-Type": contentType,
+            "Cache-Control": "public, max-age=31536000",
+          },
+        });
+      } catch (error) {
+        return new Response("Error serving file", { status: 500 });
+      }
+    },
+    {
+      params: t.Object({
+        fileName: t.String(),
+      }),
+    }
+  )
   // Protected routes with authentication
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
@@ -59,7 +96,20 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
 
     try {
       const data = await jwt_auth.verify(token);
-      return { userId: data?.id };
+
+      // Safely extract the user ID from the JWT payload
+      if (!data || typeof data !== "object") {
+        throw new Error("Invalid token payload");
+      }
+
+      // Check for either id or sub in the token payload
+      const userId = data.id || data.sub;
+
+      if (!userId) {
+        throw new Error("User ID not found in token");
+      }
+
+      return { userId };
     } catch (error) {
       throw new Error(
         JSON.stringify({
@@ -79,14 +129,13 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
   .post(
     "/posts",
     async ({ body, userId }) => {
+      // Pass the authenticated userId along with the body
       return await tripperController.createPost({ body, userId } as any);
     },
     {
       body: t.Object({
-        userId: t.String(),
-        userName: t.String(),
-        userAvatar: t.String(),
         caption: t.String(),
+        userAvatar: t.String(),
         mediaUrl: t.String(),
         mediaType: t.Union([t.Literal("image"), t.Literal("video")]),
         location: t.String(),
@@ -127,8 +176,6 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         id: t.String(),
       }),
       body: t.Object({
-        userId: t.String(),
-        userName: t.String(),
         userAvatar: t.String(),
         text: t.String(),
       }),
@@ -150,7 +197,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
   // Add a new endpoint for media upload
   .post(
     "/upload/media",
-    async ({ body, userId }) => {
+    async ({ body, userId, request }) => {
       // Handle the file upload
       try {
         // Create storage directory if it doesn't exist
@@ -169,10 +216,15 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         const fileContent = await body.file.arrayBuffer();
         await fs.promises.writeFile(filePath, new Uint8Array(fileContent));
 
-        // Get the server domain from environment or use default
-        const domain =
-          process.env.STORAGE_DOMAIN || "https://storage.pmtnt.com";
-        const fileUrl = `${domain}/${baseDir}/${newFileName}`;
+        // Get the server domain from environment or request headers
+        const apiUrl =
+          process.env.API_URL ||
+          `${
+            request.headers.get("x-forwarded-proto") || "http"
+          }://${request.headers.get("host")}`;
+
+        // Generate the URL pointing to our file serving endpoint
+        const fileUrl = `${apiUrl}/api/v1/trippers/files/${newFileName}`;
 
         return {
           status: true,
@@ -203,7 +255,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
   .delete(
     "/posts/:id",
     async ({ params, userId }) => {
-      // Owner check would be implemented in controller
+      // Owner check is now implemented in the controller
       return await tripperController.deletePost({ params, userId } as any);
     },
     {
