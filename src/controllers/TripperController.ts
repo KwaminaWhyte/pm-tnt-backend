@@ -125,9 +125,15 @@ export class TripperController {
   }
 
   // Get a specific post by ID
-  async getPostById(context: Context<{ params: { id: string } }>) {
+  async getPostById(
+    context: Context<{
+      params: { id: string };
+      query: { userId: string };
+    }>
+  ) {
     try {
       const { id } = context.params;
+      const userId = context.query.userId;
 
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return {
@@ -147,9 +153,14 @@ export class TripperController {
         };
       }
 
+      const postObj = post.toObject();
+      postObj.hasLiked =
+        post.likedBy &&
+        post.likedBy.some((id: any) => id.toString() === userId);
+
       return {
         status: true,
-        data: post,
+        data: postObj,
       };
     } catch (error: any) {
       return {

@@ -52,8 +52,32 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
   )
   .get(
     "/posts/:id",
-    async ({ params }) => {
-      return await tripperController.getPostById({ params } as any);
+    async ({ params, headers, jwt_auth, query }) => {
+      try {
+        const auth = headers["authorization"];
+        const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+        if (token) {
+          const data = await jwt_auth.verify(token);
+          if (data) {
+            // Safely extract the ID from the JWT payload as a string
+            const payload = data as Record<string, any>;
+            const userId = payload.id || payload._id;
+
+            if (userId) {
+              // Add userId to query params
+              query.userId = userId;
+            }
+          }
+        }
+      } catch (error) {
+        // Silently fail - this just means we won't add hasLiked property
+        console.log("No valid auth token found for adding hasLiked property");
+      }
+      return await tripperController.getPostById({
+        params,
+        query,
+      } as any);
     },
     {
       params: t.Object({
