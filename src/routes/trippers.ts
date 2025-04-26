@@ -22,7 +22,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         page: t.Optional(t.String()),
         type: t.Optional(t.String()),
         location: t.Optional(t.String()),
-        userId: t.Optional(t.String()),
+        user: t.Optional(t.String()),
       }),
     }
   )
@@ -34,43 +34,6 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
     {
       params: t.Object({
         id: t.String(),
-      }),
-    }
-  )
-  // Add an endpoint to serve uploaded files
-  .get(
-    "/files/:fileName",
-    async ({ params }) => {
-      try {
-        const filePath = path.join("storage/trippers", params.fileName);
-
-        if (!fs.existsSync(filePath)) {
-          return new Response("File not found", { status: 404 });
-        }
-
-        const fileBuffer = await fs.promises.readFile(filePath);
-        const fileExtension = path.extname(params.fileName).toLowerCase();
-
-        let contentType = "application/octet-stream";
-        if (fileExtension === ".jpg" || fileExtension === ".jpeg")
-          contentType = "image/jpeg";
-        else if (fileExtension === ".png") contentType = "image/png";
-        else if (fileExtension === ".gif") contentType = "image/gif";
-        else if (fileExtension === ".mp4") contentType = "video/mp4";
-
-        return new Response(fileBuffer, {
-          headers: {
-            "Content-Type": contentType,
-            "Cache-Control": "public, max-age=31536000",
-          },
-        });
-      } catch (error) {
-        return new Response("Error serving file", { status: 500 });
-      }
-    },
-    {
-      params: t.Object({
-        fileName: t.String(),
       }),
     }
   )
@@ -97,19 +60,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
     try {
       const data = await jwt_auth.verify(token);
 
-      // Safely extract the user ID from the JWT payload
-      if (!data || typeof data !== "object") {
-        throw new Error("Invalid token payload");
-      }
-
-      // Check for either id or sub in the token payload
-      const userId = data.id || data.sub;
-
-      if (!userId) {
-        throw new Error("User ID not found in token");
-      }
-
-      return { userId };
+      return { userId: data?.id };
     } catch (error) {
       throw new Error(
         JSON.stringify({
@@ -129,13 +80,12 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
   .post(
     "/posts",
     async ({ body, userId }) => {
-      // Pass the authenticated userId along with the body
+      // Pass the authenticated user's ID to the controller
       return await tripperController.createPost({ body, userId } as any);
     },
     {
       body: t.Object({
         caption: t.String(),
-        userAvatar: t.String(),
         mediaUrl: t.String(),
         mediaType: t.Union([t.Literal("image"), t.Literal("video")]),
         location: t.String(),
@@ -176,7 +126,6 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         id: t.String(),
       }),
       body: t.Object({
-        userAvatar: t.String(),
         text: t.String(),
       }),
     }
@@ -250,7 +199,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
   .delete(
     "/posts/:id",
     async ({ params, userId }) => {
-      // Owner check is now implemented in the controller
+      // Owner check would be implemented in controller
       return await tripperController.deletePost({ params, userId } as any);
     },
     {
