@@ -2,6 +2,7 @@ import cors from "@elysiajs/cors";
 import swagger from "@elysiajs/swagger";
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
+import { staticPlugin } from "@elysiajs/static";
 
 import { jwtConfig } from "./utils/jwt.config";
 import userAuthRoutes from "./routes/user-auth";
@@ -41,6 +42,13 @@ const app = new Elysia()
       allowedHeaders: ["Content-Type", "Authorization"],
       credentials: true,
       maxAge: 86400, // 24 hours
+    })
+  )
+  .use(
+    staticPlugin({
+      prefix: "/storage",
+      assets: "storage",
+      decorate: "request",
     })
   )
   // Add request logging
