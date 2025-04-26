@@ -127,11 +127,31 @@ export class TripperController {
     }>
   ) {
     try {
-      const { caption, mediaUrl, mediaType, location } = context.body;
+      console.log(
+        "Creating post with context:",
+        JSON.stringify(
+          {
+            body: context.body,
+            userId: context.userId,
+          },
+          null,
+          2
+        )
+      );
 
+      const { caption, mediaUrl, mediaType, location } = context.body;
       const userId = context.userId;
 
+      if (!userId) {
+        console.error("Missing userId in context");
+        return {
+          status: false,
+          message: "User ID is required",
+        };
+      }
+
       if (!mongoose.Types.ObjectId.isValid(userId)) {
+        console.error(`Invalid user ID format: ${userId}`);
         return {
           status: false,
           message: "Invalid user ID format",
@@ -149,7 +169,23 @@ export class TripperController {
         comments: [],
       });
 
+      console.log(
+        "Attempting to save post with data:",
+        JSON.stringify(
+          {
+            user: userId,
+            caption,
+            mediaUrl,
+            mediaType,
+            location,
+          },
+          null,
+          2
+        )
+      );
+
       const savedPost = await newPost.save();
+      console.log("Post saved successfully with ID:", savedPost._id);
 
       // Populate user information before returning
       const populatedPost = await TripperPost.findById(savedPost._id).populate(
@@ -157,15 +193,19 @@ export class TripperController {
         "firstName lastName photo"
       );
 
+      console.log("Populated post:", JSON.stringify(populatedPost, null, 2));
+
       return {
         status: true,
         message: "Post created successfully",
         data: populatedPost,
       };
     } catch (error: any) {
+      console.error("Error in createPost:", error);
       return {
         status: false,
         message: `Error creating post: ${error.message}`,
+        error: error.stack,
       };
     }
   }

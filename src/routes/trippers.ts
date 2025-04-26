@@ -81,7 +81,29 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
     "/posts",
     async ({ body, userId }) => {
       // Pass the authenticated user's ID to the controller
-      return await tripperController.createPost({ body, userId } as any);
+      console.log(
+        "POST /posts received with body:",
+        JSON.stringify(body, null, 2)
+      );
+      console.log("Authenticated userId:", userId);
+
+      try {
+        const result = await tripperController.createPost({
+          body,
+          userId,
+        } as any);
+        console.log("Post creation result:", JSON.stringify(result, null, 2));
+        return result;
+      } catch (error) {
+        console.error("Error in post creation route:", error);
+        return {
+          status: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : "An unknown error occurred",
+        };
+      }
     },
     {
       body: t.Object({

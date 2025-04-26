@@ -1,6 +1,6 @@
 {
   "name": "pm-tnt-backend",
-  "version": "1.0.50",
+  "version": "0.5.50",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts",
@@ -24,5 +24,8 @@
     "@types/nodemailer": "^6.4.17",
     "bun-types": "latest"
   },
-  "module": "src/index.js"
+  "module": "src/index.js",
+  "engines": {
+    "node": "22.x"
+  }
 }
