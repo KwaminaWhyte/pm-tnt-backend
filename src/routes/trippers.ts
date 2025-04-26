@@ -60,8 +60,24 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
     try {
       const data = await jwt_auth.verify(token);
 
-      return { userId: data?.id };
+      if (!data) {
+        throw new Error("Invalid token");
+      }
+
+      // Safely extract the ID from the JWT payload as a string
+      const payload = data as Record<string, any>;
+      const userId = payload.id || payload._id;
+
+      if (!userId) {
+        console.error("No ID found in token payload:", payload);
+        throw new Error("User ID not found in token");
+      }
+
+      console.log("JWT verified, extracted userId:", userId);
+
+      return { userId };
     } catch (error) {
+      console.error("JWT verification error:", error);
       throw new Error(
         JSON.stringify({
           message: "Unauthorized",
@@ -189,8 +205,12 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
 
         // Get the server domain from environment or use default
         const domain =
-          process.env.STORAGE_DOMAIN || "https://storage.pmtnt.com";
-        const fileUrl = `${domain}/${baseDir}/${newFileName}`;
+          process.env.STORAGE_DOMAIN || "https://pmtnt-backend.adamusgh.com";
+
+        // Use the correct format for URL - static files are served from /storage prefix
+        const fileUrl = `${domain}/storage/trippers/${newFileName}`;
+
+        console.log(`File saved to ${filePath}, accessible at ${fileUrl}`);
 
         return {
           status: true,
@@ -201,6 +221,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
           fileType: body.file.type,
         };
       } catch (error) {
+        console.error("Error uploading file:", error);
         return {
           status: false,
           message: "Failed to upload file",
