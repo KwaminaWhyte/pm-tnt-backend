@@ -172,7 +172,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         // Get the server domain from environment or use default
         const domain =
           process.env.STORAGE_DOMAIN || "https://storage.pmtnt.com";
-        const fileUrl = `${domain}/trippers/${newFileName}`;
+        const fileUrl = `${domain}/${baseDir}/${newFileName}`;
 
         return {
           status: true,

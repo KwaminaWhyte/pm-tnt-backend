@@ -48,7 +48,6 @@ const app = new Elysia()
     staticPlugin({
       prefix: "/storage",
       assets: "storage",
-      decorate: "request",
     })
   )
   // Add request logging

@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 interface ITripperPostComment extends Document {
-  userId: mongoose.Types.ObjectId;
+  user: mongoose.Types.ObjectId;
   userName: string;
   userAvatar: string;
   text: string;
@@ -10,7 +10,7 @@ interface ITripperPostComment extends Document {
 }
 
 export interface ITripperPost extends Document {
-  userId: mongoose.Types.ObjectId;
+  user: mongoose.Types.ObjectId;
   userName: string;
   userAvatar: string;
   caption: string;
@@ -25,7 +25,7 @@ export interface ITripperPost extends Document {
 
 const TripperPostCommentSchema = new Schema<ITripperPostComment>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     userName: { type: String, required: true },
     userAvatar: { type: String, required: true },
     text: { type: String, required: true },
@@ -36,7 +36,11 @@ const TripperPostCommentSchema = new Schema<ITripperPostComment>(
 
 const TripperPostSchema = new Schema<ITripperPost>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     userName: { type: String, required: true },
     userAvatar: { type: String, required: true },
     caption: { type: String, required: true },
