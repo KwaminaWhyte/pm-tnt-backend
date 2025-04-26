@@ -56,8 +56,6 @@ const app = new Elysia()
   // Add dynamic file serving route
   .get("/storage/:folder/:filename", ({ params }) => {
     const { folder, filename } = params;
-    console.log({ folder, filename });
-
     return Bun.file(`storage/${folder}/${filename}`);
   })
   // Add request logging
