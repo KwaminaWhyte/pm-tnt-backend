@@ -205,6 +205,8 @@ export default class BookingController {
         data: booking,
       };
     } catch (err) {
+      console.log(err);
+
       return error(500, {
         message: "Error retrieving booking",
         error: err,
