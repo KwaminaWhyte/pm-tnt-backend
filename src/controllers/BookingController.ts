@@ -190,8 +190,8 @@ export default class BookingController {
         .populate(
           "packageBooking.packageId",
           "name description price inclusions"
-        )
-        .populate("packageBooking.customizations.itemId");
+        );
+      // .populate("packageBooking.customizations.itemId");
 
       if (!booking) {
         return error(404, { message: "Booking not found" });
