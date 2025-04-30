@@ -281,10 +281,12 @@ interface VehicleRatingDTO {
 }
 
 interface BookingInterface {
-  user: string;
+  user: UserInterface;
   hotel?: string;
   vehicle?: string;
   travelPackage?: string;
+  bookingReference: string;
+  bookingType: "hotel" | "vehicle" | "package";
   bookingDate: Date;
   startDate: Date;
   endDate: Date;

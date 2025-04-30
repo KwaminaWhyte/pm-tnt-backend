@@ -16,9 +16,9 @@ const locationSchema = new Schema(
 
 const bookingSchema = new Schema<BookingInterface>(
   {
-    userId: {
+    user: {
       type: Schema.Types.ObjectId,
-      ref: "users",
+      ref: "User",
       required: true,
       index: true,
     },
@@ -122,7 +122,7 @@ const bookingSchema = new Schema<BookingInterface>(
       itinerary: {
         currentDestination: {
           type: Schema.Types.ObjectId,
-          ref: "destinations",
+          ref: "Destination",
         },
         progress: {
           completedActivities: [
@@ -254,7 +254,7 @@ const bookingSchema = new Schema<BookingInterface>(
       cancellationFee: Number,
       cancelledBy: {
         type: Schema.Types.ObjectId,
-        ref: "users",
+        ref: "User",
       },
     },
 
@@ -288,7 +288,7 @@ const bookingSchema = new Schema<BookingInterface>(
 );
 
 // Create indexes for common queries
-bookingSchema.index({ userId: 1, bookingType: 1, status: 1 });
+bookingSchema.index({ user: 1, bookingType: 1, status: 1 });
 bookingSchema.index({ startDate: 1, endDate: 1 });
 bookingSchema.index({ "payment.status": 1, status: 1 });
 bookingSchema.index({ "hotelBooking.hotelId": 1 }, { sparse: true });

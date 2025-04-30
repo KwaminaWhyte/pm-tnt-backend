@@ -105,7 +105,7 @@ export default class BookingController {
       const filter: Record<string, any> = {};
 
       if (userId) {
-        filter.userId = userId;
+        filter.user = userId;
       }
 
       if (status) {
@@ -192,7 +192,7 @@ export default class BookingController {
     try {
       const filter: Record<string, any> = { _id: bookingId };
       if (userId) {
-        filter.userId = userId;
+        filter.user = userId;
       }
 
       const booking = await Booking.findOne(filter)
@@ -228,7 +228,7 @@ export default class BookingController {
           "name description duration type location images"
         )
         // User population (if needed)
-        .populate("userId", "firstName lastName email phone")
+        .populate("user", "firstName lastName email phone")
         // Cancellation user population
         .populate("cancellation.cancelledBy", "firstName lastName email");
 
