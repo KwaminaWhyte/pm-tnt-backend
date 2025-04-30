@@ -44,6 +44,7 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
   .get(
     "/",
     async ({ request, query, userId }) => {
+      console.log(userId);
       const bookingController = new BookingController();
       return bookingController.getBookings({ ...query, userId });
     },
@@ -66,6 +67,35 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
       }),
     }
   )
+  // Admin route to get all bookings (for admin dashboard)
+  .get(
+    "/admin",
+    async ({ request, query }) => {
+      const bookingController = new BookingController();
+      return bookingController.getAdminBookings(query);
+    },
+    {
+      detail: {
+        tags: ["Bookings"],
+        summary: "Get all bookings (Admin Only)",
+        description:
+          "Retrieve a paginated list of all bookings with optional filters (Admin access required)",
+      },
+      query: t.Object({
+        page: t.Optional(t.Number({ minimum: 1 })),
+        limit: t.Optional(t.Number({ minimum: 1, maximum: 100 })),
+        type: t.Optional(t.String()),
+        status: t.Optional(t.String()),
+        paymentStatus: t.Optional(t.String()),
+        startDate: t.Optional(t.String()),
+        endDate: t.Optional(t.String()),
+        sortBy: t.Optional(t.String()),
+        sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+        searchTerm: t.Optional(t.String()),
+      }),
+    }
+  )
+
   .get(
     "/:id",
     async ({ request, params: { id }, userId }) => {

@@ -182,6 +182,115 @@ export default class BookingController {
     }
   }
 
+  async getAdminBookings(params: BookingSearchParams) {
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        type,
+        status,
+        paymentStatus,
+        startDate,
+        endDate,
+        sortBy = "createdAt",
+        sortOrder = "desc",
+        searchTerm,
+      } = params;
+
+      // Build the query
+      const query: any = {};
+
+      // Add filters if provided
+      if (type) query.bookingType = type.toLowerCase();
+      if (status) query.status = status;
+      if (paymentStatus) query.paymentStatus = paymentStatus;
+
+      // Date range filters
+      if (startDate || endDate) {
+        query.startDate = {};
+        if (startDate) query.startDate.$gte = new Date(startDate);
+        if (endDate) query.endDate = { $lte: new Date(endDate) };
+      }
+
+      // Search query - search by customer name, email, or reference number
+      if (searchTerm) {
+        query.$or = [
+          { bookingReference: { $regex: searchTerm, $options: "i" } },
+          { "customer.name": { $regex: searchTerm, $options: "i" } },
+          { "customer.email": { $regex: searchTerm, $options: "i" } },
+        ];
+      }
+
+      // Execute the query with pagination
+      const skip = (page - 1) * limit;
+      const bookings = await Booking.find(query)
+        .sort({ [sortBy]: sortOrder === "asc" ? 1 : -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate("user", "firstName lastName email")
+        .lean();
+
+      // Count total documents for pagination
+      const totalItems = await Booking.countDocuments(query);
+      const totalPages = Math.ceil(totalItems / limit);
+
+      // Transform the data for frontend use
+      const transformedBookings = bookings.map((booking) => {
+        const userInfo = booking.user || {};
+
+        return {
+          _id: booking._id,
+          customerName:
+            `${userInfo.firstName || ""} ${userInfo.lastName || ""}`.trim() ||
+            "N/A",
+          customerEmail: userInfo.email || "N/A",
+          customerId: booking.user?._id || "",
+          type: booking.bookingType
+            ? booking.bookingType.charAt(0).toUpperCase() +
+              booking.bookingType.slice(1)
+            : "N/A",
+          itemId:
+            booking.hotelBooking?.hotelId ||
+            booking.vehicleBooking?.vehicleId ||
+            booking.packageBooking?.packageId ||
+            "",
+          itemName: booking.itemDetails?.name || "N/A",
+          startDate: booking.startDate,
+          endDate: booking.endDate,
+          totalAmount: booking.pricing?.totalPrice || 0,
+          paymentStatus: booking.paymentStatus || "Pending",
+          bookingStatus: booking.status || "Pending",
+          createdAt: booking.createdAt,
+          updatedAt: booking.updatedAt,
+        };
+      });
+
+      return {
+        success: true,
+        statusCode: 200,
+        message: "Bookings retrieved successfully",
+        timestamp: new Date().toISOString(),
+        data: {
+          bookings: transformedBookings,
+          totalPages,
+        },
+      };
+    } catch (error) {
+      console.error("Error in getAdminBookings:", error);
+      return {
+        success: false,
+        statusCode: 500,
+        message: "Failed to retrieve bookings",
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Unknown error",
+        data: {
+          bookings: [],
+          totalPages: 0,
+        },
+      };
+    }
+  }
+
   /**
    * Get a single booking by ID
    */
