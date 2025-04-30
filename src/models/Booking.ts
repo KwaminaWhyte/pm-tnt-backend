@@ -92,7 +92,7 @@ const bookingSchema = new Schema<BookingInterface>(
 
     // Package Booking Details
     packageBooking: {
-      packageId: {
+      package: {
         type: Schema.Types.ObjectId,
         ref: "Package",
         required: function (this: BookingInterface) {
@@ -293,7 +293,7 @@ bookingSchema.index({ startDate: 1, endDate: 1 });
 bookingSchema.index({ "payment.status": 1, status: 1 });
 bookingSchema.index({ "hotelBooking.hotelId": 1 }, { sparse: true });
 bookingSchema.index({ "vehicleBooking.vehicleId": 1 }, { sparse: true });
-bookingSchema.index({ "packageBooking.packageId": 1 }, { sparse: true });
+bookingSchema.index({ "packageBooking.package": 1 }, { sparse: true });
 
 // Generate unique booking reference
 bookingSchema.pre("save", async function (next) {

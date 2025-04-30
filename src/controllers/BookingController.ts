@@ -147,7 +147,7 @@ export default class BookingController {
         .populate("hotelBooking.hotelId")
         .populate("vehicleBooking.vehicleId")
         .populate(
-          "packageBooking.packageId",
+          "packageBooking.package",
           "name description price inclusions exclusions duration images location"
         )
         .populate(
@@ -212,7 +212,7 @@ export default class BookingController {
         )
         // Package booking population
         .populate(
-          "packageBooking.packageId",
+          "packageBooking.package",
           "name description price inclusions exclusions duration images location startDates maxParticipants minParticipants"
         )
         .populate(
@@ -492,7 +492,7 @@ export default class BookingController {
       )
         .populate("hotelBooking.hotelId")
         .populate("vehicleBooking.vehicleId")
-        .populate("packageBooking.packageId");
+        .populate("packageBooking.package");
 
       return {
         success: true,
@@ -674,7 +674,7 @@ export default class BookingController {
     }
 
     if (bookingData.packageBooking) {
-      const pkg = await Package.findById(bookingData.packageBooking.packageId);
+      const pkg = await Package.findById(bookingData.packageBooking.package);
       console.log("Package data for pricing:", pkg);
       if (pkg) {
         // Add package base price - fallback to price if basePrice isn't available
@@ -696,7 +696,7 @@ export default class BookingController {
         total += customizationCost;
       } else {
         console.log(
-          `Package not found with ID: ${bookingData.packageBooking.packageId}`
+          `Package not found with ID: ${bookingData.packageBooking.package}`
         );
       }
     }
@@ -737,7 +737,7 @@ export default class BookingController {
 
     if (bookingData.packageBooking) {
       const isPackageAvailable = await this.checkPackageAvailability(
-        bookingData.packageBooking.packageId,
+        bookingData.packageBooking.package,
         bookingData.packageBooking.startDate as string,
         bookingData.packageBooking.participants
       );
@@ -826,8 +826,7 @@ export default class BookingController {
         oldBooking.vehicleBooking?.vehicleId !==
           newData.vehicleBooking.vehicleId) ||
       (newData.packageBooking &&
-        oldBooking.packageBooking?.packageId !==
-          newData.packageBooking.packageId)
+        oldBooking.packageBooking?.package !== newData.packageBooking.package)
     );
   }
 
@@ -1011,7 +1010,7 @@ export default class BookingController {
 
       // Check if there are any conflicting bookings for this package
       const conflictingBookings = await Booking.countDocuments({
-        "packageBooking.packageId": packageId,
+        "packageBooking.package": packageId,
         status: { $in: ["Pending", "Confirmed"] },
         // For simplicity, just check if the exact same date is booked
         "packageBooking.startDate": startDate,
