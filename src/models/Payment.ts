@@ -1,5 +1,4 @@
-import { Schema } from "mongoose";
-import mongoose from "~/utils/mongoose";
+import mongoose, { Schema } from "mongoose";
 import type { PaymentInterface } from "~/utils/types";
 
 const schema = new Schema<PaymentInterface>(
@@ -54,9 +53,9 @@ const schema = new Schema<PaymentInterface>(
 
 let Payment: mongoose.Model<PaymentInterface>;
 try {
-  Payment = mongoose.model<PaymentInterface>("payments");
+  Payment = mongoose.model<PaymentInterface>("Payment");
 } catch (error) {
-  Payment = mongoose.model<PaymentInterface>("payments", schema);
+  Payment = mongoose.model<PaymentInterface>("Payment", schema);
 }
 
 export default Payment;

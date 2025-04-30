@@ -11,6 +11,7 @@ import {
   UpdateBookingDTO,
 } from "../utils/types";
 import mongoose from "mongoose";
+import { ElysiaCustomStatusResponse } from "elysia/dist/error";
 
 // Define the booking type interfaces to clarify typings
 interface HotelBookingType {
@@ -77,7 +78,15 @@ export default class BookingController {
   public async getBookings(
     params: BookingSearchParams & { userId?: string }
   ): Promise<
-    ApiResponse<{ bookings: BookingInterface[]; totalPages: number }>
+    | ApiResponse<{ bookings: BookingInterface[]; totalPages: number }>
+    | ElysiaCustomStatusResponse<
+        500,
+        {
+          readonly message: "Error retrieving bookings";
+          readonly error: unknown;
+        },
+        500
+      >
   > {
     try {
       const {
@@ -143,7 +152,7 @@ export default class BookingController {
         success: true,
         statusCode: 200,
         message: "Bookings retrieved successfully",
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         data: {
           bookings,
           totalPages,

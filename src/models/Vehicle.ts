@@ -249,9 +249,9 @@ schema.methods.calculateRentalPrice = function (
 
 let Vehicle: Model<VehicleInterface>;
 try {
-  Vehicle = mongoose.model<VehicleInterface>("vehicles");
+  Vehicle = mongoose.model<VehicleInterface>("Vehicle");
 } catch (error) {
-  Vehicle = mongoose.model<VehicleInterface>("vehicles", schema);
+  Vehicle = mongoose.model<VehicleInterface>("Vehicle", schema);
 }
 
 export default Vehicle;

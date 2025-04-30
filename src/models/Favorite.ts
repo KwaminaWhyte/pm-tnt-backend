@@ -27,9 +27,9 @@ favoriteSchema.index({ userId: 1, itemId: 1, itemType: 1 }, { unique: true });
 
 let Favorite: mongoose.Model<FavoriteInterface>;
 try {
-  Favorite = mongoose.model<FavoriteInterface>("favorites");
+  Favorite = mongoose.model<FavoriteInterface>("Favorite");
 } catch (error) {
-  Favorite = mongoose.model<FavoriteInterface>("favorites", favoriteSchema);
+  Favorite = mongoose.model<FavoriteInterface>("Favorite", favoriteSchema);
 }
 
 export default Favorite;

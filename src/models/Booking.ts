@@ -54,7 +54,7 @@ const bookingSchema = new Schema<BookingInterface>(
     hotelBooking: {
       hotelId: {
         type: Schema.Types.ObjectId,
-        ref: "hotels",
+        ref: "Hotel",
         required: function (this: BookingInterface) {
           return this.bookingType === "hotel";
         },
@@ -62,7 +62,7 @@ const bookingSchema = new Schema<BookingInterface>(
       roomIds: [
         {
           type: Schema.Types.ObjectId,
-          ref: "rooms",
+          ref: "Room",
         },
       ],
       numberOfGuests: Number,
@@ -75,7 +75,7 @@ const bookingSchema = new Schema<BookingInterface>(
     vehicleBooking: {
       vehicleId: {
         type: Schema.Types.ObjectId,
-        ref: "vehicles",
+        ref: "Vehicle",
         required: function (this: BookingInterface) {
           return this.bookingType === "vehicle";
         },
@@ -94,7 +94,7 @@ const bookingSchema = new Schema<BookingInterface>(
     packageBooking: {
       packageId: {
         type: Schema.Types.ObjectId,
-        ref: "packages",
+        ref: "Package",
         required: function (this: BookingInterface) {
           return this.bookingType === "package";
         },

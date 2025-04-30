@@ -22,9 +22,9 @@ const faqSchema = new Schema<FaqInterface>(
 
 let Faq: Model<FaqInterface>;
 try {
-  Faq = mongoose.model<FaqInterface>("faqs");
+  Faq = mongoose.model<FaqInterface>("Faq");
 } catch (error) {
-  Faq = mongoose.model<FaqInterface>("faqs", faqSchema);
+  Faq = mongoose.model<FaqInterface>("Faq", faqSchema);
 }
 
 export default Faq;

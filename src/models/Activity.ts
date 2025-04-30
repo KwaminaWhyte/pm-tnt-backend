@@ -32,7 +32,7 @@ const activitySchema = new Schema<ActivityInterface>(
     description: String,
     destination: {
       type: Schema.Types.ObjectId,
-      ref: "destinations",
+      ref: "Destination",
       required: true,
       index: true,
     },

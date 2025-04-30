@@ -1,8 +1,7 @@
-import { type Model, Schema } from "mongoose";
-import mongoose from "~/utils/mongoose";
-import { FaqInterface } from "~/utils/types";
+import mongoose, { type Model, Schema } from "mongoose";
+import { OtpInterface } from "~/utils/types";
 
-const faqSchema = new Schema<FaqInterface>(
+const otpSchema = new Schema<OtpInterface>(
   {
     user: {
       type: Schema.Types.ObjectId,
@@ -21,11 +20,11 @@ const faqSchema = new Schema<FaqInterface>(
   { timestamps: true }
 );
 
-let Faq: Model<FaqInterface>;
+let Otp: Model<OtpInterface>;
 try {
-  Faq = mongoose.model<FaqInterface>("faqs");
+  Otp = mongoose.model<OtpInterface>("Otp");
 } catch (error) {
-  Faq = mongoose.model<FaqInterface>("faqs", faqSchema);
+  Otp = mongoose.model<OtpInterface>("Otp", otpSchema);
 }
 
-export default Faq;
+export default Otp;

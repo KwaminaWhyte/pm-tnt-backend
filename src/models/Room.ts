@@ -27,9 +27,9 @@ const schema = new Schema(
 
 let Room: Model<HotelInterface>;
 try {
-  Room = mongoose.model<HotelInterface>("rooms");
+  Room = mongoose.model<HotelInterface>("Room");
 } catch (error) {
-  Room = mongoose.model<HotelInterface>("rooms", schema);
+  Room = mongoose.model<HotelInterface>("Room", schema);
 }
 
 export default Room;

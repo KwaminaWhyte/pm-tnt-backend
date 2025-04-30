@@ -118,7 +118,7 @@ const schema = new Schema<DestinationInterface>(
     relatedDestinations: {
       type: [
         {
-          destinationId: { type: Schema.Types.ObjectId, ref: "destinations" },
+          destinationId: { type: Schema.Types.ObjectId, ref: "Destination" },
           relationshipType: {
             type: String,
             enum: ["NearBy", "SimilarClimate", "PopularCombination"],
@@ -162,6 +162,6 @@ schema.index({ country: 1, city: 1 });
 
 const Destination: Model<DestinationInterface> =
   mongoose.models.destinations ||
-  mongoose.model<DestinationInterface>("destinations", schema);
+  mongoose.model<DestinationInterface>("Destination", schema);
 
 export default Destination;

@@ -143,9 +143,9 @@ schema.methods.getCurrentPrice = function (date: Date = new Date()) {
 
 let Hotel: Model<HotelInterface>;
 try {
-  Hotel = mongoose.model<HotelInterface>("hotels");
+  Hotel = mongoose.model<HotelInterface>("Hotel");
 } catch (error) {
-  Hotel = mongoose.model<HotelInterface>("hotels", schema);
+  Hotel = mongoose.model<HotelInterface>("Hotel", schema);
 }
 
 export default Hotel;
