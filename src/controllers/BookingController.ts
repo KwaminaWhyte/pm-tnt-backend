@@ -146,7 +146,22 @@ export default class BookingController {
         .limit(limit)
         .populate("hotelBooking.hotelId")
         .populate("vehicleBooking.vehicleId")
-        .populate("packageBooking.packageId");
+        .populate(
+          "packageBooking.packageId",
+          "name description price inclusions exclusions duration images location"
+        )
+        .populate(
+          "packageBooking.itinerary.currentDestination",
+          "name location description"
+        )
+        .populate(
+          "packageBooking.itinerary.progress.completedActivities",
+          "name description duration"
+        )
+        .populate(
+          "packageBooking.itinerary.progress.nextActivity",
+          "name description duration"
+        );
 
       return {
         success: true,
@@ -181,37 +196,124 @@ export default class BookingController {
       }
 
       const booking = await Booking.findOne(filter)
-        .populate("hotelBooking.hotelId", "name location rating images")
-        .populate("hotelBooking.roomIds", "type amenities price")
+        // Hotel booking population
         .populate(
-          "vehicleBooking.vehicleId",
-          "make model year images specifications"
+          "hotelBooking.hotelId",
+          "name location rating images amenities description policies"
         )
         .populate(
+          "hotelBooking.roomIds",
+          "type amenities price capacity description images"
+        )
+        // Vehicle booking population
+        .populate(
+          "vehicleBooking.vehicleId",
+          "make model year images specifications rentalPrice features capacity transmission fuelType"
+        )
+        // Package booking population
+        .populate(
           "packageBooking.packageId",
-          "name description price inclusions"
-        );
-      // .populate("packageBooking.customizations.itemId");
+          "name description price inclusions exclusions duration images location startDates maxParticipants minParticipants"
+        )
+        .populate(
+          "packageBooking.itinerary.currentDestination",
+          "name location description images coordinates"
+        )
+        .populate(
+          "packageBooking.itinerary.progress.completedActivities",
+          "name description duration type location images"
+        )
+        .populate(
+          "packageBooking.itinerary.progress.nextActivity",
+          "name description duration type location images"
+        )
+        // User population (if needed)
+        .populate("userId", "firstName lastName email phone")
+        // Cancellation user population
+        .populate("cancellation.cancelledBy", "firstName lastName email");
 
       if (!booking) {
-        return error(404, { message: "Booking not found" });
+        return {
+          success: false,
+          statusCode: 404,
+          message: "Booking not found",
+          timestamp: new Date().toISOString(),
+          data: undefined,
+        };
+      }
+
+      // Add additional booking validation and status checks
+      const validationResult = this.validateBookingStatus(booking);
+      if (!validationResult.isValid) {
+        return {
+          success: false,
+          statusCode: 400,
+          message: validationResult.message,
+          timestamp: new Date().toISOString(),
+          data: booking,
+        };
       }
 
       return {
         success: true,
         statusCode: 200,
         message: "Booking retrieved successfully",
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         data: booking,
       };
     } catch (err) {
-      console.log(err);
+      console.error("Error retrieving booking:", err);
 
-      return error(500, {
+      return {
+        success: false,
+        statusCode: 500,
         message: "Error retrieving booking",
-        error: err,
-      });
+        timestamp: new Date().toISOString(),
+        error: err instanceof Error ? err.message : "Unknown error",
+        data: undefined,
+      };
     }
+  }
+
+  /**
+   * Validate booking status and return validation result
+   */
+  private validateBookingStatus(booking: BookingInterface): {
+    isValid: boolean;
+    message: string;
+  } {
+    // Check if booking is cancelled
+    if (booking.status === "Cancelled") {
+      return {
+        isValid: false,
+        message: "This booking has been cancelled",
+      };
+    }
+
+    // Check if booking dates are valid
+    const now = new Date();
+    const startDate = new Date(booking.startDate);
+    const endDate = new Date(booking.endDate);
+
+    if (endDate < now) {
+      return {
+        isValid: false,
+        message: "This booking has expired",
+      };
+    }
+
+    // Check payment status
+    if (booking.payment && booking.payment.status === "Failed") {
+      return {
+        isValid: false,
+        message: "Payment for this booking has failed",
+      };
+    }
+
+    return {
+      isValid: true,
+      message: "Booking is valid",
+    };
   }
 
   /**
