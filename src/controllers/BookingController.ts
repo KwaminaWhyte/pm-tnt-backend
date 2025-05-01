@@ -228,42 +228,14 @@ export default class BookingController {
         .skip(skip)
         .limit(limit)
         .populate("user", "firstName lastName email")
+        .populate("hotelBooking.hotelId")
+        .populate("vehicleBooking.vehicleId")
+        .populate("packageBooking.package")
         .lean();
 
       // Count total documents for pagination
       const totalItems = await Booking.countDocuments(query);
       const totalPages = Math.ceil(totalItems / limit);
-
-      // Transform the data for frontend use
-      const transformedBookings = bookings.map((booking) => {
-        const userInfo = booking.user || {};
-
-        return {
-          _id: booking._id,
-          customerName:
-            `${userInfo.firstName || ""} ${userInfo.lastName || ""}`.trim() ||
-            "N/A",
-          customerEmail: userInfo.email || "N/A",
-          customerId: booking.user?._id || "",
-          type: booking.bookingType
-            ? booking.bookingType.charAt(0).toUpperCase() +
-              booking.bookingType.slice(1)
-            : "N/A",
-          itemId:
-            booking.hotelBooking?.hotelId ||
-            booking.vehicleBooking?.vehicleId ||
-            booking.packageBooking?.packageId ||
-            "",
-          itemName: booking.itemDetails?.name || "N/A",
-          startDate: booking.startDate,
-          endDate: booking.endDate,
-          totalAmount: booking.pricing?.totalPrice || 0,
-          paymentStatus: booking.paymentStatus || "Pending",
-          bookingStatus: booking.status || "Pending",
-          createdAt: booking.createdAt,
-          updatedAt: booking.updatedAt,
-        };
-      });
 
       return {
         success: true,
@@ -271,7 +243,7 @@ export default class BookingController {
         message: "Bookings retrieved successfully",
         timestamp: new Date().toISOString(),
         data: {
-          bookings: transformedBookings,
+          bookings,
           totalPages,
         },
       };
