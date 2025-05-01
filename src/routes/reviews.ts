@@ -84,25 +84,25 @@ const reviewsRoutes = new Elysia({ prefix: "/api/v1/reviews" })
       detail: {
         summary: "Get all reviews",
         description: "Get all reviews with pagination and filtering",
-        responses: {
-          200: {
-            description: "List of reviews with pagination",
-            content: {
-              "application/json": {
-                schema: t.Object({
-                  success: t.Boolean(),
-                  data: t.Array(t.Any()),
-                  pagination: t.Object({
-                    currentPage: t.Number(),
-                    totalPages: t.Number(),
-                    totalItems: t.Number(),
-                    itemsPerPage: t.Number(),
-                  }),
-                }),
-              },
-            },
-          },
-        },
+        // responses: {
+        //   200: {
+        //     description: "List of reviews with pagination",
+        //     content: {
+        //       "application/json": {
+        //         schema: t.Object({
+        //           success: t.Boolean(),
+        //           data: t.Array(t.Any()),
+        //           pagination: t.Object({
+        //             currentPage: t.Number(),
+        //             totalPages: t.Number(),
+        //             totalItems: t.Number(),
+        //             itemsPerPage: t.Number(),
+        //           }),
+        //         }),
+        //       },
+        //     },
+        //   },
+        // },
       },
     }
   )

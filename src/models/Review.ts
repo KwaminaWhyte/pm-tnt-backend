@@ -1,7 +1,8 @@
 import mongoose, { Schema } from "mongoose";
+import type { UserInterface } from "./User";
 
 export interface ReviewInterface {
-  user: Schema.Types.ObjectId;
+  user: UserInterface;
   itemId: Schema.Types.ObjectId;
   itemType: "hotel" | "destination" | "package" | "vehicle";
   rating: number;
@@ -120,11 +121,11 @@ reviewSchema.pre("save", async function (next) {
   next();
 });
 
-let Review;
+let Review: mongoose.Model<ReviewInterface>;
 try {
-  Review = mongoose.model("Review");
+  Review = mongoose.model<ReviewInterface>("Review");
 } catch (error) {
-  Review = mongoose.model("Review", reviewSchema);
+  Review = mongoose.model<ReviewInterface>("Review", reviewSchema);
 }
 
 export default Review;

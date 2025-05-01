@@ -49,7 +49,7 @@ export default class ReviewController {
 
       // Execute the query with pagination
       const reviews = await Review.find(filter)
-        .populate("userId", "firstName lastName email")
+        .populate("user", "firstName lastName email")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -62,8 +62,8 @@ export default class ReviewController {
       const formattedReviews = reviews.map((review) => ({
         id: review._id.toString(),
         customerName:
-          `${review.userId?.firstName || ""} ${
-            review.userId?.lastName || ""
+          `${review.user?.firstName || ""} ${
+            review.user?.lastName || ""
           }`.trim() || "Anonymous User",
         itemName: review.itemId?.toString() || "",
         itemType: this.capitalizeFirstLetter(review.itemType),
@@ -108,7 +108,7 @@ export default class ReviewController {
   async getReviewById(id: string) {
     try {
       const review = await Review.findById(id)
-        .populate("userId", "firstName lastName email")
+        .populate("user", "firstName lastName email")
         .lean();
 
       if (!review) {
@@ -130,8 +130,8 @@ export default class ReviewController {
         review: {
           id: review._id.toString(),
           customerName:
-            `${review.userId?.firstName || ""} ${
-              review.userId?.lastName || ""
+            `${review.user?.firstName || ""} ${
+              review.user?.lastName || ""
             }`.trim() || "Anonymous User",
           itemName: review.itemId?.toString() || "",
           itemType: this.capitalizeFirstLetter(review.itemType),
@@ -174,7 +174,7 @@ export default class ReviewController {
         { status: mappedStatus },
         { new: true }
       )
-        .populate("userId", "firstName lastName email")
+        .populate("user", "firstName lastName email")
         .lean();
 
       if (!updatedReview) {
@@ -197,8 +197,8 @@ export default class ReviewController {
         review: {
           id: updatedReview._id.toString(),
           customerName:
-            `${updatedReview.userId?.firstName || ""} ${
-              updatedReview.userId?.lastName || ""
+            `${updatedReview.user?.firstName || ""} ${
+              updatedReview.user?.lastName || ""
             }`.trim() || "Anonymous User",
           itemName: updatedReview.itemId?.toString() || "",
           itemType: this.capitalizeFirstLetter(updatedReview.itemType),
@@ -248,7 +248,7 @@ export default class ReviewController {
         },
         { new: true }
       )
-        .populate("userId", "firstName lastName email")
+        .populate("user", "firstName lastName email")
         .lean();
 
       if (!updatedReview) {
@@ -271,8 +271,8 @@ export default class ReviewController {
         review: {
           id: updatedReview._id.toString(),
           customerName:
-            `${updatedReview.userId?.firstName || ""} ${
-              updatedReview.userId?.lastName || ""
+            `${updatedReview.user?.firstName || ""} ${
+              updatedReview.user?.lastName || ""
             }`.trim() || "Anonymous User",
           itemName: updatedReview.itemId?.toString() || "",
           itemType: this.capitalizeFirstLetter(updatedReview.itemType),
