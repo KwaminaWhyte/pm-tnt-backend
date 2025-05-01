@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 
 export interface ReviewInterface {
-  userId: Schema.Types.ObjectId;
+  user: Schema.Types.ObjectId;
   itemId: Schema.Types.ObjectId;
   itemType: "hotel" | "destination" | "package" | "vehicle";
   rating: number;
@@ -23,7 +23,7 @@ export interface ReviewInterface {
 
 const reviewSchema = new Schema<ReviewInterface>(
   {
-    userId: {
+    user: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
