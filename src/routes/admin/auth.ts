@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../utils/jwt.config";
-import AdminController from "../controllers/AdminController";
+import { jwtConfig } from "../../utils/jwt.config";
+import AdminController from "../../controllers/AdminController";
 
 const controller = new AdminController();
 

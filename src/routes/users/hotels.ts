@@ -1,6 +1,5 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../utils/jwt.config";
-import HotelController from "../controllers/HotelController";
+import HotelController from "../../controllers/HotelController";
 
 const hotelController = new HotelController();
 

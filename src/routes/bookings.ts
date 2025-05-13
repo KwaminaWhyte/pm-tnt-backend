@@ -1,5 +1,4 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../utils/jwt.config";
 import BookingController from "../controllers/BookingController";
 
 const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })

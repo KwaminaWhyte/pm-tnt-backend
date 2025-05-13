@@ -1,22 +1,21 @@
+import { Elysia } from "elysia";
 import cors from "@elysiajs/cors";
 import swagger from "@elysiajs/swagger";
-import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { staticPlugin } from "@elysiajs/static";
-import * as path from "path";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
 import fs from "fs";
 
 import { jwtConfig } from "./utils/jwt.config";
-import userAuthRoutes from "./routes/user-auth";
-import vehiclesRoutes from "./routes/vehicles";
-import vehiclesPublicRoutes from "./routes/vehicles-public";
+
 import adminsRoutes from "./routes/admins";
+import adminAuthRoutes from "./routes/admin/auth";
+import hotelAdminRoutes from "./routes/admin/hotels";
+
+import vehiclesPublicRoutes from "./routes/users/vehicles";
+import hotelPublicRoutes from "./routes/users/hotels";
+
+import vehiclesRoutes from "./routes/vehicles";
+import userAuthRoutes from "./routes/user-auth";
 import usersRoutes from "./routes/users";
-import adminAuthRoutes from "./routes/admin-auth";
-import hotelAdminRoutes from "./routes/hotels-admin";
-import hotelPublicRoutes from "./routes/hotels-public";
 import roomRoutes from "./routes/rooms";
 import packageRoutes from "./routes/packages";
 import destinationRoutes from "./routes/destinations";
@@ -147,8 +146,6 @@ const app = new Elysia()
   .use(activitiesRoutes);
 
 app.onError(({ error, code }) => {
-  console.log(error, code);
-
   if (code === "NOT_FOUND") return;
 
   let errorMessage;
@@ -192,6 +189,7 @@ app.onError(({ error, code }) => {
     };
   }
 
+  console.log(errorMessage);
   return errorMessage;
 });
 

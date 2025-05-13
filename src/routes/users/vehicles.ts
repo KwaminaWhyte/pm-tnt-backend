@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../utils/jwt.config";
-import VehicleController from "../controllers/VehicleController";
-import BookingController from "../controllers/BookingController";
+import { jwtConfig } from "../../utils/jwt.config";
+import VehicleController from "../../controllers/VehicleController";
+import BookingController from "../../controllers/BookingController";
 
 const vehicleController = new VehicleController();
 
@@ -63,13 +63,13 @@ const vehiclePublicRoutes = new Elysia({ prefix: "/api/v1/vehicles/public" })
                     currentPage: t.Number(),
                     totalPages: t.Number(),
                     totalItems: t.Number(),
-                    itemsPerPage: t.Number()
-                  })
-                })
-              }
-            }
-          }
-        }
+                    itemsPerPage: t.Number(),
+                  }),
+                }),
+              },
+            },
+          },
+        },
       },
       query: t.Object({
         page: t.Optional(t.Number()),
