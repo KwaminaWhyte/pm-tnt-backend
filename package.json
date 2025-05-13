@@ -8,16 +8,17 @@
     "seed:trippers": "bun run src/seeders/tripperOnly.ts"
   },
   "dependencies": {
-    "@elysiajs/cors": "^1.2.0",
-    "@elysiajs/jwt": "^1.2.0",
-    "@elysiajs/static": "^1.2.0",
-    "@elysiajs/swagger": "^1.2.2",
-    "axios": "^1.8.4",
-    "bcryptjs": "^2.4.3",
+    "@elysiajs/cors": "^1.3.1",
+    "@elysiajs/cron": "^1.3.0",
+    "@elysiajs/jwt": "^1.3.0",
+    "@elysiajs/static": "^1.3.0",
+    "@elysiajs/swagger": "^1.3.0",
+    "axios": "^1.9.0",
+    "bcryptjs": "^3.0.2",
     "elysia": "latest",
     "moment": "^2.30.1",
-    "mongoose": "^8.13.0",
-    "nodemailer": "^6.10.0"
+    "mongoose": "^8.14.3",
+    "nodemailer": "^7.0.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

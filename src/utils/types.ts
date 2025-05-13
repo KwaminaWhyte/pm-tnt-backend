@@ -5,8 +5,22 @@ export interface OTP {
   expiresAt: Date;
 }
 
+export interface SmsInterface {
+  phone: string;
+  from: string;
+  message: string;
+  isSent: boolean;
+}
+
+export interface EmailInterface {
+  email: string;
+  subject: string;
+  body: string;
+  isSent: boolean;
+}
+
 export interface UserDeviceInterface {
-  user: string;
+  user: UserInterface;
   deviceToken: string;
   deviceType: string;
   deviceName: string;
