@@ -1,11 +1,20 @@
 import { Schema } from "mongoose";
 
-interface OTP {
+export interface OTP {
   code: string;
   expiresAt: Date;
 }
 
-interface UserInterface {
+export interface UserDeviceInterface {
+  user: string;
+  deviceToken: string;
+  deviceType: string;
+  deviceName: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserInterface {
   firstName: string;
   lastName?: string;
   email?: string;
@@ -20,12 +29,12 @@ interface UserInterface {
   updatedAt: Date;
 }
 
-interface LoginWithEmailDTO {
+export interface LoginWithEmailDTO {
   email: string;
   password: string;
 }
 
-interface RegisterDTO {
+export interface RegisterDTO {
   email: string;
   password: string;
   firstName: string;
@@ -33,16 +42,16 @@ interface RegisterDTO {
   phone: string;
 }
 
-interface LoginWithPhoneDTO {
+export interface LoginWithPhoneDTO {
   phone: string;
 }
 
-interface VerifyOtpDTO {
+export interface VerifyOtpDTO {
   phone: string;
   otp: string;
 }
 
-interface LocationInterface {
+export interface LocationInterface {
   address: string;
   city: string;
   country: string;
@@ -52,14 +61,14 @@ interface LocationInterface {
   };
 }
 
-interface RatingInterface {
+export interface RatingInterface {
   userId: string;
   rating: number;
   comment?: string;
   createdAt: Date;
 }
 
-interface HotelInterface {
+export interface HotelInterface {
   name: string;
   description: string;
   location: LocationInterface;
@@ -101,7 +110,7 @@ interface HotelInterface {
   updatedAt: Date;
 }
 
-interface VehicleInterface {
+export interface VehicleInterface {
   vehicleType: string;
   make: string;
   model: string;
@@ -164,7 +173,7 @@ interface VehicleInterface {
   updatedAt: Date;
 }
 
-interface CreateHotelDTO {
+export interface CreateHotelDTO {
   name: string;
   description: string;
   location: LocationInterface;
@@ -196,7 +205,7 @@ interface CreateHotelDTO {
   };
 }
 
-interface CreateVehicleDTO {
+export interface CreateVehicleDTO {
   vehicleType: string;
   make: string;
   model: string;
@@ -244,7 +253,7 @@ interface CreateVehicleDTO {
   policies: string;
 }
 
-interface UpdateHotelDTO extends Partial<Omit<CreateHotelDTO, "rooms">> {
+export interface UpdateHotelDTO extends Partial<Omit<CreateHotelDTO, "rooms">> {
   rooms?: Array<{
     roomNumber: string;
     isAvailable?: boolean;
@@ -253,14 +262,14 @@ interface UpdateHotelDTO extends Partial<Omit<CreateHotelDTO, "rooms">> {
   }>;
 }
 
-interface UpdateVehicleDTO extends Partial<CreateVehicleDTO> {
+export interface UpdateVehicleDTO extends Partial<CreateVehicleDTO> {
   city?: string;
   country?: string;
   "availability.isAvailable"?: boolean;
   "maintenance.status"?: "Available" | "In Service" | "Repairs Needed";
 }
 
-interface VehicleSearchParams {
+export interface VehicleSearchParams {
   page?: number;
   limit?: number;
   vehicleType?: string;
@@ -275,12 +284,12 @@ interface VehicleSearchParams {
   sortOrder?: "asc" | "desc";
 }
 
-interface VehicleRatingDTO {
+export interface VehicleRatingDTO {
   rating: number;
   comment?: string;
 }
 
-interface BookingInterface {
+export interface BookingInterface {
   user: UserInterface;
   hotel?: string;
   vehicle?: string;
@@ -352,7 +361,7 @@ interface BookingInterface {
   updatedAt: Date;
 }
 
-interface CreateBookingDTO {
+export interface CreateBookingDTO {
   // Required fields
   startDate: string;
   endDate: string;
@@ -406,7 +415,7 @@ interface CreateBookingDTO {
   };
 }
 
-interface UpdateBookingDTO {
+export interface UpdateBookingDTO {
   startDate?: string;
   endDate?: string;
   bookingDetails?: {
@@ -435,7 +444,7 @@ interface UpdateBookingDTO {
   paymentStatus?: "Paid" | "Partially Paid" | "Unpaid" | "Refunded";
 }
 
-interface BookingSearchParams {
+export interface BookingSearchParams {
   page?: number;
   limit?: number;
   startDate?: Date;
@@ -449,7 +458,7 @@ interface BookingSearchParams {
   sortOrder?: "asc" | "desc";
 }
 
-interface BookingPricingResponse {
+export interface BookingPricingResponse {
   basePrice: number;
   taxes: number;
   fees: Array<{
@@ -523,25 +532,3 @@ export interface DestinationInterface {
   createdAt: Date;
   updatedAt: Date;
 }
-
-export {
-  UserInterface,
-  LoginWithEmailDTO,
-  LoginWithPhoneDTO,
-  VerifyOtpDTO,
-  OTP,
-  HotelInterface,
-  VehicleInterface,
-  CreateHotelDTO,
-  CreateVehicleDTO,
-  UpdateHotelDTO,
-  UpdateVehicleDTO,
-  VehicleSearchParams,
-  VehicleRatingDTO,
-  RegisterDTO,
-  BookingInterface,
-  CreateBookingDTO,
-  UpdateBookingDTO,
-  BookingSearchParams,
-  BookingPricingResponse,
-};
