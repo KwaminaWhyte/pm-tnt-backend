@@ -136,10 +136,10 @@ export default class UserController {
    * Authenticate user with email and password
    * @throws {Error} 401 - Invalid credentials
    * @throws {Error} 400 - Invalid input data
+   * @throws {Error} 403 - Email not verified
    */
   async loginWithEmail(data: LoginWithEmailDTO, jwt_auth?: any) {
     const { email, password } = data;
-    console.log(email, password);
 
     if (!email || !password) {
       return error(400, {
@@ -154,7 +154,6 @@ export default class UserController {
     }
 
     const user = await User.findOne({ email });
-    console.log(user);
 
     if (!user) {
       return error(401, {
@@ -179,6 +178,23 @@ export default class UserController {
             message: "Incorrect password",
           },
         ],
+      });
+    }
+
+    // Check if email is verified
+    if (user.email && !user.isEmailVerified) {
+      return error(403, {
+        message: "Email not verified",
+        errors: [
+          {
+            type: "VerificationError",
+            message: "Please verify your email before logging in",
+          },
+        ],
+        user: {
+          _id: user._id,
+          email: user.email,
+        },
       });
     }
 
