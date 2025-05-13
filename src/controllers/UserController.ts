@@ -68,9 +68,10 @@ export default class UserController {
    */
   async loginWithEmail(data: LoginWithEmailDTO, jwt_auth?: any) {
     const { email, password } = data;
+    console.log(email, password);
 
     if (!email || !password) {
-      return error(404, {
+      return error(400, {
         message: "Invalid input data",
         errors: [
           {
@@ -82,9 +83,10 @@ export default class UserController {
     }
 
     const user = await User.findOne({ email });
+    console.log(user);
 
     if (!user) {
-      return error(404, {
+      return error(401, {
         message: "User not found",
         errors: [
           {
@@ -98,7 +100,7 @@ export default class UserController {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return error(404, {
+      return error(401, {
         message: "Invalid credentials",
         errors: [
           {
@@ -700,61 +702,6 @@ export default class UserController {
               type: "ServerError",
               path: ["server"],
               message: "An error occurred while updating user",
-            },
-          ],
-        })
-      );
-    }
-  }
-
-  /**
-   * Remove duplicate user records
-   * @throws {Error} 500 - Server error
-   */
-  async removeDuplicates() {
-    try {
-      const duplicates = await User.aggregate([
-        {
-          $group: {
-            _id: {
-              firstName: "$firstName",
-              lastName: "$lastName",
-              phone: "$phone",
-            },
-            uniqueIds: { $addToSet: "$_id" },
-            count: { $sum: 1 },
-          },
-        },
-        {
-          $match: {
-            count: { $gt: 1 },
-          },
-        },
-      ]);
-
-      let removedCount = 0;
-      for (const duplicate of duplicates) {
-        const [keepId, ...removeIds] = duplicate.uniqueIds;
-        await User.deleteMany({ _id: { $in: removeIds } });
-        removedCount += removeIds.length;
-      }
-
-      return {
-        message: "Duplicate removal completed",
-        statistics: {
-          duplicateGroups: duplicates.length,
-          removedUsers: removedCount,
-        },
-      };
-    } catch (error) {
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to remove duplicates",
-          errors: [
-            {
-              type: "ServerError",
-              path: ["server"],
-              message: "An error occurred while removing duplicate users",
             },
           ],
         })
