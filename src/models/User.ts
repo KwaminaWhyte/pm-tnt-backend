@@ -1,5 +1,5 @@
 import mongoose, { type Model, Schema } from "mongoose";
-import { UserInterface } from "~/utils/types";
+import { UserInterface } from "../utils/types";
 
 const userSchema = new mongoose.Schema<UserInterface>(
   {
@@ -45,6 +45,8 @@ const userSchema = new mongoose.Schema<UserInterface>(
       type: Boolean,
       default: false,
     },
+    emailVerificationToken: String,
+    emailVerificationExpires: Date,
   },
   {
     timestamps: true,

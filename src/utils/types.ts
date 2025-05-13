@@ -39,6 +39,8 @@ export interface UserInterface {
   otp?: OTP;
   isPhoneVerified: boolean;
   isEmailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +56,22 @@ export interface RegisterDTO {
   firstName: string;
   lastName: string;
   phone: string;
+}
+
+export interface UpdateUserDTO {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  photo?: string;
+}
+
+export interface UserSearchParams {
+  page?: number;
+  limit?: number;
+  searchTerm?: string;
+  status?: string;
 }
 
 export interface LoginWithPhoneDTO {

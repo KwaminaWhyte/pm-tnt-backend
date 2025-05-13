@@ -10,8 +10,8 @@ export const cronJobs = new Elysia()
   .use(
     cron({
       name: "send-pending-emails",
-      // Run every 5 minutes
-      pattern: "*/5 * * * *",
+      // Run every 2 minutes
+      pattern: "*/2 * * * *",
       async run() {
         console.log("Running email sending cron job...");
         try {
@@ -55,7 +55,7 @@ export const cronJobs = new Elysia()
   .use(
     cron({
       name: "send-pending-sms",
-      // Run every 5 minutes
+      // Run every 1 minutes
       pattern: "*/1 * * * *",
       async run() {
         console.log("Running SMS sending cron job...");

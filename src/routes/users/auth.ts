@@ -241,6 +241,102 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
         },
       },
     }
+  )
+
+  .post(
+    "/verify-email",
+    ({ body }) => userController.verifyEmail(body.token, body.email),
+    {
+      body: t.Object({
+        token: t.String(),
+        email: t.String({ format: "email" }),
+      }),
+      detail: {
+        tags: ["Authentication - User"],
+        summary: "Verify email address",
+        description: "Verify user's email address using the verification token",
+        responses: {
+          200: {
+            description: "Email verified successfully",
+            content: {
+              "application/json": {
+                schema: t.Object({
+                  message: t.String(),
+                  user: t.Object({
+                    _id: t.String(),
+                    firstName: t.String(),
+                    lastName: t.Optional(t.String()),
+                    email: t.String(),
+                    isEmailVerified: t.Boolean(),
+                  }),
+                }),
+              },
+            },
+          },
+          400: {
+            description: "Invalid or expired verification token",
+            content: {
+              "application/json": {
+                schema: t.Object({
+                  message: t.String(),
+                  errors: t.Array(
+                    t.Object({
+                      type: t.String(),
+                      path: t.Array(t.String()),
+                      message: t.String(),
+                    })
+                  ),
+                }),
+              },
+            },
+          },
+        },
+      },
+    }
+  )
+
+  .post(
+    "/resend-verification-email",
+    ({ body }) => userController.resendVerificationEmail(body.email),
+    {
+      body: t.Object({
+        email: t.String({ format: "email" }),
+      }),
+      detail: {
+        tags: ["Authentication - User"],
+        summary: "Resend verification email",
+        description: "Resend the email verification link to the user's email address",
+        responses: {
+          200: {
+            description: "Verification email sent successfully",
+            content: {
+              "application/json": {
+                schema: t.Object({
+                  message: t.String(),
+                }),
+              },
+            },
+          },
+          404: {
+            description: "User not found",
+            content: {
+              "application/json": {
+                schema: t.Object({
+                  message: t.String(),
+                  errors: t.Array(
+                    t.Object({
+                      type: t.String(),
+                      path: t.Array(t.String()),
+                      message: t.String(),
+                    })
+                  ),
+                }),
+              },
+            },
+          },
+        },
+      },
+    }
   );
 
 export default authRoutes;

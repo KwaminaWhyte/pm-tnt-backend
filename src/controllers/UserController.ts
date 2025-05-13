@@ -1,7 +1,9 @@
 import User from "../models/User";
+import Email from "../models/Email";
 import generateOTP from "../utils/generateOtp";
 import sendSMS from "../utils/sendSMS";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import {
   LoginWithEmailDTO,
   LoginWithPhoneDTO,
@@ -48,17 +50,86 @@ export default class UserController {
       });
     }
 
+    const existingPhone = await User.findOne({ phone });
+    if (existingPhone) {
+      return error(404, {
+        message: "Phone already exists",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["phone"],
+            message: "An account with this phone number already exists",
+          },
+        ],
+      });
+    }
+
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const tokenExpiry = new Date();
+    tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Token valid for 24 hours
+
     const hashedPassword = await bcrypt.hash(password, 10);
+    // try {
     const user = new User({
       firstName,
       lastName,
       phone,
       email,
       password: hashedPassword,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: tokenExpiry,
     });
     await user.save();
+    console.log(user);
+    // } catch (error) {
+    //   console.log(error);
+    // }
 
-    return user;
+    // Create verification email
+    const verificationUrl = `${
+      process.env.FRONTEND_URL || "http://localhost:3000"
+    }/verify-email?token=${verificationToken}&email=${email}`;
+
+    const emailBody = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Welcome to PM Travel and Tour!</h2>
+        <p>Hello ${firstName},</p>
+        <p>Thank you for registering with PM Travel and Tour. Please verify your email address by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verificationUrl}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Verify Email Address</a>
+        </div>
+        <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+        <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+        <p>This link will expire in 24 hours.</p>
+        <p>If you did not create an account, please ignore this email.</p>
+        <p>Best regards,<br>PM Travel and Tour Team</p>
+      </div>
+    `;
+
+    // Create email record for the cron job to pick up
+    const emailRecord = new Email({
+      email: user.email,
+      subject: "Verify Your Email - PM Travel and Tour",
+      body: emailBody,
+      isSent: false,
+    });
+    await emailRecord.save();
+
+    console.log({ verificationToken, hashedPassword });
+    return {
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified,
+      },
+      message:
+        "Registration successful. Please check your email to verify your account.",
+    };
   }
 
   /**
@@ -710,10 +781,142 @@ export default class UserController {
   }
 
   /**
-   * Update user profile
+   * Verify user email with verification token
+   * @throws {Error} 400 - Invalid or expired token
    * @throws {Error} 404 - User not found
-   * @throws {Error} 400 - Validation error or duplicate data
    */
+  async verifyEmail(token: string, email: string) {
+    try {
+      const user = await User.findOne({
+        email,
+        emailVerificationToken: token,
+        emailVerificationExpires: { $gt: new Date() },
+      });
+
+      if (!user) {
+        return error(400, {
+          message: "Invalid or expired verification token",
+          errors: [
+            {
+              type: "ValidationError",
+              path: ["token"],
+              message: "The verification link is invalid or has expired",
+            },
+          ],
+        });
+      }
+
+      // Update user as verified
+      user.isEmailVerified = true;
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpires = undefined;
+      await user.save();
+
+      return {
+        message: "Email verified successfully",
+        user: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          isEmailVerified: user.isEmailVerified,
+        },
+      };
+    } catch (err) {
+      return error(500, {
+        message: "Server error",
+        errors: [
+          {
+            type: "ServerError",
+            message: "An error occurred while verifying email",
+          },
+        ],
+      });
+    }
+  }
+
+  /**
+   * Resend verification email
+   * @throws {Error} 404 - User not found
+   */
+  async resendVerificationEmail(email: string) {
+    try {
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        return error(404, {
+          message: "User not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["email"],
+              message: "No account found with this email address",
+            },
+          ],
+        });
+      }
+
+      if (user.isEmailVerified) {
+        return {
+          message: "Email is already verified",
+        };
+      }
+
+      // Generate new verification token
+      const verificationToken = crypto.randomBytes(32).toString("hex");
+      const tokenExpiry = new Date();
+      tokenExpiry.setHours(tokenExpiry.getHours() + 24);
+
+      user.emailVerificationToken = verificationToken;
+      user.emailVerificationExpires = tokenExpiry;
+      await user.save();
+
+      // Create verification email
+      const verificationUrl = `${
+        process.env.FRONTEND_URL || "http://localhost:3000"
+      }/verify-email?token=${verificationToken}&email=${email}`;
+
+      const emailBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Email Verification</h2>
+          <p>Hello ${user.firstName},</p>
+          <p>You requested a new verification email. Please verify your email address by clicking the button below:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Verify Email Address</a>
+          </div>
+          <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
+          <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+          <p>This link will expire in 24 hours.</p>
+          <p>If you did not request this email, please ignore it.</p>
+          <p>Best regards,<br>PM Travel and Tour Team</p>
+        </div>
+      `;
+
+      // Create email record for the cron job to pick up
+      const emailRecord = new Email({
+        email: user.email,
+        subject: "Verify Your Email - PM Travel and Tour",
+        body: emailBody,
+        isSent: false,
+      });
+      await emailRecord.save();
+
+      return {
+        message: "Verification email sent. Please check your inbox.",
+      };
+    } catch (err) {
+      return error(500, {
+        message: "Server error",
+        errors: [
+          {
+            type: "ServerError",
+            message: "An error occurred while sending verification email",
+          },
+        ],
+      });
+    }
+  }
+
   async updateUser(id: string, updateData: UpdateUserDTO) {
     const user = await User.findById(id);
 
