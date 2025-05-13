@@ -4,17 +4,18 @@ import swagger from "@elysiajs/swagger";
 import mongoose from "mongoose";
 import fs from "fs";
 
+import { cronJobs } from "./utils/cron";
 import { jwtConfig } from "./utils/jwt.config";
 
 import adminsRoutes from "./routes/admins";
 import adminAuthRoutes from "./routes/admin/auth";
 import hotelAdminRoutes from "./routes/admin/hotels";
 
-import vehiclesPublicRoutes from "./routes/users/vehicles";
+import userAuthRoutes from "./routes/users/auth";
 import hotelPublicRoutes from "./routes/users/hotels";
+import vehiclesPublicRoutes from "./routes/users/vehicles";
 
 import vehiclesRoutes from "./routes/vehicles";
-import userAuthRoutes from "./routes/user-auth";
 import usersRoutes from "./routes/users";
 import roomRoutes from "./routes/rooms";
 import packageRoutes from "./routes/packages";
@@ -47,6 +48,8 @@ const app = new Elysia()
       maxAge: 86400, // 24 hours
     })
   )
+  // Use cron jobs
+  .use(cronJobs)
   // .use(
   //   staticPlugin({
   //     prefix: "/storage",

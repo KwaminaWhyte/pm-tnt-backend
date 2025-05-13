@@ -1,20 +1,5 @@
 import mongoose, { type Model, Schema } from "mongoose";
-
-export interface UserInterface {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  phone: string;
-  otp: {
-    code: string;
-    expiresAt: Date;
-  };
-  position: string;
-  photo: string;
-  isPhoneVerified: boolean;
-  isEmailVerified: boolean;
-}
+import { UserInterface } from "~/utils/types";
 
 const userSchema = new mongoose.Schema<UserInterface>(
   {

@@ -47,7 +47,7 @@ const sendEmail = async ({
   // Define email options
   let mailOptions = {
     from: {
-      name: "Adamus Med Treatment",
+      name: "PM Travel and Tour",
       address: "nf@adamusgh.com",
     },
     to: to, // List of receivers

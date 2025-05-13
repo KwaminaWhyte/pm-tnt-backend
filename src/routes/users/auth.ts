@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
-import UserController from "../controllers/UserController";
-import { jwtConfig } from "../utils/jwt.config";
+import UserController from "../../controllers/UserController";
+import { jwtConfig } from "../../utils/jwt.config";
 
 const userController = new UserController();
 
