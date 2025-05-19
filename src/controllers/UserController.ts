@@ -88,7 +88,7 @@ export default class UserController {
 
     // Create verification email
     const verificationUrl = `${
-      process.env.API_URL || "http://localhost:3000"
+      process.env.FRONTEND_URL || "http://localhost:3000"
     }/verify-email?token=${verificationToken}&email=${email}`;
 
     const emailBody = `
