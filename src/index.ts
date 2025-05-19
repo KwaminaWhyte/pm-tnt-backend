@@ -31,7 +31,7 @@ import activitiesRoutes from "./routes/activities";
 
 // Connect to MongoDB
 mongoose
-  .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/pm-tnt")
+  .connect(process.env.MONGODB_URI as string)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
@@ -49,7 +49,7 @@ const app = new Elysia()
     })
   )
   // Use cron jobs
-  .use(cronJobs)
+  // .use(cronJobs)
   // .use(
   //   staticPlugin({
   //     prefix: "/storage",
