@@ -70,7 +70,7 @@ export default class UserController {
     tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Token valid for 24 hours
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    // try {
+
     const user = new User({
       firstName,
       lastName,
@@ -81,10 +81,6 @@ export default class UserController {
       emailVerificationExpires: tokenExpiry,
     });
     await user.save();
-    console.log(user);
-    // } catch (error) {
-    //   console.log(error);
-    // }
 
     // Create verification email
     const verificationUrl = `${
