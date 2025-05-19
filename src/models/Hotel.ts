@@ -86,6 +86,11 @@ const schema = new Schema<HotelInterface>(
         multiplier: { type: Number, required: true, min: 0 },
       },
     ],
+    isAvailable: {
+      type: Boolean,
+      required: false,
+      default: true,
+    },
   },
   {
     timestamps: true,

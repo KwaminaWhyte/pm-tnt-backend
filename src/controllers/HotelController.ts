@@ -20,6 +20,7 @@ export default class HotelController {
     country,
     sortBy,
     sortOrder,
+    isAvailable,
   }: {
     page?: number;
     searchTerm?: string;
@@ -28,6 +29,7 @@ export default class HotelController {
     country?: string;
     sortBy?: "pricePerNight" | "capacity" | "rating";
     sortOrder?: "asc" | "desc";
+    isAvailable?: boolean;
   }) {
     try {
       if (page < 1 || limit < 1) {
@@ -59,6 +61,10 @@ export default class HotelController {
 
       if (country) {
         filter["location.country"] = { $regex: country, $options: "i" };
+      }
+
+      if (isAvailable) {
+        filter["isAvailable"] = isAvailable;
       }
 
       const sort: Record<string, 1 | -1> = {};

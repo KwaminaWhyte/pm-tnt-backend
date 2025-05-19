@@ -138,6 +138,7 @@ export interface HotelInterface {
     endDate: Date;
     multiplier: number;
   }>;
+  isAvailable: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
