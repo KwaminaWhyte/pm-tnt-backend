@@ -233,14 +233,42 @@ export default class VehicleController {
    */
   async createVehicle(data: CreateVehicleDTO) {
     try {
+      // Set default dates for maintenance if not provided
+      const currentDate = new Date();
+      const nextServiceDate = new Date();
+      nextServiceDate.setMonth(nextServiceDate.getMonth() + 3); // Default next service in 3 months
+      
       const vehicle = new Vehicle({
         ...data,
+        // Ensure availability location is set properly
         availability: {
           isAvailable: true,
           location: {
-            city: data.city,
-            country: data.country,
+            city: data.city || data.location?.city,
+            country: data.country || data.location?.country,
+            coordinates: data.coordinates || {
+              latitude: 0,
+              longitude: 0,
+            },
           },
+        },
+        // Ensure maintenance data is set
+        maintenance: {
+          lastService: data.maintenance?.lastService || currentDate,
+          nextService: data.maintenance?.nextService || nextServiceDate,
+          status: data.maintenance?.status || "Available",
+          history: data.maintenance?.history || [],
+        },
+        // Ensure details.vin is set
+        details: {
+          ...data.details,
+          vin: data.details?.vin || "", // This should be validated in the frontend
+          insurance: {
+            provider: data.details?.insurance?.provider || data.insuranceProvider || "",
+            policyNumber: data.details?.insurance?.policyNumber || data.insurancePolicyNumber || "",
+            expiryDate: data.details?.insurance?.expiryDate || new Date(currentDate.setFullYear(currentDate.getFullYear() + 1)),
+            coverage: data.details?.insurance?.coverage || data.insuranceCoverage || "Basic"
+          }
         },
       });
 

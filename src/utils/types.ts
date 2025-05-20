@@ -243,26 +243,44 @@ export interface CreateVehicleDTO {
   make: string;
   model: string;
   year: number;
-  details: {
+  details?: {
     color: string;
     licensePlate: string;
     transmission: "Automatic" | "Manual";
     fuelType: "Petrol" | "Diesel" | "Electric" | "Hybrid";
     mileage: number;
     vin: string;
-    insurance: {
+    insurance?: {
       provider: string;
       policyNumber: string;
-      expiryDate: string;
+      expiryDate: string | Date;
       coverage: string;
     };
   };
+  // Individual fields for form submission
+  color?: string;
+  licensePlate?: string;
+  transmission?: "Automatic" | "Manual";
+  fuelType?: "Petrol" | "Diesel" | "Electric" | "Hybrid";
+  mileage?: number;
+  vin?: string;
+  insuranceProvider?: string;
+  insurancePolicyNumber?: string;
+  insuranceExpiryDate?: string | Date;
+  insuranceCoverage?: string;
+  
   features: string[];
   capacity: number;
   pricePerDay: number;
+  
+  // Location information
   city?: string;
   country?: string;
-  location: {
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  location?: {
     city: string;
     country: string;
     coordinates?: {
@@ -270,7 +288,22 @@ export interface CreateVehicleDTO {
       longitude: number;
     };
   };
-  rentalTerms: {
+  
+  // Maintenance information
+  maintenance?: {
+    lastService: Date;
+    nextService: Date;
+    status?: "Available" | "In Service" | "Repairs Needed";
+    history?: Array<{
+      date: Date;
+      type: string;
+      description: string;
+      cost: number;
+    }>;
+  };
+  
+  // Rental terms
+  rentalTerms?: {
     minimumAge: number;
     requiredDocuments: string[];
     securityDeposit: number;
@@ -282,6 +315,17 @@ export interface CreateVehicleDTO {
       pricePerDay: number;
     }>;
   };
+  minimumAge?: number;
+  requiredDocuments?: string[];
+  securityDeposit?: number;
+  mileageLimit?: number;
+  additionalDrivers?: boolean;
+  insuranceOptions?: Array<{
+    type: string;
+    coverage: string;
+    pricePerDay: number;
+  }>;
+  
   images: string[];
   policies: string;
 }

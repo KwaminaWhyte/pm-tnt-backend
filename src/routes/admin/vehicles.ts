@@ -156,36 +156,74 @@ const adminVehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles/admin" })
     async ({ body }) => {
       console.log("Create vehicle request body:", body);
 
+      // Current date for default values
+      const currentDate = new Date();
+      const nextServiceDate = new Date();
+      nextServiceDate.setMonth(nextServiceDate.getMonth() + 3); // Default next service in 3 months
+      
+      // Parse features and images if they're comma-separated strings
+      const features = Array.isArray(body.features) 
+        ? body.features 
+        : (typeof body.features === 'string' ? body.features.split(',').map((f: string) => f.trim()) : []);
+      
+      const images = Array.isArray(body.images) 
+        ? body.images 
+        : (typeof body.images === 'string' ? body.images.split(',').map((i: string) => i.trim()) : []);
+
       // Adapt the body structure to match the CreateVehicleDTO interface
       const vehicleData = {
         vehicleType: body.vehicleType,
         make: body.make,
         model: body.model,
         year: body.year || new Date().getFullYear(),
+        
+        // Individual fields that will be structured in controller
+        color: body.color || "Unknown",
+        licensePlate: body.licensePlate || "",
+        transmission: (body.transmission || "Automatic") as "Automatic" | "Manual",
+        fuelType: (body.fuelType || "Petrol") as "Petrol" | "Diesel" | "Electric" | "Hybrid",
+        mileage: body.mileage || 0,
+        vin: body.vin || "",
+        insuranceProvider: body.insuranceProvider || "",
+        insurancePolicyNumber: body.insurancePolicyNumber || "",
+        insuranceExpiryDate: body.insuranceExpiryDate || new Date(currentDate.setFullYear(currentDate.getFullYear() + 1)),
+        insuranceCoverage: body.insuranceCoverage || "Basic",
+        
+        // Structured details object
         details: {
           color: body.color || "Unknown",
           licensePlate: body.licensePlate || "",
-          transmission: (body.transmission || "Automatic") as
-            | "Automatic"
-            | "Manual",
-          fuelType: (body.fuelType || "Petrol") as
-            | "Petrol"
-            | "Diesel"
-            | "Electric"
-            | "Hybrid",
+          transmission: (body.transmission || "Automatic") as "Automatic" | "Manual",
+          fuelType: (body.fuelType || "Petrol") as "Petrol" | "Diesel" | "Electric" | "Hybrid",
           mileage: body.mileage || 0,
           vin: body.vin || "",
           insurance: {
             provider: body.insuranceProvider || "",
             policyNumber: body.insurancePolicyNumber || "",
-            expiryDate: body.insuranceExpiryDate || new Date().toISOString(),
+            expiryDate: body.insuranceExpiryDate || new Date(currentDate.setFullYear(currentDate.getFullYear() + 1)),
             coverage: body.insuranceCoverage || "Basic",
           },
         },
-        features: body.features,
+        
+        // Required maintenance data
+        maintenance: {
+          lastService: currentDate,
+          nextService: nextServiceDate,
+          status: "Available" as "Available" | "In Service" | "Repairs Needed",
+          history: [],
+        },
+        
+        features,
         capacity: body.capacity,
         pricePerDay: body.pricePerDay,
+        
         // Location data for availability
+        city: body.city,
+        country: body.country,
+        coordinates: body.coordinates || {
+          latitude: 0,
+          longitude: 0,
+        },
         location: {
           city: body.city,
           country: body.country,
@@ -194,12 +232,23 @@ const adminVehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles/admin" })
             longitude: 0,
           },
         },
+        
+        // Rental terms
+        minimumAge: body.minimumAge || 18,
+        requiredDocuments: body.requiredDocuments || ["Driver's License", "Credit Card"],
+        securityDeposit: body.securityDeposit || 0,
+        mileageLimit: body.mileageLimit || 0,
+        additionalDrivers: body.additionalDrivers || false,
+        insuranceOptions: body.insuranceOptions || [
+          {
+            type: "Basic",
+            coverage: "Collision Damage Waiver",
+            pricePerDay: 10,
+          },
+        ],
         rentalTerms: {
           minimumAge: body.minimumAge || 18,
-          requiredDocuments: body.requiredDocuments || [
-            "Driver's License",
-            "Credit Card",
-          ],
+          requiredDocuments: body.requiredDocuments || ["Driver's License", "Credit Card"],
           securityDeposit: body.securityDeposit || 0,
           mileageLimit: body.mileageLimit || 0,
           additionalDrivers: body.additionalDrivers || false,
@@ -211,7 +260,8 @@ const adminVehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles/admin" })
             },
           ],
         },
-        images: body.images,
+        
+        images,
         policies: body.policies || "",
       };
 
