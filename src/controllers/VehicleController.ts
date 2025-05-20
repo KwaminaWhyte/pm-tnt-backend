@@ -250,6 +250,8 @@ export default class VehicleController {
         vehicle: savedVehicle,
       };
     } catch (err) {
+      console.log(err);
+
       if (err instanceof Error && err.message.includes("status")) {
         throw err;
       }

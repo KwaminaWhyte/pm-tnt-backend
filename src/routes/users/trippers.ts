@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
-import { TripperController } from "../controllers/TripperController";
-import { jwtConfig } from "../utils/jwt.config";
+import { TripperController } from "~/controllers/TripperController";
+import { jwtConfig } from "~/utils/jwt.config";
 import * as fs from "fs";
 import * as path from "path";
 import crypto from "crypto";
@@ -9,83 +9,7 @@ const tripperController = new TripperController();
 
 const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
   .use(jwtConfig)
-  // Public routes don't need auth
-  .get(
-    "/posts",
-    async ({ query, headers, jwt_auth }) => {
-      // Try to extract userId from token if available
-      try {
-        const auth = headers["authorization"];
-        const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
 
-        if (token) {
-          const data = await jwt_auth.verify(token);
-          if (data) {
-            // Safely extract the ID from the JWT payload as a string
-            const payload = data as Record<string, any>;
-            const userId = payload.id || payload._id;
-
-            if (userId) {
-              // Add userId to query params
-              query.userId = userId;
-            }
-          }
-        }
-      } catch (error) {
-        // Silently fail - this just means we won't add hasLiked property
-        console.log("No valid auth token found for adding hasLiked property");
-      }
-
-      return await tripperController.getAllPosts({ query } as any);
-    },
-    {
-      query: t.Object({
-        sort: t.Optional(t.String()),
-        limit: t.Optional(t.String()),
-        page: t.Optional(t.String()),
-        type: t.Optional(t.String()),
-        location: t.Optional(t.String()),
-        user: t.Optional(t.String()),
-        userId: t.Optional(t.String()), // Allow userId to be passed explicitly (but will be overridden by token)
-      }),
-    }
-  )
-  .get(
-    "/posts/:id",
-    async ({ params, headers, jwt_auth, query }) => {
-      try {
-        const auth = headers["authorization"];
-        const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
-
-        if (token) {
-          const data = await jwt_auth.verify(token);
-          if (data) {
-            // Safely extract the ID from the JWT payload as a string
-            const payload = data as Record<string, any>;
-            const userId = payload.id || payload._id;
-
-            if (userId) {
-              // Add userId to query params
-              query.userId = userId;
-            }
-          }
-        }
-      } catch (error) {
-        // Silently fail - this just means we won't add hasLiked property
-        console.log("No valid auth token found for adding hasLiked property");
-      }
-      return await tripperController.getPostById({
-        params,
-        query,
-      } as any);
-    },
-    {
-      params: t.Object({
-        id: t.String(),
-      }),
-    }
-  )
-  // Protected routes with authentication
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
@@ -138,7 +62,91 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
       );
     }
   })
-  // Create a new post (authenticated)
+
+  .get(
+    "/posts",
+    async ({ query, headers, jwt_auth }) => {
+      // Try to extract userId from token if available
+      try {
+        const auth = headers["authorization"];
+        const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+        if (token) {
+          const data = await jwt_auth.verify(token);
+          if (data) {
+            // Safely extract the ID from the JWT payload as a string
+            const payload = data as Record<string, any>;
+            const userId = payload.id || payload._id;
+
+            if (userId) {
+              // Add userId to query params
+              query.userId = userId;
+            }
+          }
+        }
+      } catch (error) {
+        // Silently fail - this just means we won't add hasLiked property
+        console.log("No valid auth token found for adding hasLiked property");
+      }
+
+      return await tripperController.getAllPosts({ query } as any);
+    },
+    {
+      query: t.Object({
+        sort: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
+        page: t.Optional(t.String()),
+        type: t.Optional(t.String()),
+        location: t.Optional(t.String()),
+        user: t.Optional(t.String()),
+        userId: t.Optional(t.String()), // Allow userId to be passed explicitly (but will be overridden by token)
+      }),
+      detail: {
+        summary: "Get all posts with pagination and filtering",
+        tags: ["Tripper - Auth User"],
+      },
+    }
+  )
+  .get(
+    "/posts/:id",
+    async ({ params, headers, jwt_auth, query }) => {
+      try {
+        const auth = headers["authorization"];
+        const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+        if (token) {
+          const data = await jwt_auth.verify(token);
+          if (data) {
+            // Safely extract the ID from the JWT payload as a string
+            const payload = data as Record<string, any>;
+            const userId = payload.id || payload._id;
+
+            if (userId) {
+              // Add userId to query params
+              query.userId = userId;
+            }
+          }
+        }
+      } catch (error) {
+        // Silently fail - this just means we won't add hasLiked property
+        console.log("No valid auth token found for adding hasLiked property");
+      }
+      return await tripperController.getPostById({
+        params,
+        query,
+      } as any);
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      detail: {
+        summary: "Get a post by ID",
+        tags: ["Tripper - Auth User"],
+      },
+    }
+  )
+
   .post(
     "/posts",
     async ({ body, userId }) => {
@@ -178,9 +186,13 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         ),
         location: t.String(),
       }),
+      detail: {
+        summary: "Create a new post",
+        tags: ["Tripper - Auth User"],
+      },
     }
   )
-  // Update post reactions (like/dislike - authenticated)
+
   .put(
     "/posts/:id/react",
     async ({ params, body, userId }) => {
@@ -197,9 +209,13 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
       body: t.Object({
         action: t.Union([t.Literal("like"), t.Literal("dislike")]),
       }),
+      detail: {
+        summary: "Update post reactions (like/dislike)",
+        tags: ["Tripper - Auth User"],
+      },
     }
   )
-  // Add a comment to a post (authenticated)
+
   .post(
     "/posts/:id/comment",
     async ({ params, body, userId }) => {
@@ -216,9 +232,13 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
       body: t.Object({
         text: t.String(),
       }),
+      detail: {
+        summary: "Add a comment to a post",
+        tags: ["Tripper - Auth User"],
+      },
     }
   )
-  // Like a comment (authenticated)
+
   .put(
     "/posts/:id/comments/:commentId/like",
     async ({ params, userId }) => {
@@ -229,9 +249,13 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         id: t.String(),
         commentId: t.String(),
       }),
+      detail: {
+        summary: "Like a comment",
+        tags: ["Tripper - Auth User"],
+      },
     }
   )
-  // Add a new endpoint for media upload (supports multiple files)
+
   .post(
     "/upload/media",
     async ({ body, userId }) => {
@@ -341,9 +365,13 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
           maxSize: 15 * 1024 * 1024, // Increase to 15MB max size for videos
         }),
       }),
+      detail: {
+        summary: "Upload a single media file",
+        tags: ["Tripper - Auth User"],
+      },
     }
   )
-  // Add a new endpoint for multiple media upload
+
   .post(
     "/upload/multiple",
     async ({ body, userId }) => {
@@ -417,9 +445,13 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
           ),
         ]),
       }),
+      detail: {
+        summary: "Upload multiple media files",
+        tags: ["Tripper - Auth User"],
+      },
     }
   )
-  // Delete a post (authenticated + owner check)
+
   .delete(
     "/posts/:id",
     async ({ params, userId }) => {
@@ -430,6 +462,10 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
       params: t.Object({
         id: t.String(),
       }),
+      detail: {
+        summary: "Delete a post",
+        tags: ["Tripper - Auth User"],
+      },
     }
   );
 

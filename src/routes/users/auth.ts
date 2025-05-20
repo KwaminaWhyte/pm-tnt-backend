@@ -339,6 +339,90 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
         },
       },
     }
+  )
+
+  .derive(async ({ headers, jwt_auth }) => {
+    const auth = headers["authorization"];
+    const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
+
+    if (!token) {
+      throw new Error(
+        JSON.stringify({
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Token is missing",
+            },
+          ],
+        })
+      );
+    }
+
+    try {
+      const data = await jwt_auth.verify(token);
+
+      return { userId: data?.id };
+    } catch (error) {
+      throw new Error(
+        JSON.stringify({
+          message: "Unauthorized",
+          errors: [
+            {
+              type: "AuthError",
+              path: ["authorization"],
+              message: "Invalid or expired token",
+            },
+          ],
+        })
+      );
+    }
+  })
+  .get("/me", async ({ userId }) => userController.getUser(userId), {
+    detail: {
+      tags: ["Users"],
+      summary: "Get current user profile",
+      description:
+        "Retrieve the profile information of the currently authenticated user",
+      security: [{ bearerAuth: [] }],
+    },
+  })
+  .put(
+    "/me",
+    async ({ userId, body }) => userController.updateUserProfile(userId, body),
+    {
+      body: t.Object({
+        firstName: t.Optional(t.String()),
+        lastName: t.Optional(t.String()),
+        email: t.Optional(t.String({ format: "email" })),
+        phone: t.Optional(t.String({ pattern: "^\\+?[0-9]\\d{1,14}$" })),
+      }),
+      detail: {
+        tags: ["Users"],
+        summary: "Update current user profile",
+        description:
+          "Update the profile information of the currently authenticated user",
+        security: [{ bearerAuth: [] }],
+      },
+    }
+  )
+  .put(
+    "/me/password",
+    async ({ userId, body: { currentPassword, newPassword } }) =>
+      userController.changePassword({ userId, currentPassword, newPassword }),
+    {
+      body: t.Object({
+        currentPassword: t.String({ minLength: 6 }),
+        newPassword: t.String({ minLength: 6 }),
+      }),
+      detail: {
+        tags: ["Users"],
+        summary: "Change user password",
+        description: "Change the password for the currently authenticated user",
+        security: [{ bearerAuth: [] }],
+      },
+    }
   );
 
 export default authRoutes;

@@ -7,7 +7,7 @@ const hotelController = new HotelController();
  * Hotel routes for admin operations
  * Base path: /api/v1/hotels/admin
  */
-const hotelAdminRoutes = new Elysia({ prefix: "/api/v1/hotels/admin" })
+const adminHotelRoutes = new Elysia({ prefix: "/api/v1/hotels/admin" })
 
   .guard({
     detail: {
@@ -311,4 +311,4 @@ const hotelAdminRoutes = new Elysia({ prefix: "/api/v1/hotels/admin" })
     }
   );
 
-export default hotelAdminRoutes;
+export default adminHotelRoutes;

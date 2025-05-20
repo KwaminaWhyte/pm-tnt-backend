@@ -9,14 +9,14 @@ import { jwtConfig } from "./utils/jwt.config";
 
 import adminsRoutes from "./routes/admins";
 import adminAuthRoutes from "./routes/admin/auth";
-import hotelAdminRoutes from "./routes/admin/hotels";
+import adminHotelRoutes from "./routes/admin/hotels";
+import adminVehicleRoutes from "./routes/admin/vehicles";
 
 import userAuthRoutes from "./routes/users/auth";
 import hotelPublicRoutes from "./routes/users/hotels";
-import vehiclesPublicRoutes from "./routes/users/vehicles";
+import vehicleRoutes from "./routes/users/vehicles";
+import tripperRoutes from "./routes/users/trippers";
 
-import vehiclesRoutes from "./routes/vehicles";
-import usersRoutes from "./routes/users";
 import roomRoutes from "./routes/rooms";
 import packageRoutes from "./routes/packages";
 import destinationRoutes from "./routes/destinations";
@@ -26,8 +26,8 @@ import settingsRoutes from "./routes/settings";
 import reviewsRoutes from "./routes/reviews";
 import sliderRoutes from "./routes/sliders";
 import notificationRoutes from "./routes/notifications";
-import tripperRoutes from "./routes/trippers";
 import activitiesRoutes from "./routes/activities";
+import adminUserRoutes from "./routes/admin/users";
 
 // Connect to MongoDB
 mongoose
@@ -49,7 +49,7 @@ const app = new Elysia()
     })
   )
   // Use cron jobs
-  // .use(cronJobs)
+  .use(cronJobs)
   // .use(
   //   staticPlugin({
   //     prefix: "/storage",
@@ -128,14 +128,19 @@ const app = new Elysia()
     })
   )
   .use(jwtConfig)
-  .use(userAuthRoutes)
+
+  // admin routes
   .use(adminAuthRoutes)
-  .use(vehiclesRoutes)
-  .use(vehiclesPublicRoutes)
+  .use(adminUserRoutes)
+  .use(adminVehicleRoutes)
+  .use(adminHotelRoutes)
   .use(adminsRoutes)
-  .use(usersRoutes)
+
+  // user routes
+  .use(userAuthRoutes)
+  .use(vehicleRoutes)
+
   .use(hotelPublicRoutes)
-  .use(hotelAdminRoutes)
   .use(roomRoutes)
   .use(packageRoutes)
   .use(bookingRoutes)
