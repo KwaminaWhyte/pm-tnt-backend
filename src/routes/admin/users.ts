@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../../utils/jwt.config";
-import UserController from "../../controllers/UserController";
+import { jwtConfig } from "~/utils/jwt.config";
+import UserController from "~/controllers/UserController";
 
 const userController = new UserController();
 
@@ -127,7 +127,7 @@ const adminUserRoutes = new Elysia({ prefix: "/api/v1/users" })
       }
       const bcrypt = require("bcryptjs");
       const hashedPassword = await bcrypt.hash(password, 10);
-      await require("../models/User").default.findByIdAndUpdate(id, {
+      await require("~/models/User").default.findByIdAndUpdate(id, {
         password: hashedPassword,
       });
       return { message: "Password reset successfully" };
