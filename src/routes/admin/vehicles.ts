@@ -153,7 +153,7 @@ const adminVehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles/admin" })
 
   .post(
     "/",
-    async ({ body }) => {
+    async ({ body }: { body: any }) => {
       console.log("Create vehicle request body:", body);
 
       // Current date for default values
@@ -165,110 +165,65 @@ const adminVehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles/admin" })
       const features = Array.isArray(body.features)
         ? body.features
         : typeof body.features === "string"
-        ? body.features.split(",").map((f: string) => f.trim())
+        ? body.features
+            .split(",")
+            .map((f: string) => f.trim())
+            .filter(Boolean)
         : [];
 
       const images = Array.isArray(body.images)
         ? body.images
         : typeof body.images === "string"
-        ? body.images.split(",").map((i: string) => i.trim())
+        ? body.images
+            .split(",")
+            .map((i: string) => i.trim())
+            .filter(Boolean)
         : [];
 
       // Adapt the body structure to match the CreateVehicleDTO interface
-      const vehicleData = {
+      const vehicleData: any = {
         vehicleType: body.vehicleType,
         make: body.make,
         model: body.model,
         year: body.year || new Date().getFullYear(),
-
-        // Individual fields that will be structured in controller
-        color: body.color || "Unknown",
-        licensePlate: body.licensePlate || "",
-        transmission: (body.transmission || "Automatic") as
-          | "Automatic"
-          | "Manual",
-        fuelType: (body.fuelType || "Petrol") as
-          | "Petrol"
-          | "Diesel"
-          | "Electric"
-          | "Hybrid",
-        mileage: body.mileage || 0,
-        vin: body.vin || "",
-        insuranceProvider: body.insuranceProvider || "",
-        insurancePolicyNumber: body.insurancePolicyNumber || "",
-        insuranceExpiryDate:
-          body.insuranceExpiryDate ||
-          new Date(currentDate.setFullYear(currentDate.getFullYear() + 1)),
-        insuranceCoverage: body.insuranceCoverage || "Basic",
-
-        // Structured details object
+        capacity: body.capacity,
+        pricePerDay: body.pricePerDay,
+        features,
+        images,
+        policies: body.policies || "Standard rental policies apply.",
         details: {
+          vin: body.vin || "TBD",
+          licensePlate: body.licensePlate || "TBD",
           color: body.color || "Unknown",
-          licensePlate: body.licensePlate || "",
-          transmission: (body.transmission || "Automatic") as
-            | "Automatic"
-            | "Manual",
-          fuelType: (body.fuelType || "Petrol") as
-            | "Petrol"
-            | "Diesel"
-            | "Electric"
-            | "Hybrid",
+          transmission: body.transmission || "Automatic",
+          fuelType: body.fuelType || "Petrol",
           mileage: body.mileage || 0,
-          vin: body.vin || "",
           insurance: {
-            provider: body.insuranceProvider || "",
-            policyNumber: body.insurancePolicyNumber || "",
+            provider: body.insuranceProvider || "TBD",
+            policyNumber: body.insurancePolicyNumber || "TBD",
             expiryDate:
               body.insuranceExpiryDate ||
-              new Date(currentDate.setFullYear(currentDate.getFullYear() + 1)),
+              new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
             coverage: body.insuranceCoverage || "Basic",
           },
         },
-
-        // Required maintenance data
         maintenance: {
-          lastService: currentDate,
-          nextService: nextServiceDate,
-          status: "Available" as "Available" | "In Service" | "Repairs Needed",
+          lastService: body.lastService || new Date(),
+          nextService:
+            body.nextService ||
+            (() => {
+              const d = new Date();
+              d.setMonth(d.getMonth() + 3);
+              return d;
+            })(),
+          status: "Available",
           history: [],
-        },
-
-        features,
-        capacity: body.capacity,
-        pricePerDay: body.pricePerDay,
-
-        // Location data for availability
-        city: body.city,
-        country: body.country,
-        coordinates: body.coordinates || {
-          latitude: 0,
-          longitude: 0,
         },
         location: {
           city: body.city,
           country: body.country,
-          coordinates: body.coordinates || {
-            latitude: 0,
-            longitude: 0,
-          },
+          coordinates: body.coordinates || { latitude: 0, longitude: 0 },
         },
-
-        // Rental terms
-        minimumAge: body.minimumAge || 18,
-        requiredDocuments: body.requiredDocuments || [
-          "Driver's License",
-          "Credit Card",
-        ],
-        securityDeposit: body.securityDeposit || 0,
-        mileageLimit: body.mileageLimit || 0,
-        additionalDrivers: body.additionalDrivers || false,
-        insuranceOptions: body.insuranceOptions || [
-          {
-            type: "Basic",
-            coverage: "Collision Damage Waiver",
-            pricePerDay: 10,
-          },
-        ],
         rentalTerms: {
           minimumAge: body.minimumAge || 18,
           requiredDocuments: body.requiredDocuments || [
@@ -286,9 +241,6 @@ const adminVehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles/admin" })
             },
           ],
         },
-
-        images,
-        policies: body.policies || "",
       };
 
       console.log("Processed vehicle data:", vehicleData);
