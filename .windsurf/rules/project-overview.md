@@ -8,17 +8,17 @@ This is the backend service for PM Travel and Tourism, a tourism management plat
 
 ## Project Structure
 
-- Main entry point: [src/index.ts](mdc:pmtnt/src/index.ts)
+- Main entry point: [src/index.ts](mdc:pm-tnt-backend/src/index.ts)
 - Database: MongoDB with Mongoose
 - API Framework: Elysia.js
 
 ## Key Components
 
-- **Routes**: [src/routes/](mdc:pmtnt/src/routes) - API endpoints organized by resource
-- **Controllers**: [src/controllers/](mdc:pmtnt/src/controllers) - Business logic implementation
-- **Models**: [src/models/](mdc:pmtnt/src/models) - Mongoose schemas and models
-- **Middleware**: [src/middleware/](mdc:pmtnt/src/middleware) - Authentication and other middleware
-- **Utils**: [src/utils/](mdc:pmtnt/src/utils) - Helper functions and type definitions
+- **Routes**: [src/routes/](mdc:pm-tnt-backend/src/routes) - API endpoints organized by resource
+- **Controllers**: [src/controllers/](mdc:pm-tnt-backend/src/controllers) - Business logic implementation
+- **Models**: [src/models/](mdc:pm-tnt-backend/src/models) - Mongoose schemas and models
+- **Middleware**: [src/middleware/](mdc:pm-tnt-backend/src/middleware) - Authentication and other middleware
+- **Utils**: [src/utils/](mdc:pm-tnt-backend/src/utils) - Helper functions and type definitions
 
 ## Main Features
 

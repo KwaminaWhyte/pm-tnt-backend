@@ -9,7 +9,7 @@ Controllers in the PM-TNT backend handle business logic and interact with models
 
 ## Structure
 
-Controllers are defined in [src/controllers/](mdc:pmtnt/src/controllers) as classes with methods for each operation.
+Controllers are defined in [src/controllers/](mdc:pm-tnt-backend/src/controllers) as classes with methods for each operation.
 
 Example structure:
 

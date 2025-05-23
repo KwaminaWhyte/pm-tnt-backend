@@ -14,8 +14,8 @@ The PM-TNT backend follows RESTful API design principles with consistent pattern
 
 ## Authentication
 
-- JWT-based authentication using [src/utils/jwt.config.ts](mdc:pmtnt/src/utils/jwt.config.ts)
-- Authorization middleware in [src/middleware/auth.ts](mdc:pmtnt/src/middleware/auth.ts)
+- JWT-based authentication using [src/utils/jwt.config.ts](mdc:pm-tnt-backend/src/utils/jwt.config.ts)
+- Authorization middleware in [src/middleware/auth.ts](mdc:pm-tnt-backend/src/middleware/auth.ts)
 - Three authentication levels:
   - User authentication
   - Admin authentication

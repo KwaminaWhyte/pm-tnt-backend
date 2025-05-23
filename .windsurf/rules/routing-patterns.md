@@ -9,7 +9,7 @@ The PM-TNT backend uses Elysia.js for routing with consistent patterns.
 
 ## Route Files
 
-Routes are defined in [src/routes/](mdc:pmtnt/src/routes) with separate files for each resource.
+Routes are defined in [src/routes/](mdc:pm-tnt-backend/src/routes) with separate files for each resource.
 
 Example structure:
 

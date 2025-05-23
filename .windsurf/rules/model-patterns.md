@@ -9,7 +9,7 @@ The PM-TNT backend uses Mongoose for MongoDB data modeling with consistent patte
 
 ## Schema Definition
 
-Models are defined in [src/models/](mdc:pmtnt/src/models) with TypeScript interfaces in [src/utils/types.ts](mdc:pmtnt/src/utils/types.ts).
+Models are defined in [src/models/](mdc:pm-tnt-backend/src/models) with TypeScript interfaces in [src/utils/types.ts](mdc:pm-tnt-backend/src/utils/types.ts).
 
 Example schema pattern:
 
