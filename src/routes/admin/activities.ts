@@ -53,45 +53,6 @@ const activityAdminRoutes = new Elysia({ prefix: "/admin" })
     }
   })
 
-  .get(
-    "/",
-    async ({ query }) =>
-      activityController.getActivities({
-        page: Number(query.page) || 1,
-        searchTerm: query.searchTerm as string,
-        limit: Number(query.limit) || 10,
-        category: query.category as string,
-        destination: query.destination as string,
-        minPrice: query.minPrice ? Number(query.minPrice) : undefined,
-        maxPrice: query.maxPrice ? Number(query.maxPrice) : undefined,
-        minDuration: query.minDuration ? Number(query.minDuration) : undefined,
-        maxDuration: query.maxDuration ? Number(query.maxDuration) : undefined,
-        sortBy: query.sortBy as "price" | "duration" | "name",
-        sortOrder: query.sortOrder as "asc" | "desc",
-      }),
-    {
-      query: t.Object({
-        page: t.Optional(t.String()),
-        searchTerm: t.Optional(t.String()),
-        limit: t.Optional(t.String()),
-        category: t.Optional(t.String()),
-        destination: t.Optional(t.String()),
-        minPrice: t.Optional(t.String()),
-        maxPrice: t.Optional(t.String()),
-        minDuration: t.Optional(t.String()),
-        maxDuration: t.Optional(t.String()),
-        sortBy: t.Optional(t.String()),
-        sortOrder: t.Optional(t.String()),
-      }),
-      detail: {
-        summary: "Get all activities (Admin)",
-        description:
-          "Retrieve a list of activities with optional filtering and pagination for admin",
-        tags: ["Activities - Admin"],
-      },
-    }
-  )
-
   .get("/:id", ({ params: { id } }) => activityController.getActivityById(id), {
     detail: {
       summary: "Get activity by ID (Admin)",
