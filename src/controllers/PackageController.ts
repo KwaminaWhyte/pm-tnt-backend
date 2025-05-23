@@ -3,7 +3,13 @@ import { PackageInterface } from "~/utils/types";
 import PackageTemplate from "~/models/PackageTemplate";
 import Hotel from "~/models/Hotel";
 import Activity from "~/models/Activity";
-import { NotFoundError, ValidationError, ServerError } from "~/utils/errors";
+import {
+  NotFoundError,
+  ValidationError,
+  ServerError,
+  AuthorizationError,
+} from "~/utils/errors";
+import mongoose from "mongoose";
 
 export default class PackageController {
   /**
@@ -141,16 +147,10 @@ export default class PackageController {
         );
 
         if (invalidDays) {
-          return error(400, {
-            message: "Invalid itinerary",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["itinerary"],
-                message: "Itinerary day cannot exceed package duration",
-              },
-            ],
-          });
+          throw new ValidationError(
+            "Itinerary day cannot exceed package duration",
+            "itinerary"
+          );
         }
       }
 
@@ -161,28 +161,30 @@ export default class PackageController {
         success: true,
         data: packageItem,
       };
-    } catch (err: any) {
-      if (err.name === "ValidationError") {
-        return error(400, {
-          message: "Validation failed",
-          errors: Object.keys(err.errors).map((key) => ({
-            type: "ValidationError",
-            path: [key],
-            message: err.errors[key].message,
-          })),
-        });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof ValidationError) {
+        throw err;
       }
 
-      return error(500, {
-        message: "Failed to create package",
-        errors: [
-          {
-            type: "ServerError",
-            path: [],
-            message: err.message,
-          },
-        ],
-      });
+      // Handle Mongoose validation errors
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "name" in err &&
+        err.name === "ValidationError"
+      ) {
+        const mongooseErr = err as any;
+        const fieldName = Object.keys(mongooseErr.errors)[0] || "unknown";
+        const message =
+          mongooseErr.errors[fieldName]?.message || "Validation failed";
+        throw new ValidationError(message, fieldName);
+      }
+
+      // Convert other errors to ServerError
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to create package"
+      );
     }
   }
 
@@ -200,16 +202,7 @@ export default class PackageController {
       );
 
       if (!packageItem) {
-        return error(404, {
-          message: "Package not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["id"],
-              message: "Package with the specified ID does not exist",
-            },
-          ],
-        });
+        throw new NotFoundError("Package", id);
       }
 
       return {
@@ -217,16 +210,9 @@ export default class PackageController {
         data: packageItem,
       };
     } catch (err: any) {
-      return error(400, {
-        message: "Failed to update package",
-        errors: [
-          {
-            type: "ValidationError",
-            path: [],
-            message: err.message,
-          },
-        ],
-      });
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to update package"
+      );
     }
   }
 
@@ -239,16 +225,7 @@ export default class PackageController {
       const packageItem = await Package.findByIdAndDelete(id);
 
       if (!packageItem) {
-        return error(404, {
-          message: "Package not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["id"],
-              message: "Package with the specified ID does not exist",
-            },
-          ],
-        });
+        throw new NotFoundError("Package", id);
       }
 
       return {
@@ -256,21 +233,17 @@ export default class PackageController {
         message: "Package deleted successfully",
       };
     } catch (err: any) {
-      return error(500, {
-        message: "Failed to delete package",
-        errors: [
-          {
-            type: "ServerError",
-            path: [],
-            message: err.message,
-          },
-        ],
-      });
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to delete package"
+      );
     }
   }
 
   /**
    * Share a package with other users
+   * @throws {NotFoundError} When package is not found
+   * @throws {AuthorizationError} When user is not authorized to share the package
+   * @throws {ServerError} When an unexpected error occurs
    */
   async sharePackage(
     packageId: string,
@@ -280,11 +253,11 @@ export default class PackageController {
     try {
       const pkg = await Package.findById(packageId);
       if (!pkg) {
-        return error(404, { message: "Package not found" });
+        throw new NotFoundError("Package", packageId);
       }
 
       if (pkg.userId.toString() !== userId) {
-        return error(403, { message: "Not authorized to share this package" });
+        throw new AuthorizationError("Not authorized to share this package");
       }
 
       pkg.sharing.isPublic = false;
@@ -294,59 +267,92 @@ export default class PackageController {
       await pkg.save();
 
       return { success: true, message: "Package shared successfully" };
-    } catch (err) {
-      return error(500, { message: "Error sharing package", error: err });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError || err instanceof AuthorizationError) {
+        throw err;
+      }
+
+      // Convert other errors to ServerError
+      throw new ServerError(
+        err instanceof Error ? err.message : "Error sharing package"
+      );
     }
   }
 
   /**
    * Update package meal plan
+   * @throws {NotFoundError} When package is not found
+   * @throws {AuthorizationError} When user is not authorized to update the package
+   * @throws {ServerError} When an unexpected error occurs
    */
   async updateMealPlan(packageId: string, userId: string, meals: any[]) {
     try {
       const pkg = await Package.findById(packageId);
       if (!pkg) {
-        return error(404, { message: "Package not found" });
+        throw new NotFoundError("Package", packageId);
       }
 
       if (pkg.userId.toString() !== userId) {
-        return error(403, { message: "Not authorized to update this package" });
+        throw new AuthorizationError("Not authorized to update this package");
       }
 
       pkg.meals = meals;
       await pkg.save();
 
       return { success: true, message: "Meal plan updated successfully" };
-    } catch (err) {
-      return error(500, { message: "Error updating meal plan", error: err });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError || err instanceof AuthorizationError) {
+        throw err;
+      }
+
+      // Convert other errors to ServerError
+      throw new ServerError(
+        err instanceof Error ? err.message : "Error updating meal plan"
+      );
     }
   }
 
   /**
    * Update package budget
+   * @throws {NotFoundError} When package is not found
+   * @throws {AuthorizationError} When user is not authorized to update the package
+   * @throws {ServerError} When an unexpected error occurs
    */
   async updateBudget(packageId: string, userId: string, budget: any) {
     try {
       const pkg = await Package.findById(packageId);
       if (!pkg) {
-        return error(404, { message: "Package not found" });
+        throw new NotFoundError("Package", packageId);
       }
 
       if (pkg.userId.toString() !== userId) {
-        return error(403, { message: "Not authorized to update this package" });
+        throw new AuthorizationError("Not authorized to update this package");
       }
 
       pkg.budget = budget;
       await pkg.save();
 
       return { success: true, message: "Budget updated successfully" };
-    } catch (err) {
-      return error(500, { message: "Error updating budget", error: err });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError || err instanceof AuthorizationError) {
+        throw err;
+      }
+
+      // Convert other errors to ServerError
+      throw new ServerError(
+        err instanceof Error ? err.message : "Error updating budget"
+      );
     }
   }
 
   /**
    * Save package customization as a template
+   * @throws {NotFoundError} When package is not found
+   * @throws {ValidationError} When template data is invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async saveAsTemplate(
     packageId: string,
@@ -362,7 +368,7 @@ export default class PackageController {
     try {
       const pkg = await Package.findById(packageId);
       if (!pkg) {
-        return error(404, { message: "Package not found" });
+        throw new NotFoundError("Package", packageId);
       }
 
       const template = new PackageTemplate({
@@ -377,13 +383,37 @@ export default class PackageController {
         success: true,
         data: template,
       };
-    } catch (err) {
-      return error(500, { message: "Error saving template", error: err });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+
+      // Handle Mongoose validation errors
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "name" in err &&
+        err.name === "ValidationError"
+      ) {
+        const mongooseErr = err as any;
+        const fieldName = Object.keys(mongooseErr.errors)[0] || "unknown";
+        const message =
+          mongooseErr.errors[fieldName]?.message || "Validation failed";
+        throw new ValidationError(message, fieldName);
+      }
+
+      // Convert other errors to ServerError
+      throw new ServerError(
+        err instanceof Error ? err.message : "Error saving template"
+      );
     }
   }
 
   /**
    * Get user's package templates
+   * @throws {ValidationError} When pagination parameters are invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async getTemplates(
     userId: string,
@@ -396,6 +426,14 @@ export default class PackageController {
   ) {
     try {
       const { search, tags, page = 1, limit = 10 } = filters;
+
+      if (page < 1 || limit < 1) {
+        throw new ValidationError(
+          "Page and limit must be positive numbers",
+          "pagination"
+        );
+      }
+
       const query: any = { userId };
 
       if (search) {
@@ -430,13 +468,23 @@ export default class PackageController {
           },
         },
       };
-    } catch (err) {
-      return error(500, { message: "Error fetching templates", error: err });
+    } catch (err: unknown) {
+      // Re-throw ValidationError directly
+      if (err instanceof ValidationError) {
+        throw err;
+      }
+
+      // Convert other errors to ServerError
+      throw new ServerError(
+        err instanceof Error ? err.message : "Error fetching templates"
+      );
     }
   }
 
   /**
    * Create package from template
+   * @throws {NotFoundError} When template is not found
+   * @throws {ServerError} When an unexpected error occurs
    */
   async createFromTemplate(
     templateId: string,
@@ -450,7 +498,7 @@ export default class PackageController {
       }).populate("basePackageId");
 
       if (!template) {
-        return error(404, { message: "Template not found" });
+        throw new NotFoundError("Template", templateId);
       }
 
       // Merge template customizations with any additional customizations
@@ -466,16 +514,26 @@ export default class PackageController {
       );
 
       return customizedPackage;
-    } catch (err) {
-      return error(500, {
-        message: "Error creating package from template",
-        error: err,
-      });
+    } catch (err: unknown) {
+      // Re-throw NotFoundError directly
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+
+      // Convert other errors to ServerError
+      throw new ServerError(
+        err instanceof Error
+          ? err.message
+          : "Error creating package from template"
+      );
     }
   }
 
   /**
    * Enhanced customizePackage with more options
+   * @throws {NotFoundError} When package is not found
+   * @throws {ValidationError} When customizations are invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async customizePackage(
     packageId: string,
@@ -556,7 +614,7 @@ export default class PackageController {
     try {
       const originalPackage = await Package.findById(packageId);
       if (!originalPackage) {
-        return error(404, { message: "Package not found" });
+        throw new NotFoundError("Package", packageId);
       }
 
       // Validate customizations
@@ -609,18 +667,46 @@ export default class PackageController {
         success: true,
         data: newPackage,
       };
-    } catch (err) {
-      return error(400, { message: "Failed to customize package", error: err });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError || err instanceof ValidationError) {
+        throw err;
+      }
+
+      // Handle Mongoose validation errors
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "name" in err &&
+        err.name === "ValidationError"
+      ) {
+        const mongooseErr = err as any;
+        const fieldName = Object.keys(mongooseErr.errors)[0] || "unknown";
+        const message =
+          mongooseErr.errors[fieldName]?.message || "Validation failed";
+        throw new ValidationError(message, fieldName);
+      }
+
+      // Convert other errors to ServerError
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to customize package"
+      );
     }
   }
 
   // Private helper methods for customization
 
+  /**
+   * Validate package customizations
+   * @throws {ValidationError} When customizations are invalid
+   */
   private async validateCustomizations(customizations: any) {
     const errors = [];
+    let fieldName = "customizations";
 
     if (customizations.budget?.maxBudget < 0) {
       errors.push("Budget cannot be negative");
+      fieldName = "budget";
     }
 
     if (customizations.itinerary?.customDays) {
@@ -629,11 +715,15 @@ export default class PackageController {
       );
       if (!hasValidDays) {
         errors.push("Invalid itinerary day configuration");
+        fieldName = "itinerary";
       }
     }
 
     if (errors.length > 0) {
-      throw new Error(`Validation failed: ${errors.join(", ")}`);
+      throw new ValidationError(
+        `Validation failed: ${errors.join(", ")}`,
+        fieldName
+      );
     }
   }
 
