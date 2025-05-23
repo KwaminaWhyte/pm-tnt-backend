@@ -69,15 +69,7 @@ Example:
 detail: {
   summary: "Get all resources",
   description: "Retrieve a list of resources with pagination",
-  tags: ["Resources"],
-  responses: {
-    200: {
-      description: "List of resources retrieved successfully",
-    },
-    400: {
-      description: "Invalid query parameters",
-    },
-  },
+  tags: ["Resources"]
 }
 ```
 

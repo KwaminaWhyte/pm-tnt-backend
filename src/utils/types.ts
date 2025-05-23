@@ -100,6 +100,24 @@ export interface RatingInterface {
   createdAt: Date;
 }
 
+export interface RoomInterface {
+  hotel: string | Schema.Types.ObjectId; // Reference to Hotel
+  roomNumber: string;
+  floor: number;
+  roomType: "Single" | "Double" | "Twin" | "Suite" | "Deluxe" | "Presidential";
+  pricePerNight: number;
+  capacity: number;
+  features: string[];
+  isAvailable: boolean;
+  maintenanceStatus: "Available" | "Cleaning" | "Maintenance";
+  images: string[];
+  description?: string;
+  size?: number; // in square meters/feet
+  bedType?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface HotelInterface {
   name: string;
   description: string;
@@ -268,11 +286,11 @@ export interface CreateVehicleDTO {
   insurancePolicyNumber?: string;
   insuranceExpiryDate?: string | Date;
   insuranceCoverage?: string;
-  
+
   features: string[];
   capacity: number;
   pricePerDay: number;
-  
+
   // Location information
   city?: string;
   country?: string;
@@ -288,7 +306,7 @@ export interface CreateVehicleDTO {
       longitude: number;
     };
   };
-  
+
   // Maintenance information
   maintenance?: {
     lastService: Date;
@@ -301,7 +319,7 @@ export interface CreateVehicleDTO {
       cost: number;
     }>;
   };
-  
+
   // Rental terms
   rentalTerms?: {
     minimumAge: number;
@@ -325,7 +343,7 @@ export interface CreateVehicleDTO {
     coverage: string;
     pricePerDay: number;
   }>;
-  
+
   images: string[];
   policies: string;
 }
@@ -606,6 +624,125 @@ export interface DestinationInterface {
   timeZone: string;
   status: "Active" | "Inactive" | "Seasonal";
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Package Interface - Represents a travel package in the system
+ *
+ * @remarks
+ * Packages include destinations, hotels, activities, transportation, and itinerary details
+ */
+export interface PackageInterface {
+  name: string;
+  description?: string;
+  price: number;
+  basePrice: number; // Base price before any add-ons or seasonal adjustments
+  images: string[];
+  videos?: string[];
+  duration: {
+    days: number;
+    nights: number;
+  };
+  destinations: Array<{
+    destinationId: Schema.Types.ObjectId;
+    order: number;
+    stayDuration: number; // in days
+  }>;
+  hotels: Array<{
+    hotelId: Schema.Types.ObjectId;
+    roomTypes: string[];
+    checkIn?: string;
+    checkOut?: string;
+  }>;
+  accommodations?: Schema.Types.ObjectId[]; // Hotel IDs for accommodations
+  activities: Array<{
+    activityId: Schema.Types.ObjectId;
+    day: number;
+    timeSlot?: string;
+  }>;
+  transportation: {
+    type: "Flight" | "Train" | "Bus" | "RentalCar" | "Mixed";
+    details: Array<{
+      vehicleId?: Schema.Types.ObjectId;
+      type: string;
+      from: string;
+      to: string;
+      day: number;
+    }>;
+  };
+  itinerary: Array<{
+    day: number;
+    title: string;
+    description: string;
+    meals: {
+      breakfast?: boolean;
+      lunch?: boolean;
+      dinner?: boolean;
+    };
+  }>;
+  included: string[];
+  excluded: string[];
+  terms: string[];
+  maxParticipants?: number;
+  minParticipants?: number;
+  spotsPerDay?: number; // Maximum number of bookings per day
+  availability: {
+    startDate?: Date; // Overall availability start
+    endDate?: Date; // Overall availability end
+    blackoutDates?: Date[]; // Dates when package is not available
+    availableWeekdays?: number[]; // 0 = Sunday, 6 = Saturday
+  };
+  startDates?: Date[];
+  seasonalPricing?: Array<{
+    startDate: Date;
+    endDate: Date;
+    priceMultiplier: number;
+  }>;
+  weekendPricing?: {
+    enabled: boolean;
+    multiplier: number;
+    weekendDays: number[]; // 0 = Sunday, 6 = Saturday
+  };
+  bookingPolicies: {
+    minDaysBeforeBooking?: number;
+    maxDaysInAdvance?: number;
+    cancellationPolicy?: {
+      fullRefundDays: number; // Number of days before for full refund
+      partialRefundDays: number; // Number of days before for partial refund
+      partialRefundPercentage: number; // Percentage for partial refund
+    };
+    paymentOptions?: {
+      fullPayment: boolean;
+      partialPayment: boolean;
+      minDepositPercentage?: number;
+    };
+  };
+  status: "Draft" | "Active" | "Inactive" | "SoldOut";
+  sharing: {
+    isPublic: boolean;
+    sharedWith: Schema.Types.ObjectId[];
+  };
+  notes?: string;
+  budget: {
+    estimatedTotal: number;
+    breakdown: {
+      accommodation: number;
+      transportation: number;
+      activities: number;
+      meals: number;
+      others: number;
+    };
+  };
+  meals: Array<{
+    type: "Breakfast" | "Lunch" | "Dinner";
+    date: Date;
+    venue: string;
+    isIncluded: boolean;
+    preferences: string[];
+  }>;
+  createdFromTemplate?: Schema.Types.ObjectId; // Reference to PackageTemplate if created from one
   createdAt: Date;
   updatedAt: Date;
 }

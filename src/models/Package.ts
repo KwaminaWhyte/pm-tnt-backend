@@ -1,138 +1,144 @@
-import mongoose, { Model, Schema } from "mongoose";
+import mongoose, { Model, Schema, Document } from "mongoose";
+import { PackageInterface } from "~/utils/types";
 
-export interface PackageInterface {
-  name: string;
-  description?: string;
-  price: number;
-  basePrice: number; // Base price before any add-ons or seasonal adjustments
-  images: string[];
-  videos?: string[];
-  duration: {
-    days: number;
-    nights: number;
-  };
-  destinations: Array<{
-    destinationId: Schema.Types.ObjectId;
-    order: number;
-    stayDuration: number; // in days
-  }>;
-  hotels: Array<{
-    hotelId: Schema.Types.ObjectId;
-    roomTypes: string[];
-    checkIn?: string;
-    checkOut?: string;
-  }>;
-  activities: Array<{
-    activityId: Schema.Types.ObjectId;
-    day: number;
-    timeSlot?: string;
-  }>;
-  transportation: {
-    type: "Flight" | "Train" | "Bus" | "RentalCar" | "Mixed";
-    details: Array<{
-      vehicleId?: Schema.Types.ObjectId;
-      type: string;
-      from: string;
-      to: string;
-      day: number;
-    }>;
-  };
-  itinerary: Array<{
-    day: number;
-    title: string;
-    description: string;
-    meals: {
-      breakfast?: boolean;
-      lunch?: boolean;
-      dinner?: boolean;
-    };
-  }>;
-  included: string[];
-  excluded: string[];
-  terms: string[];
-  maxParticipants?: number;
-  minParticipants?: number;
-  spotsPerDay?: number; // Maximum number of bookings per day
-  availability: {
-    startDate?: Date; // Overall availability start
-    endDate?: Date; // Overall availability end
-    blackoutDates?: Date[]; // Dates when package is not available
-    availableWeekdays?: number[]; // 0 = Sunday, 6 = Saturday
-  };
-  startDates?: Date[];
-  seasonalPricing?: Array<{
-    startDate: Date;
-    endDate: Date;
-    priceMultiplier: number;
-  }>;
-  weekendPricing?: {
-    enabled: boolean;
-    multiplier: number;
-    weekendDays: number[]; // 0 = Sunday, 6 = Saturday
-  };
-  bookingPolicies: {
-    minDaysBeforeBooking?: number;
-    maxDaysInAdvance?: number;
-    cancellationPolicy?: {
-      fullRefundDays: number; // Number of days before for full refund
-      partialRefundDays: number; // Number of days before for partial refund
-      partialRefundPercentage: number; // Percentage for partial refund
-    };
-    paymentOptions?: {
-      fullPayment: boolean;
-      partialPayment: boolean;
-      minDepositPercentage?: number;
-    };
-  };
-  status: "Draft" | "Active" | "Inactive" | "SoldOut";
-  sharing: {
-    isPublic: boolean;
-    sharedWith: Schema.Types.ObjectId[];
-  };
-  notes?: string;
-  budget: {
-    estimatedTotal: number;
-    breakdown: {
-      accommodation: number;
-      transportation: number;
-      activities: number;
-      meals: number;
-      others: number;
-    };
-  };
-  meals: Array<{
-    type: "Breakfast" | "Lunch" | "Dinner";
-    date: Date;
-    venue: string;
-    isIncluded: boolean;
-    preferences: string[];
-  }>;
-  createdFromTemplate?: Schema.Types.ObjectId; // Reference to PackageTemplate if created from one
-  createdAt: Date;
-  updatedAt: Date;
-}
+/**
+ * Destination Schema - Represents a destination in a package
+ */
+const destinationSchema = new Schema(
+  {
+    destinationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Destination",
+      required: [true, "Destination ID is required"],
+    },
+    order: {
+      type: Number,
+      required: [true, "Order is required"],
+      min: [1, "Order must be at least 1"],
+    },
+    stayDuration: {
+      type: Number,
+      required: [true, "Stay duration is required"],
+      min: [1, "Stay duration must be at least 1 day"],
+    },
+  },
+  { _id: true }
+);
 
-const packageSchema = new Schema<PackageInterface>(
+/**
+ * Hotel Schema - Represents a hotel in a package
+ */
+const hotelSchema = new Schema(
+  {
+    hotelId: {
+      type: Schema.Types.ObjectId,
+      ref: "Hotel",
+      required: [true, "Hotel ID is required"],
+    },
+
+    roomTypes: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    checkIn: {
+      type: String,
+      trim: true,
+    },
+    checkOut: {
+      type: String,
+      trim: true,
+    },
+  },
+  { _id: true }
+);
+
+/**
+ * Activity Schema - Represents an activity in a package
+ */
+const activitySchema = new Schema(
+  {
+    activityId: {
+      type: Schema.Types.ObjectId,
+      ref: "Activity",
+      required: [true, "Activity ID is required"],
+    },
+    day: {
+      type: Number,
+      required: [true, "Day is required"],
+      min: [1, "Day must be at least 1"],
+    },
+    timeSlot: {
+      type: String,
+      trim: true,
+    },
+  },
+  { _id: true }
+);
+
+/**
+ * Transportation Detail Schema - Represents transportation details in a package
+ */
+const transportationDetailSchema = new Schema(
+  {
+    vehicleId: {
+      type: Schema.Types.ObjectId,
+      ref: "Vehicle",
+    },
+    type: {
+      type: String,
+      required: [true, "Transportation type is required"],
+      trim: true,
+    },
+    from: {
+      type: String,
+      required: [true, "Origin is required"],
+      trim: true,
+    },
+    to: {
+      type: String,
+      required: [true, "Destination is required"],
+      trim: true,
+    },
+    day: {
+      type: Number,
+      required: [true, "Day is required"],
+      min: [1, "Day must be at least 1"],
+    },
+  },
+  { _id: true }
+);
+
+/**
+ * Package Schema - Represents a travel package in the system
+ */
+const packageSchema = new Schema<PackageInterface & Document>(
   {
     name: {
       type: String,
-      required: true,
+      required: [true, "Package name is required"],
+      trim: true,
       index: true,
     },
-    description: String,
+    description: {
+      type: String,
+      trim: true,
+    },
     price: {
       type: Number,
-      required: true,
-      min: 0,
+      required: [true, "Price is required"],
+      min: [0, "Price must be non-negative"],
     },
     basePrice: {
       type: Number,
-      required: true,
-      min: 0,
+      required: [true, "Base price is required"],
+      min: [0, "Base price must be non-negative"],
     },
     images: [
       {
         type: String,
+        trim: true,
         validate: {
           validator: function (v: string) {
             return /^https?:\/\/.+/.test(v);
@@ -144,6 +150,7 @@ const packageSchema = new Schema<PackageInterface>(
     videos: [
       {
         type: String,
+        trim: true,
         validate: {
           validator: function (v: string) {
             return /^https?:\/\/.+/.test(v);
@@ -153,124 +160,92 @@ const packageSchema = new Schema<PackageInterface>(
       },
     ],
     duration: {
-      days: { type: Number, required: true, min: 1 },
-      nights: { type: Number, required: true, min: 0 },
+      days: {
+        type: Number,
+        required: [true, "Duration days is required"],
+        min: [1, "Duration must be at least 1 day"],
+      },
+      nights: {
+        type: Number,
+        required: [true, "Duration nights is required"],
+        min: [0, "Nights cannot be negative"],
+      },
     },
-    destinations: [
-      {
-        destinationId: {
-          type: Schema.Types.ObjectId,
-          ref: "destinations",
-          required: true,
-        },
-        order: {
-          type: Number,
-          required: true,
-          min: 1,
-        },
-        stayDuration: {
-          type: Number,
-          required: true,
-          min: 1,
-        },
-      },
-    ],
-    hotels: [
-      {
-        hotelId: {
-          type: Schema.Types.ObjectId,
-          ref: "hotels",
-          required: true,
-        },
-        roomTypes: [
-          {
-            type: String,
-            required: true,
-          },
-        ],
-        checkIn: String,
-        checkOut: String,
-      },
-    ],
-    activities: [
-      {
-        activityId: {
-          type: Schema.Types.ObjectId,
-          ref: "activities",
-          required: true,
-        },
-        day: {
-          type: Number,
-          required: true,
-          min: 1,
-        },
-        timeSlot: String,
-      },
-    ],
+    destinations: [destinationSchema],
+    hotels: [hotelSchema],
+    activities: [activitySchema],
     transportation: {
       type: {
         type: String,
-        enum: ["Flight", "Train", "Bus", "RentalCar", "Mixed"],
-        required: true,
-      },
-      details: [
-        {
-          vehicleId: {
-            type: Schema.Types.ObjectId,
-            ref: "vehicles",
-          },
-          type: {
-            type: String,
-            required: true,
-          },
-          from: {
-            type: String,
-            required: true,
-          },
-          to: {
-            type: String,
-            required: true,
-          },
-          day: {
-            type: Number,
-            required: true,
-            min: 1,
-          },
+        enum: {
+          values: ["Flight", "Train", "Bus", "RentalCar", "Mixed"],
+          message: "{VALUE} is not a valid transportation type",
         },
-      ],
+        required: [true, "Transportation type is required"],
+      },
+      details: [transportationDetailSchema],
     },
+    /**
+     * Itinerary Schema - Represents a day in the package itinerary
+     */
     itinerary: [
       {
         day: {
           type: Number,
-          required: true,
-          min: 1,
+          required: [true, "Day number is required"],
+          min: [1, "Day must be at least 1"],
         },
         title: {
           type: String,
-          required: true,
+          required: [true, "Title is required"],
+          trim: true,
         },
         description: {
           type: String,
-          required: true,
+          required: [true, "Description is required"],
+          trim: true,
         },
         meals: {
-          breakfast: Boolean,
-          lunch: Boolean,
-          dinner: Boolean,
+          breakfast: {
+            type: Boolean,
+            default: false,
+          },
+          lunch: {
+            type: Boolean,
+            default: false,
+          },
+          dinner: {
+            type: Boolean,
+            default: false,
+          },
         },
       },
     ],
-    included: [String],
-    excluded: [String],
-    terms: [String],
+    included: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    excluded: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    terms: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
     maxParticipants: {
       type: Number,
-      min: 1,
+      min: [1, "Maximum participants must be at least 1"],
     },
     minParticipants: {
       type: Number,
-      min: 1,
+      min: [1, "Minimum participants must be at least 1"],
       validate: {
         validator: function (this: PackageInterface, v: number) {
           return !this.maxParticipants || v <= this.maxParticipants;
@@ -281,48 +256,99 @@ const packageSchema = new Schema<PackageInterface>(
     },
     spotsPerDay: {
       type: Number,
-      min: 1,
+      min: [1, "Spots per day must be at least 1"],
     },
+
+    /**
+     * Availability configuration for the package
+     */
     availability: {
-      startDate: Date,
-      endDate: Date,
-      blackoutDates: [Date],
+      startDate: {
+        type: Date,
+        validate: {
+          validator: function (value: Date) {
+            // Start date should be today or in the future
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return value >= today;
+          },
+          message: "Start date cannot be in the past",
+        },
+      },
+      endDate: {
+        type: Date,
+        validate: {
+          validator: function (this: any, value: Date) {
+            return !this.startDate || value > this.startDate;
+          },
+          message: "End date must be after start date",
+        },
+      },
+      blackoutDates: [
+        {
+          type: Date,
+          validate: {
+            validator: function (value: Date) {
+              return value >= new Date();
+            },
+            message: "Blackout dates cannot be in the past",
+          },
+        },
+      ],
       availableWeekdays: [
         {
           type: Number,
-          min: 0,
-          max: 6,
+          min: [0, "Weekday must be between 0 and 6"],
+          max: [6, "Weekday must be between 0 and 6"],
         },
       ],
     },
+
+    /**
+     * Specific start dates for the package
+     */
     startDates: [
       {
         type: Date,
         validate: {
-          validator: function (v: Date) {
-            return v >= new Date();
+          validator: function (value: Date) {
+            return value > new Date();
           },
           message: "Start date must be in the future",
         },
       },
     ],
+
+    /**
+     * Seasonal pricing configuration
+     */
     seasonalPricing: [
       {
         startDate: {
           type: Date,
-          required: true,
+          required: [true, "Season start date is required"],
         },
         endDate: {
           type: Date,
-          required: true,
+          required: [true, "Season end date is required"],
+          validate: {
+            validator: function (this: any, value: Date) {
+              return value > this.startDate;
+            },
+            message: "Season end date must be after start date",
+          },
         },
         priceMultiplier: {
           type: Number,
-          required: true,
-          min: 0,
+          required: [true, "Price multiplier is required"],
+          min: [0, "Price multiplier must be non-negative"],
         },
       },
     ],
+
+    /**
+     * Weekend pricing configuration
+     */
     weekendPricing: {
       enabled: {
         type: Boolean,
@@ -331,38 +357,48 @@ const packageSchema = new Schema<PackageInterface>(
       multiplier: {
         type: Number,
         default: 1,
-        min: 0,
+        min: [0, "Multiplier must be non-negative"],
       },
       weekendDays: [
         {
           type: Number,
-          enum: [0, 1, 2, 3, 4, 5, 6],
+          enum: {
+            values: [0, 1, 2, 3, 4, 5, 6],
+            message: "{VALUE} is not a valid day of week (0-6)",
+          },
           default: [5, 6], // Default to Friday and Saturday
         },
       ],
     },
+    /**
+     * Booking policies configuration
+     */
     bookingPolicies: {
       minDaysBeforeBooking: {
         type: Number,
-        min: 0,
+        min: [0, "Minimum days before booking cannot be negative"],
+        default: 0,
       },
       maxDaysInAdvance: {
         type: Number,
-        min: 1,
+        min: [1, "Maximum days in advance must be at least 1"],
+        default: 365,
       },
       cancellationPolicy: {
         fullRefundDays: {
           type: Number,
-          min: 0,
+          min: [0, "Full refund days cannot be negative"],
+          default: 7,
         },
         partialRefundDays: {
           type: Number,
-          min: 0,
+          min: [0, "Partial refund days cannot be negative"],
+          default: 3,
         },
         partialRefundPercentage: {
           type: Number,
-          min: 0,
-          max: 100,
+          min: [0, "Refund percentage must be between 0 and 100"],
+          max: [100, "Refund percentage must be between 0 and 100"],
           default: 50,
         },
       },
@@ -377,123 +413,258 @@ const packageSchema = new Schema<PackageInterface>(
         },
         minDepositPercentage: {
           type: Number,
-          min: 0,
-          max: 100,
+          min: [0, "Deposit percentage must be between 0 and 100"],
+          max: [100, "Deposit percentage must be between 0 and 100"],
           default: 20,
         },
       },
     },
+
+    /**
+     * Package status
+     */
     status: {
       type: String,
-      enum: ["Draft", "Active", "Inactive", "SoldOut"],
+      enum: {
+        values: ["Draft", "Active", "Inactive", "SoldOut"],
+        message: "{VALUE} is not a valid package status",
+      },
       default: "Draft",
+      index: true,
     },
+
+    /**
+     * Sharing configuration
+     */
     sharing: {
-      isPublic: { type: Boolean, default: false },
-      sharedWith: [{ type: Schema.Types.ObjectId, ref: "users" }],
+      isPublic: {
+        type: Boolean,
+        default: false,
+      },
+      sharedWith: [
+        {
+          type: Schema.Types.ObjectId,
+          ref: "User",
+        },
+      ],
     },
-    notes: String,
+
+    /**
+     * Additional notes
+     */
+    notes: {
+      type: String,
+      trim: true,
+    },
+
+    /**
+     * Budget breakdown
+     */
     budget: {
-      estimatedTotal: { type: Number, required: true },
+      estimatedTotal: {
+        type: Number,
+        required: [true, "Estimated total budget is required"],
+        min: [0, "Budget must be non-negative"],
+      },
       breakdown: {
-        accommodation: { type: Number, default: 0 },
-        transportation: { type: Number, default: 0 },
-        activities: { type: Number, default: 0 },
-        meals: { type: Number, default: 0 },
-        others: { type: Number, default: 0 },
+        accommodation: {
+          type: Number,
+          default: 0,
+          min: [0, "Accommodation budget must be non-negative"],
+        },
+        transportation: {
+          type: Number,
+          default: 0,
+          min: [0, "Transportation budget must be non-negative"],
+        },
+        activities: {
+          type: Number,
+          default: 0,
+          min: [0, "Activities budget must be non-negative"],
+        },
+        meals: {
+          type: Number,
+          default: 0,
+          min: [0, "Meals budget must be non-negative"],
+        },
+        others: {
+          type: Number,
+        },
+        breakdown: {
+          accommodation: {
+            type: Number,
+            default: 0,
+            min: [0, "Accommodation budget must be non-negative"],
+          },
+          transportation: {
+            type: Number,
+            default: 0,
+            min: [0, "Transportation budget must be non-negative"],
+          },
+          activities: {
+            type: Number,
+            default: 0,
+            min: [0, "Activities budget must be non-negative"],
+          },
+          meals: {
+            type: Number,
+            default: 0,
+            min: [0, "Meals budget must be non-negative"],
+          },
+          others: {
+            type: Number,
+            default: 0,
+            min: [0, "Other expenses budget must be non-negative"],
+          },
+        },
       },
-    },
-    meals: [
-      {
-        type: { type: String, enum: ["Breakfast", "Lunch", "Dinner"] },
-        date: Date,
-        venue: String,
-        isIncluded: { type: Boolean, default: false },
-        preferences: [String],
+      /**
+       * Meals included in the package
+       */
+      meals: [
+        {
+          type: {
+            type: String,
+            enum: {
+              values: ["Breakfast", "Lunch", "Dinner"],
+              message: "{VALUE} is not a valid meal type",
+            },
+            required: [true, "Meal type is required"],
+          },
+          date: {
+            type: Date,
+            required: [true, "Meal date is required"],
+          },
+          venue: {
+            type: String,
+            required: [true, "Venue is required"],
+            trim: true,
+          },
+          isIncluded: {
+            type: Boolean,
+            default: true,
+          },
+          preferences: [
+            {
+              type: String,
+              trim: true,
+            },
+          ],
+        },
+      ],
+      createdFromTemplate: {
+        type: Schema.Types.ObjectId,
+        ref: "PackageTemplate",
       },
-    ],
-    createdFromTemplate: {
-      type: Schema.Types.ObjectId,
-      ref: "PackageTemplate",
     },
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
-// Create indexes for common queries
-packageSchema.index({ name: "text", description: "text" });
-packageSchema.index({ "destinations.destinationId": 1 });
+// Indexes for performance optimization
+packageSchema.index({ price: 1 });
 packageSchema.index({ price: 1, "duration.days": 1 });
 packageSchema.index({ status: 1, "seasonalPricing.startDate": 1 });
 packageSchema.index({ "availability.startDate": 1, "availability.endDate": 1 });
 packageSchema.index({ createdFromTemplate: 1 });
+packageSchema.index({ name: "text", description: "text" }); // Text search index
 
-// Add method to check if package is available for a date
+// Virtuals
+packageSchema.virtual("durationInDays").get(function () {
+  return this.duration?.days || 0;
+});
+
+packageSchema.virtual("isActive").get(function () {
+  return this.status === "Active";
+});
+
+packageSchema.virtual("totalMeals").get(function () {
+  return this.meals?.length || 0;
+});
+
+/**
+ * Check if package is available for a specific date
+ * @param date - The date to check availability for
+ * @returns Whether the package is available on the specified date
+ */
 packageSchema.methods.isAvailableForDate = function (date: Date): boolean {
   const pkg = this as PackageInterface;
 
   // Check if package is active
   if (pkg.status !== "Active") return false;
 
-  const checkDate = new Date(date);
+  // Check if date is within overall availability
+  if (
+    pkg.availability?.startDate &&
+    date < new Date(pkg.availability.startDate)
+  )
+    return false;
+  if (pkg.availability?.endDate && date > new Date(pkg.availability.endDate))
+    return false;
 
-  // Check overall availability period
-  if (pkg.availability?.startDate && pkg.availability.endDate) {
-    if (
-      checkDate < pkg.availability.startDate ||
-      checkDate > pkg.availability.endDate
-    ) {
+  // Check if date is in blackout dates
+  if (pkg.availability?.blackoutDates) {
+    for (const blackoutDate of pkg.availability.blackoutDates) {
+      const bd = new Date(blackoutDate);
+      if (
+        date.getFullYear() === bd.getFullYear() &&
+        date.getMonth() === bd.getMonth() &&
+        date.getDate() === bd.getDate()
+      ) {
+        return false;
+      }
+    }
+  }
+
+  // Check if day of week is available
+  if (pkg.availability?.availableWeekdays?.length) {
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+    if (!pkg.availability.availableWeekdays.includes(dayOfWeek)) {
       return false;
     }
   }
 
-  // Check blackout dates
-  if (
-    pkg.availability?.blackoutDates &&
-    pkg.availability.blackoutDates.length > 0
-  ) {
-    const isBlackout = pkg.availability.blackoutDates.some(
-      (blackoutDate) => blackoutDate.toDateString() === checkDate.toDateString()
-    );
-    if (isBlackout) return false;
-  }
-
-  // Check available weekdays
-  if (
-    pkg.availability?.availableWeekdays &&
-    pkg.availability.availableWeekdays.length > 0
-  ) {
-    const dayOfWeek = checkDate.getDay();
-    if (!pkg.availability.availableWeekdays.includes(dayOfWeek)) return false;
-  }
-
-  // Check specific start dates if defined
+  // Check if date is in start dates (if specified)
   if (pkg.startDates && pkg.startDates.length > 0) {
-    const isValidStartDate = pkg.startDates.some(
-      (startDate) => startDate.toDateString() === checkDate.toDateString()
-    );
-    if (!isValidStartDate) return false;
+    let isInStartDates = false;
+    for (const startDate of pkg.startDates) {
+      const sd = new Date(startDate);
+      if (
+        date.getFullYear() === sd.getFullYear() &&
+        date.getMonth() === sd.getMonth() &&
+        date.getDate() === sd.getDate()
+      ) {
+        isInStartDates = true;
+        break;
+      }
+    }
+    if (!isInStartDates) return false;
   }
 
   return true;
 };
 
-// Calculate price for a package based on date and participants
+/**
+ * Calculate price for a package based on date and participants
+ * @param date - The date for the package
+ * @param participants - Number of participants
+ * @returns The calculated price
+ */
 packageSchema.methods.calculatePrice = function (
   date: Date,
   participants: number
 ): number {
   const pkg = this as PackageInterface;
-
-  let finalPrice = pkg.basePrice;
-  const checkDate = new Date(date);
+  let finalPrice = pkg.price;
 
   // Apply seasonal pricing if applicable
   if (pkg.seasonalPricing && pkg.seasonalPricing.length > 0) {
     for (const season of pkg.seasonalPricing) {
-      if (checkDate >= season.startDate && checkDate <= season.endDate) {
+      if (date >= season.startDate && date <= season.endDate) {
         finalPrice *= season.priceMultiplier;
         break;
       }
@@ -501,17 +672,22 @@ packageSchema.methods.calculatePrice = function (
   }
 
   // Apply weekend pricing if applicable
-  if (pkg.weekendPricing?.enabled) {
-    const dayOfWeek = checkDate.getDay();
-    if (pkg.weekendPricing.weekendDays.includes(dayOfWeek)) {
-      finalPrice *= pkg.weekendPricing.multiplier;
-    }
+  if (
+    pkg.weekendPricing?.enabled &&
+    pkg.weekendPricing.weekendDays.includes(date.getDay())
+  ) {
+    finalPrice *= pkg.weekendPricing.multiplier;
   }
 
   return finalPrice * participants;
 };
 
-// Static method to create a package from a template
+/**
+ * Create a package from a template
+ * @param templateId - The ID of the template to use
+ * @param options - Optional configuration
+ * @returns The newly created package
+ */
 packageSchema.statics.createFromTemplate = async function (
   templateId: Schema.Types.ObjectId,
   options: {
@@ -627,11 +803,15 @@ packageSchema.statics.createFromTemplate = async function (
   }
 };
 
-let Package: Model<PackageInterface>;
+// Create or retrieve the model
+let Package: Model<PackageInterface & Document>;
 try {
-  Package = mongoose.model("Package");
+  Package = mongoose.model<PackageInterface & Document>("Package");
 } catch (error) {
-  Package = mongoose.model("Package", packageSchema);
+  Package = mongoose.model<PackageInterface & Document>(
+    "Package",
+    packageSchema
+  );
 }
 
 export default Package;

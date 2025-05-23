@@ -60,3 +60,7 @@ try {
 - Pre-save hooks for validation
 - Pre-update hooks for data consistency
 - Error handling in middleware
+
+## Note
+
+Using unique (`unique: true` or `index: true`) for model field equates to index (`userSchema.index({ email: 1 })`), DON'T use both, just one

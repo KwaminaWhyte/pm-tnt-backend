@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import ActivityController from "../controllers/ActivityController";
+import ActivityController from "../../controllers/ActivityController";
 
 const activityController = new ActivityController();
 
@@ -7,7 +7,7 @@ const activityController = new ActivityController();
  * Activity routes for public access
  * Base path: /api/v1/activities/public
  */
-const activityPublicRoutes = new Elysia({ prefix: "/public" })
+const activityRoutes = new Elysia()
 
   .get(
     "/",
@@ -44,14 +44,6 @@ const activityPublicRoutes = new Elysia({ prefix: "/public" })
         description:
           "Retrieve a list of activities with optional filtering and pagination",
         tags: ["Activities - Public"],
-        responses: {
-          200: {
-            description: "List of activities retrieved successfully",
-          },
-          400: {
-            description: "Invalid query parameters",
-          },
-        },
       },
     }
   )
@@ -61,14 +53,6 @@ const activityPublicRoutes = new Elysia({ prefix: "/public" })
       summary: "Get activity by ID (Public)",
       description: "Retrieve a specific activity by its ID",
       tags: ["Activities - Public"],
-      responses: {
-        200: {
-          description: "Activity retrieved successfully",
-        },
-        404: {
-          description: "Activity not found",
-        },
-      },
     },
   })
 
@@ -91,16 +75,8 @@ const activityPublicRoutes = new Elysia({ prefix: "/public" })
         description:
           "Retrieve activities associated with a specific destination",
         tags: ["Activities - Public"],
-        responses: {
-          200: {
-            description: "Activities retrieved successfully",
-          },
-          404: {
-            description: "Destination not found",
-          },
-        },
       },
     }
   );
 
-export default activityPublicRoutes;
+export default activityRoutes;

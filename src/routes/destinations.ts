@@ -1,11 +1,10 @@
 import { Elysia, t } from "elysia";
 import DestinationController from "../controllers/DestinationController";
-import { jwtConfig } from "../utils/jwt.config";
 
 const destinationController = new DestinationController();
 
 const destinationRoutes = new Elysia({ prefix: "/api/v1/destinations" })
-  .use(jwtConfig)
+
   // Public routes
   .get("/", async ({ query }) => destinationController.getDestinations(query), {
     detail: {

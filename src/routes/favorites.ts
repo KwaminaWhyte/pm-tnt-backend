@@ -78,57 +78,6 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
           example: "507f1f77bcf86cd799439011",
         }),
       }),
-      responses: {
-        200: {
-          description: "Successfully toggled favorite status",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                isFavorite: t.Boolean({
-                  description: "New favorite status after toggle",
-                  example: true,
-                }),
-              }),
-            },
-          },
-        },
-        404: {
-          description: "Item not found",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                message: t.String({
-                  example: "hotel not found",
-                }),
-                errors: t.Array(
-                  t.Object({
-                    type: t.String({ example: "NotFoundError" }),
-                    path: t.Array(t.String()),
-                    message: t.String(),
-                  })
-                ),
-              }),
-            },
-          },
-        },
-        401: {
-          description: "Unauthorized - Invalid or missing token",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                message: t.String({ example: "Unauthorized" }),
-                errors: t.Array(
-                  t.Object({
-                    type: t.String({ example: "AuthError" }),
-                    path: t.Array(t.String()),
-                    message: t.String(),
-                  })
-                ),
-              }),
-            },
-          },
-        },
-      },
     }
   )
   .get(
@@ -153,85 +102,6 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
           })
         ),
       }),
-      responses: {
-        200: {
-          description: "Successfully retrieved favorites",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                hotels: t.Array(
-                  t.Object({
-                    _id: t.String(),
-                    name: t.String(),
-                    favoriteId: t.String(),
-                    // Add other relevant hotel fields
-                  })
-                ),
-                vehicles: t.Array(
-                  t.Object({
-                    _id: t.String(),
-                    name: t.String(),
-                    favoriteId: t.String(),
-                    // Add other relevant vehicle fields
-                  })
-                ),
-                packages: t.Array(
-                  t.Object({
-                    _id: t.String(),
-                    name: t.String(),
-                    favoriteId: t.String(),
-                    // Add other relevant package fields
-                  })
-                ),
-              }),
-              examples: {
-                "Mixed Results": {
-                  value: {
-                    hotels: [
-                      {
-                        _id: "507f1f77bcf86cd799439011",
-                        name: "Luxury Resort",
-                        favoriteId: "507f1f77bcf86cd799439099",
-                      },
-                    ],
-                    vehicles: [
-                      {
-                        _id: "507f1f77bcf86cd799439022",
-                        name: "SUV Premium",
-                        favoriteId: "507f1f77bcf86cd799439088",
-                      },
-                    ],
-                    packages: [
-                      {
-                        _id: "507f1f77bcf86cd799439033",
-                        name: "Weekend Getaway",
-                        favoriteId: "507f1f77bcf86cd799439077",
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          },
-        },
-        401: {
-          description: "Unauthorized - Invalid or missing token",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                message: t.String({ example: "Unauthorized" }),
-                errors: t.Array(
-                  t.Object({
-                    type: t.String({ example: "AuthError" }),
-                    path: t.Array(t.String()),
-                    message: t.String(),
-                  })
-                ),
-              }),
-            },
-          },
-        },
-      },
     }
   )
   .get(
@@ -254,18 +124,6 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
         summary: "Check Favorite Status",
         description: "Check if an item is favorited by the authenticated user",
         tags: ["Favorites"],
-      },
-      responses: {
-        200: {
-          description: "Successfully checked favorite status",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                isFavorite: t.Boolean(),
-              }),
-            },
-          },
-        },
       },
     }
   );

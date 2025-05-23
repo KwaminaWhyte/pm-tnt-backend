@@ -10,11 +10,9 @@ import { jwtConfig } from "./utils/jwt.config";
 import adminsRoutes from "./routes/admins";
 import adminAuthRoutes from "./routes/admin/auth";
 import adminHotelRoutes from "./routes/admin/hotels";
-import adminVehicleRoutes from "./routes/admin/vehicles";
 
 import userAuthRoutes from "./routes/users/auth";
 import hotelPublicRoutes from "./routes/users/hotels";
-import vehicleRoutes from "./routes/users/vehicles";
 import tripperRoutes from "./routes/users/trippers";
 
 import roomRoutes from "./routes/rooms";
@@ -28,6 +26,7 @@ import sliderRoutes from "./routes/sliders";
 import notificationRoutes from "./routes/notifications";
 import activitiesRoutes from "./routes/activities";
 import adminUserRoutes from "./routes/admin/users";
+import vehiclesRoutes from "./routes/vehicles";
 
 // Connect to MongoDB
 mongoose
@@ -50,12 +49,6 @@ const app = new Elysia()
   )
   // Use cron jobs
   .use(cronJobs)
-  // .use(
-  //   staticPlugin({
-  //     prefix: "/storage",
-  //     assets: "storage",
-  //   })
-  // )
   // Add dynamic file serving route
   .get("/storage/:folder/:filename", ({ params }) => {
     try {
@@ -132,13 +125,11 @@ const app = new Elysia()
   // admin routes
   .use(adminAuthRoutes)
   .use(adminUserRoutes)
-  .use(adminVehicleRoutes)
   .use(adminHotelRoutes)
   .use(adminsRoutes)
 
   // user routes
   .use(userAuthRoutes)
-  .use(vehicleRoutes)
 
   .use(hotelPublicRoutes)
   .use(roomRoutes)
@@ -151,8 +142,8 @@ const app = new Elysia()
   .use(sliderRoutes)
   .use(notificationRoutes)
   .use(tripperRoutes)
-  .use(activitiesRoutes);
-
+  .use(activitiesRoutes)
+  .use(vehiclesRoutes);
 app.onError(({ error, code }) => {
   if (code === "NOT_FOUND") return;
 

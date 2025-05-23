@@ -38,17 +38,6 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
         description:
           "Retrieve a list of hotels with optional filtering and pagination",
         tags: ["Hotels - Public"],
-        responses: {
-          200: {
-            description: "List of hotels retrieved successfully",
-          },
-          400: {
-            description: "Invalid query parameters",
-          },
-          401: {
-            description: "Unauthorized - Invalid or missing token",
-          },
-        },
       },
     }
   )
@@ -58,17 +47,6 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
       summary: "Get hotel by ID",
       description: "Retrieve a specific hotel by its ID",
       tags: ["Hotels - Public"],
-      responses: {
-        200: {
-          description: "Hotel retrieved successfully",
-        },
-        404: {
-          description: "Hotel not found",
-        },
-        401: {
-          description: "Unauthorized - Invalid or missing token",
-        },
-      },
     },
   })
 
@@ -91,17 +69,6 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
         description:
           "Check room availability for specific dates and number of guests",
         tags: ["Hotels - Public", "Rooms"],
-        responses: {
-          200: {
-            description: "Room availability retrieved successfully",
-          },
-          400: {
-            description: "Invalid query parameters",
-          },
-          404: {
-            description: "Hotel not found",
-          },
-        },
       },
     }
   )
@@ -127,14 +94,6 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
         description:
           "Find hotels within a specified radius of given coordinates",
         tags: ["Hotels - Public", "Search"],
-        responses: {
-          200: {
-            description: "Nearby hotels retrieved successfully",
-          },
-          400: {
-            description: "Invalid coordinates",
-          },
-        },
       },
     }
   )
@@ -143,25 +102,6 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
     detail: {
       summary: "Get all hotels with pagination and filtering",
       tags: ["Hotels - Public"],
-      responses: {
-        200: {
-          description: "List of hotels with pagination",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                success: t.Boolean(),
-                data: t.Array(t.Any()),
-                pagination: t.Object({
-                  currentPage: t.Number(),
-                  totalPages: t.Number(),
-                  totalItems: t.Number(),
-                  itemsPerPage: t.Number(),
-                }),
-              }),
-            },
-          },
-        },
-      },
     },
     query: t.Object({
       page: t.Optional(t.Number()),

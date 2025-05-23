@@ -1,113 +1,233 @@
-import mongoose, { type Model, Schema } from "mongoose";
+import mongoose, { type Model, Schema, Document } from "mongoose";
 import { VehicleInterface } from "../utils/types";
 
+/**
+ * Location Schema - Represents a physical location with coordinates
+ */
 const locationSchema = new Schema(
   {
-    city: { type: String, required: true },
-    country: { type: String, required: true },
+    city: { 
+      type: String, 
+      required: [true, 'City is required'],
+      trim: true 
+    },
+    country: { 
+      type: String, 
+      required: [true, 'Country is required'],
+      trim: true 
+    },
     coordinates: {
-      latitude: Number,
-      longitude: Number,
+      latitude: { 
+        type: Number,
+        min: [-90, 'Latitude must be between -90 and 90'],
+        max: [90, 'Latitude must be between -90 and 90']
+      },
+      longitude: { 
+        type: Number,
+        min: [-180, 'Longitude must be between -180 and 180'],
+        max: [180, 'Longitude must be between -180 and 180']
+      },
     },
   },
   { _id: false }
 );
 
+/**
+ * Rating Schema - Represents a user rating for a vehicle
+ */
 const ratingSchema = new Schema(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: String,
-    createdAt: { type: Date, default: Date.now },
+    userId: { 
+      type: Schema.Types.ObjectId, 
+      ref: "User", 
+      required: [true, 'User ID is required'] 
+    },
+    rating: { 
+      type: Number, 
+      required: [true, 'Rating is required'], 
+      min: [1, 'Rating must be at least 1'], 
+      max: [5, 'Rating cannot exceed 5'] 
+    },
+    comment: { 
+      type: String,
+      trim: true 
+    },
+    createdAt: { 
+      type: Date, 
+      default: Date.now 
+    },
   },
   { _id: true }
 );
 
+/**
+ * Insurance Schema - Represents vehicle insurance details
+ */
 const insuranceSchema = new Schema(
   {
-    provider: { type: String, required: true },
-    policyNumber: { type: String, required: true },
-    expiryDate: { type: Date, required: true },
-    coverage: { type: String, required: true },
+    provider: { 
+      type: String, 
+      required: [true, 'Insurance provider is required'],
+      trim: true 
+    },
+    policyNumber: { 
+      type: String, 
+      required: [true, 'Policy number is required'],
+      trim: true 
+    },
+    expiryDate: { 
+      type: Date, 
+      required: [true, 'Expiry date is required'] 
+    },
+    coverage: { 
+      type: String, 
+      required: [true, 'Coverage details are required'],
+      trim: true 
+    },
   },
   { _id: false }
 );
 
+/**
+ * Maintenance History Schema - Represents a vehicle maintenance record
+ */
 const maintenanceHistorySchema = new Schema(
   {
-    date: { type: Date, required: true },
-    type: { type: String, required: true },
-    description: { type: String, required: true },
-    cost: { type: Number, required: true },
+    date: { 
+      type: Date, 
+      required: [true, 'Maintenance date is required'] 
+    },
+    type: { 
+      type: String, 
+      required: [true, 'Maintenance type is required'],
+      trim: true 
+    },
+    description: { 
+      type: String, 
+      required: [true, 'Maintenance description is required'],
+      trim: true 
+    },
+    cost: { 
+      type: Number, 
+      required: [true, 'Maintenance cost is required'],
+      min: [0, 'Cost must be non-negative'] 
+    },
   },
-  { _id: true }
+  { _id: true, timestamps: true }
 );
 
+/**
+ * Insurance Option Schema - Represents an insurance option for rental
+ */
 const insuranceOptionSchema = new Schema(
   {
-    type: { type: String, required: true },
-    coverage: { type: String, required: true },
-    pricePerDay: { type: Number, required: true },
+    type: { 
+      type: String, 
+      required: [true, 'Insurance type is required'],
+      trim: true 
+    },
+    coverage: { 
+      type: String, 
+      required: [true, 'Coverage details are required'],
+      trim: true 
+    },
+    pricePerDay: { 
+      type: Number, 
+      required: [true, 'Price per day is required'],
+      min: [0, 'Price must be non-negative'] 
+    },
   },
   { _id: false }
 );
 
-const schema = new Schema<VehicleInterface>(
+/**
+ * Vehicle Schema - Represents a vehicle in the system
+ * 
+ * @remarks
+ * Vehicles have details, availability status, maintenance records, and rental terms
+ */
+const vehicleSchema = new Schema<VehicleInterface & Document>(
   {
     vehicleType: {
       type: String,
-      required: true,
+      required: [true, 'Vehicle type is required'],
+      trim: true,
       index: true,
     },
     make: {
       type: String,
-      required: true,
+      required: [true, 'Make is required'],
+      trim: true,
       index: true,
     },
     model: {
       type: String,
-      required: true,
+      required: [true, 'Model is required'],
+      trim: true,
       index: true,
     },
     year: {
       type: Number,
-      required: true,
+      required: [true, 'Year is required'],
+      min: [1900, 'Year must be 1900 or later'],
+      max: [new Date().getFullYear() + 1, 'Year cannot be in the future']
     },
     details: {
-      color: { type: String, required: true },
+      color: { 
+        type: String, 
+        required: [true, 'Color is required'],
+        trim: true 
+      },
       licensePlate: {
         type: String,
-        required: true,
+        required: [true, 'License plate is required'],
         unique: true,
+        trim: true,
+        uppercase: true
       },
       transmission: {
         type: String,
-        enum: ["Automatic", "Manual"],
-        required: true,
+        enum: {
+          values: ["Automatic", "Manual"],
+          message: '{VALUE} is not a valid transmission type'
+        },
+        required: [true, 'Transmission type is required'],
       },
       fuelType: {
         type: String,
-        enum: ["Petrol", "Diesel", "Electric", "Hybrid"],
-        required: true,
+        enum: {
+          values: ["Petrol", "Diesel", "Electric", "Hybrid"],
+          message: '{VALUE} is not a valid fuel type'
+        },
+        required: [true, 'Fuel type is required'],
       },
-      mileage: { type: Number, required: true },
+      mileage: { 
+        type: Number, 
+        required: [true, 'Mileage is required'],
+        min: [0, 'Mileage must be non-negative'] 
+      },
       vin: {
         type: String,
-        required: true,
+        required: [true, 'VIN is required'],
         unique: true,
+        trim: true,
+        uppercase: true
       },
       insurance: insuranceSchema,
     },
-    features: [String],
+    features: [{ 
+      type: String,
+      trim: true 
+    }],
     capacity: {
       type: Number,
-      required: true,
-      min: 1,
+      required: [true, 'Capacity is required'],
+      min: [1, 'Capacity must be at least 1'],
     },
     pricePerDay: {
       type: Number,
-      required: true,
-      min: 0,
+      required: [true, 'Price per day is required'],
+      min: [0, 'Price must be non-negative'],
     },
     availability: {
       isAvailable: {
@@ -118,11 +238,20 @@ const schema = new Schema<VehicleInterface>(
       location: locationSchema,
     },
     maintenance: {
-      lastService: { type: Date, required: true },
-      nextService: { type: Date, required: true },
+      lastService: { 
+        type: Date, 
+        required: [true, 'Last service date is required'] 
+      },
+      nextService: { 
+        type: Date, 
+        required: [true, 'Next service date is required'] 
+      },
       status: {
         type: String,
-        enum: ["Available", "In Service", "Repairs Needed"],
+        enum: {
+          values: ["Available", "In Service", "Repairs Needed"],
+          message: '{VALUE} is not a valid maintenance status'
+        },
         default: "Available",
         index: true,
       },
@@ -131,19 +260,22 @@ const schema = new Schema<VehicleInterface>(
     rentalTerms: {
       minimumAge: {
         type: Number,
-        required: true,
-        min: 18,
+        required: [true, 'Minimum age is required'],
+        min: [18, 'Minimum age must be at least 18'],
       },
-      requiredDocuments: [String],
+      requiredDocuments: [{ 
+        type: String,
+        trim: true 
+      }],
       securityDeposit: {
         type: Number,
-        required: true,
-        min: 0,
+        required: [true, 'Security deposit is required'],
+        min: [0, 'Security deposit must be non-negative'],
       },
       mileageLimit: {
         type: Number,
-        required: true,
-        min: 0,
+        required: [true, 'Mileage limit is required'],
+        min: [0, 'Mileage limit must be non-negative'],
       },
       additionalDrivers: {
         type: Boolean,
@@ -152,8 +284,15 @@ const schema = new Schema<VehicleInterface>(
       insuranceOptions: [insuranceOptionSchema],
     },
     ratings: [ratingSchema],
-    images: [String],
-    policies: { type: String, required: true },
+    images: [{ 
+      type: String,
+      trim: true 
+    }],
+    policies: { 
+      type: String, 
+      required: [true, 'Policies are required'],
+      trim: true 
+    },
   },
   {
     timestamps: true,
@@ -162,22 +301,25 @@ const schema = new Schema<VehicleInterface>(
   }
 );
 
-// Indexes
-schema.index({
+// Indexes for performance optimization
+vehicleSchema.index({
   "availability.location.city": 1,
   "availability.location.country": 1,
 });
-schema.index({ pricePerDay: 1 });
-schema.index({ capacity: 1 });
+vehicleSchema.index({ pricePerDay: 1 });
+vehicleSchema.index({ capacity: 1 });
+vehicleSchema.index({ year: 1 });
+vehicleSchema.index({ "details.fuelType": 1 });
+vehicleSchema.index({ "details.transmission": 1 });
 
 // Virtuals
-schema.virtual("averageRating").get(function () {
+vehicleSchema.virtual("averageRating").get(function () {
   if (!this.ratings || this.ratings.length === 0) return 0;
   const sum = this.ratings.reduce((acc, curr) => acc + curr.rating, 0);
   return Math.round((sum / this.ratings.length) * 10) / 10;
 });
 
-schema.virtual("maintenanceStatus").get(function () {
+vehicleSchema.virtual("maintenanceStatus").get(function () {
   if (!this.maintenance.nextService) return "Unknown";
   const today = new Date();
   const daysUntilService = Math.ceil(
@@ -189,27 +331,33 @@ schema.virtual("maintenanceStatus").get(function () {
   return "OK";
 });
 
-schema.virtual("totalMaintenanceCost").get(function () {
+vehicleSchema.virtual("totalMaintenanceCost").get(function () {
+  if (!this.maintenance.history || this.maintenance.history.length === 0) return 0;
   return this.maintenance.history.reduce((acc, curr) => acc + curr.cost, 0);
 });
 
 // Middleware
-schema.pre("save", function (next) {
+vehicleSchema.pre("save", function (next) {
   // Validate maintenance dates
   if (this.maintenance.lastService >= this.maintenance.nextService) {
-    next(new Error("Next service date must be after last service date"));
+    return next(new Error("Next service date must be after last service date"));
   }
 
   // Validate insurance expiry
   if (this.details.insurance.expiryDate <= new Date()) {
-    next(new Error("Insurance has expired"));
+    return next(new Error("Insurance has expired"));
   }
 
   next();
 });
 
-// Methods
-schema.methods.isAvailableForDates = function (
+/**
+ * Check if the vehicle is available for the specified date range
+ * @param startDate - The rental start date
+ * @param endDate - The rental end date
+ * @returns Whether the vehicle is available for the specified dates
+ */
+vehicleSchema.methods.isAvailableForDates = function (
   startDate: Date,
   endDate: Date
 ): boolean {
@@ -220,7 +368,13 @@ schema.methods.isAvailableForDates = function (
   );
 };
 
-schema.methods.calculateRentalPrice = function (
+/**
+ * Calculate the rental price for the specified number of days
+ * @param days - The number of rental days
+ * @param insuranceOption - Optional insurance option type
+ * @returns Object containing basePrice, insuranceCost, and totalPrice
+ */
+vehicleSchema.methods.calculateRentalPrice = function (
   days: number,
   insuranceOption?: string
 ): {
@@ -231,9 +385,9 @@ schema.methods.calculateRentalPrice = function (
   const basePrice = this.pricePerDay * days;
   let insuranceCost = 0;
 
-  if (insuranceOption) {
+  if (insuranceOption && this.rentalTerms.insuranceOptions) {
     const insurance = this.rentalTerms.insuranceOptions.find(
-      (i) => i.type === insuranceOption
+      (i: { type: string; pricePerDay: number }) => i.type === insuranceOption
     );
     if (insurance) {
       insuranceCost = insurance.pricePerDay * days;
@@ -247,11 +401,12 @@ schema.methods.calculateRentalPrice = function (
   };
 };
 
-let Vehicle: Model<VehicleInterface>;
+// Create or retrieve the model
+let Vehicle: Model<VehicleInterface & Document>;
 try {
-  Vehicle = mongoose.model<VehicleInterface>("Vehicle");
+  Vehicle = mongoose.model<VehicleInterface & Document>("Vehicle");
 } catch (error) {
-  Vehicle = mongoose.model<VehicleInterface>("Vehicle", schema);
+  Vehicle = mongoose.model<VehicleInterface & Document>("Vehicle", vehicleSchema);
 }
 
 export default Vehicle;

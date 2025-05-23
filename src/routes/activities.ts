@@ -1,15 +1,13 @@
 import { Elysia } from "elysia";
-import { jwtConfig } from "../utils/jwt.config";
-import activityAdminRoutes from "./activities-admin";
-import activityPublicRoutes from "./activities-public";
+import activityAdminRoutes from "./admin/activities";
+import activityRoutes from "./users/activities";
 
 /**
  * Main activities routes
  * Base path: /api/v1/activities
  */
 const activitiesRoutes = new Elysia({ prefix: "/api/v1/activities" })
-  .use(jwtConfig) // Apply JWT middleware
   .use(activityAdminRoutes)
-  .use(activityPublicRoutes);
+  .use(activityRoutes);
 
 export default activitiesRoutes;

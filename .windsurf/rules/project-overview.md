@@ -1,5 +1,5 @@
 ---
-trigger: model_decision
+trigger: always_on
 ---
 
 # PM-TNT Backend Overview
@@ -28,3 +28,5 @@ This is the backend service for PM Travel and Tourism, a tourism management plat
 - User management (authentication, profiles)
 - Booking system
 - Reviews and ratings
+
+Models are defined in [src/models/](mdc:pm-tnt-backend/src/models) with TypeScript interfaces in [src/utils/types.ts](mdc:pm-tnt-backend/src/utils/types.ts).

@@ -195,6 +195,8 @@ export async function seedSampleData() {
         location: {
           name: "Phuket Marina",
           coordinates: [98.3923, 7.8804], // [longitude, latitude]
+          city: "Phuket",
+          country: "Thailand",
         },
         maxParticipants: 15,
         minParticipants: 4,
@@ -222,6 +224,12 @@ export async function seedSampleData() {
             endTime: "13:00",
           },
         ],
+        location: {
+          name: "Phuket Marina",
+          coordinates: [98.3923, 7.8804], // [longitude, latitude]
+          city: "Phuket",
+          country: "Thailand",
+        },
         maxParticipants: 12,
         minParticipants: 2,
         requirements: ["No cooking experience needed"],

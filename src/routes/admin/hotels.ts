@@ -80,20 +80,6 @@ const adminHotelRoutes = new Elysia({ prefix: "/api/v1/hotels/admin" })
         description:
           "Retrieve a list of hotels with optional filtering and pagination for admin",
         tags: ["Hotels - Admin"],
-        responses: {
-          200: {
-            description: "List of hotels retrieved successfully",
-          },
-          400: {
-            description: "Invalid query parameters",
-          },
-          401: {
-            description: "Unauthorized - Invalid or missing token",
-          },
-          403: {
-            description: "Forbidden - Not an admin",
-          },
-        },
       },
     }
   )
@@ -103,20 +89,6 @@ const adminHotelRoutes = new Elysia({ prefix: "/api/v1/hotels/admin" })
       summary: "Get hotel by ID (Admin)",
       description: "Retrieve a specific hotel by its ID for admin",
       tags: ["Hotels - Admin"],
-      responses: {
-        200: {
-          description: "Hotel retrieved successfully",
-        },
-        404: {
-          description: "Hotel not found",
-        },
-        401: {
-          description: "Unauthorized - Invalid or missing token",
-        },
-        403: {
-          description: "Forbidden - Not an admin",
-        },
-      },
     },
   })
 
@@ -164,20 +136,6 @@ const adminHotelRoutes = new Elysia({ prefix: "/api/v1/hotels/admin" })
       summary: "Create hotel (Admin)",
       description: "Create a new hotel (Admin only)",
       tags: ["Hotels - Admin"],
-      responses: {
-        201: {
-          description: "Hotel created successfully",
-        },
-        400: {
-          description: "Invalid hotel data",
-        },
-        401: {
-          description: "Unauthorized - Invalid or missing token",
-        },
-        403: {
-          description: "Forbidden - Not an admin",
-        },
-      },
     },
   })
 
@@ -234,23 +192,6 @@ const adminHotelRoutes = new Elysia({ prefix: "/api/v1/hotels/admin" })
         summary: "Update hotel (Admin)",
         description: "Update an existing hotel by ID (Admin only)",
         tags: ["Hotels - Admin"],
-        responses: {
-          200: {
-            description: "Hotel updated successfully",
-          },
-          400: {
-            description: "Invalid hotel data",
-          },
-          401: {
-            description: "Unauthorized - Invalid or missing token",
-          },
-          403: {
-            description: "Forbidden - Not an admin",
-          },
-          404: {
-            description: "Hotel not found",
-          },
-        },
       },
     }
   )
@@ -260,20 +201,6 @@ const adminHotelRoutes = new Elysia({ prefix: "/api/v1/hotels/admin" })
       summary: "Delete hotel (Admin)",
       description: "Delete a hotel by ID (Admin only)",
       tags: ["Hotels - Admin"],
-      responses: {
-        200: {
-          description: "Hotel deleted successfully",
-        },
-        401: {
-          description: "Unauthorized - Invalid or missing token",
-        },
-        403: {
-          description: "Forbidden - Not an admin",
-        },
-        404: {
-          description: "Hotel not found",
-        },
-      },
     },
   })
 
@@ -290,23 +217,6 @@ const adminHotelRoutes = new Elysia({ prefix: "/api/v1/hotels/admin" })
         summary: "Add hotel rating (Admin)",
         description: "Add a rating to a hotel (Admin only)",
         tags: ["Hotels - Admin", "Ratings"],
-        responses: {
-          200: {
-            description: "Rating added successfully",
-          },
-          400: {
-            description: "Invalid rating data",
-          },
-          401: {
-            description: "Unauthorized - Invalid or missing token",
-          },
-          403: {
-            description: "Forbidden - Not an admin",
-          },
-          404: {
-            description: "Hotel not found",
-          },
-        },
       },
     }
   );

@@ -1,5 +1,4 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../utils/jwt.config";
 import PackageController from "../controllers/PackageController";
 import PackageTemplateController from "../controllers/PackageTemplateController";
 

@@ -7,7 +7,6 @@ import {
   deleteSlider,
   getSliderById,
 } from "../controllers/slider";
-import { jwtConfig } from "../utils/jwt.config";
 
 const sliderRoutes = new Elysia({ prefix: "/api/v1/sliders" })
   .guard({
@@ -22,8 +21,6 @@ const sliderRoutes = new Elysia({ prefix: "/api/v1/sliders" })
     return await getActiveSliders();
   })
 
-  // Admin routes (protected)
-  .use(jwtConfig)
   .get(
     "/admin",
     async ({ headers, set, jwt_auth }) => {

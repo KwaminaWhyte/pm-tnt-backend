@@ -1,12 +1,10 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../utils/jwt.config";
 import NotificationController from "../controllers/NotificationController";
 
 const notificationController = new NotificationController();
 
 // Define routes for notifications
 const notificationRoutes = new Elysia({ prefix: "/api/v1/notifications" })
-  .use(jwtConfig)
   .guard({
     detail: {
       tags: ["Notifications"],

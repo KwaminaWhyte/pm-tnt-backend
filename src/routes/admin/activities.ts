@@ -1,6 +1,5 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../utils/jwt.config";
-import ActivityController from "../controllers/ActivityController";
+import ActivityController from "../../controllers/ActivityController";
 
 const activityController = new ActivityController();
 
@@ -89,20 +88,6 @@ const activityAdminRoutes = new Elysia({ prefix: "/admin" })
         description:
           "Retrieve a list of activities with optional filtering and pagination for admin",
         tags: ["Activities - Admin"],
-        responses: {
-          200: {
-            description: "List of activities retrieved successfully",
-          },
-          400: {
-            description: "Invalid query parameters",
-          },
-          401: {
-            description: "Unauthorized - Invalid or missing token",
-          },
-          403: {
-            description: "Forbidden - Not an admin",
-          },
-        },
       },
     }
   )
@@ -112,20 +97,6 @@ const activityAdminRoutes = new Elysia({ prefix: "/admin" })
       summary: "Get activity by ID (Admin)",
       description: "Retrieve a specific activity by its ID for admin",
       tags: ["Activities - Admin"],
-      responses: {
-        200: {
-          description: "Activity retrieved successfully",
-        },
-        404: {
-          description: "Activity not found",
-        },
-        401: {
-          description: "Unauthorized - Invalid or missing token",
-        },
-        403: {
-          description: "Forbidden - Not an admin",
-        },
-      },
     },
   })
 
@@ -160,20 +131,6 @@ const activityAdminRoutes = new Elysia({ prefix: "/admin" })
       summary: "Create activity (Admin)",
       description: "Create a new activity (Admin only)",
       tags: ["Activities - Admin"],
-      responses: {
-        201: {
-          description: "Activity created successfully",
-        },
-        400: {
-          description: "Invalid activity data",
-        },
-        401: {
-          description: "Unauthorized - Invalid or missing token",
-        },
-        403: {
-          description: "Forbidden - Not an admin",
-        },
-      },
     },
   })
 
@@ -215,23 +172,6 @@ const activityAdminRoutes = new Elysia({ prefix: "/admin" })
         summary: "Update activity (Admin)",
         description: "Update an existing activity (Admin only)",
         tags: ["Activities - Admin"],
-        responses: {
-          200: {
-            description: "Activity updated successfully",
-          },
-          400: {
-            description: "Invalid activity data",
-          },
-          404: {
-            description: "Activity not found",
-          },
-          401: {
-            description: "Unauthorized - Invalid or missing token",
-          },
-          403: {
-            description: "Forbidden - Not an admin",
-          },
-        },
       },
     }
   )
@@ -244,20 +184,6 @@ const activityAdminRoutes = new Elysia({ prefix: "/admin" })
         summary: "Delete activity (Admin)",
         description: "Delete an activity by ID (Admin only)",
         tags: ["Activities - Admin"],
-        responses: {
-          200: {
-            description: "Activity deleted successfully",
-          },
-          404: {
-            description: "Activity not found",
-          },
-          401: {
-            description: "Unauthorized - Invalid or missing token",
-          },
-          403: {
-            description: "Forbidden - Not an admin",
-          },
-        },
       },
     }
   )
@@ -281,20 +207,6 @@ const activityAdminRoutes = new Elysia({ prefix: "/admin" })
         description:
           "Retrieve activities associated with a specific destination (Admin only)",
         tags: ["Activities - Admin"],
-        responses: {
-          200: {
-            description: "Activities retrieved successfully",
-          },
-          404: {
-            description: "Destination not found",
-          },
-          401: {
-            description: "Unauthorized - Invalid or missing token",
-          },
-          403: {
-            description: "Forbidden - Not an admin",
-          },
-        },
       },
     }
   );

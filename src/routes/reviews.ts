@@ -1,5 +1,4 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../utils/jwt.config";
 import ReviewController from "../controllers/ReviewController";
 
 const reviewController = new ReviewController();
@@ -84,25 +83,6 @@ const reviewsRoutes = new Elysia({ prefix: "/api/v1/reviews" })
       detail: {
         summary: "Get all reviews",
         description: "Get all reviews with pagination and filtering",
-        // responses: {
-        //   200: {
-        //     description: "List of reviews with pagination",
-        //     content: {
-        //       "application/json": {
-        //         schema: t.Object({
-        //           success: t.Boolean(),
-        //           data: t.Array(t.Any()),
-        //           pagination: t.Object({
-        //             currentPage: t.Number(),
-        //             totalPages: t.Number(),
-        //             totalItems: t.Number(),
-        //             itemsPerPage: t.Number(),
-        //           }),
-        //         }),
-        //       },
-        //     },
-        //   },
-        // },
       },
     }
   )
@@ -118,14 +98,6 @@ const reviewsRoutes = new Elysia({ prefix: "/api/v1/reviews" })
       detail: {
         summary: "Get review by ID",
         description: "Get a specific review by its ID",
-        responses: {
-          200: {
-            description: "Review details",
-          },
-          404: {
-            description: "Review not found",
-          },
-        },
       },
     }
   )
@@ -147,14 +119,6 @@ const reviewsRoutes = new Elysia({ prefix: "/api/v1/reviews" })
       detail: {
         summary: "Update review status",
         description: "Update the status of a review",
-        responses: {
-          200: {
-            description: "Review status updated successfully",
-          },
-          404: {
-            description: "Review not found",
-          },
-        },
       },
     }
   )
@@ -177,14 +141,6 @@ const reviewsRoutes = new Elysia({ prefix: "/api/v1/reviews" })
       detail: {
         summary: "Reply to review",
         description: "Add an admin reply to a review",
-        responses: {
-          200: {
-            description: "Reply added successfully",
-          },
-          404: {
-            description: "Review not found",
-          },
-        },
       },
     }
   )
@@ -194,24 +150,6 @@ const reviewsRoutes = new Elysia({ prefix: "/api/v1/reviews" })
     detail: {
       summary: "Get review statistics",
       description: "Get aggregated statistics about reviews",
-      responses: {
-        200: {
-          description: "Review statistics",
-          content: {
-            "application/json": {
-              schema: t.Object({
-                stats: t.Object({
-                  total: t.Number(),
-                  published: t.Number(),
-                  pending: t.Number(),
-                  rejected: t.Number(),
-                  averageRating: t.Number(),
-                }),
-              }),
-            },
-          },
-        },
-      },
     },
   });
 
