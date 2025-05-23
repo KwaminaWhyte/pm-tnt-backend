@@ -174,7 +174,7 @@ adminSchema.methods.generatePasswordResetToken =
 adminSchema.statics.findByEmail = async function (
   email: string
 ): Promise<AdminInterface | null> {
-  return this.findOne({ email: email.toLowerCase() });
+  return this.findOne({ email: email.toLowerCase() }).select("+password");
 };
 
 /**

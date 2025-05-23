@@ -32,8 +32,8 @@ export class AuthorizationError extends Error {
 }
 
 export class ServerError extends Error {
-  constructor(message: string = 'Internal server error') {
-    super(message);
+  constructor(message: string | unknown = 'Internal server error') {
+    super(typeof message === 'string' ? message : 'Internal server error');
     this.name = 'ServerError';
   }
 }

@@ -10,7 +10,7 @@ The PM-TNT backend uses JWT for authentication with multiple user roles.
 
 - JWT configuration in [src/utils/jwt.config.ts](mdc:pm-tnt-backend/src/utils/jwt.config.ts)
 - Authentication middleware in [src/middleware/auth.ts](mdc:pm-tnt-backend/src/middleware/auth.ts)
-- Auth routes in [src/routes/user-auth.ts](mdc:pm-tnt-backend/src/routes/user-auth.ts) and [src/routes/admin-auth.ts](mdc:pm-tnt-backend/src/routes/admin-auth.ts)
+- Auth routes in [src/routes/user-auth.ts](mdc:pm-tnt-backend/src/routes/user-auth.ts) and [src/routes/auth/admin.ts](mdc:pm-tnt-backend/src/routes/auth/admin.ts)
 
 ## User Types
 

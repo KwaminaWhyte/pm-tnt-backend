@@ -316,19 +316,30 @@ export default class PackageController {
 
   /**
    * Update package budget
-   * @throws {NotFoundError} When package is not found
-   * @throws {AuthorizationError} When user is not authorized to update the package
-   * @throws {ServerError} When an unexpected error occurs
    */
   async updateBudget(packageId: string, userId: string, budget: any) {
     try {
       const pkg = await Package.findById(packageId);
       if (!pkg) {
-        throw new NotFoundError("Package", packageId);
+        throw new Error(JSON.stringify({
+          message: "Package not found",
+          errors: [{
+            type: "NotFoundError",
+            path: ["packageId"],
+            message: `Package with ID ${packageId} not found`
+          }]
+        }));
       }
 
       if (pkg.userId.toString() !== userId) {
-        throw new AuthorizationError("Not authorized to update this package");
+        throw new Error(JSON.stringify({
+          message: "Not authorized",
+          errors: [{
+            type: "AuthorizationError",
+            path: ["userId"],
+            message: "You are not authorized to update this package"
+          }]
+        }));
       }
 
       pkg.budget = budget;
@@ -336,15 +347,18 @@ export default class PackageController {
 
       return { success: true, message: "Budget updated successfully" };
     } catch (err: unknown) {
-      // Re-throw custom errors directly
-      if (err instanceof NotFoundError || err instanceof AuthorizationError) {
+      if (err instanceof Error && err.message.startsWith('{')) {
         throw err;
       }
-
-      // Convert other errors to ServerError
-      throw new ServerError(
-        err instanceof Error ? err.message : "Error updating budget"
-      );
+      
+      throw new Error(JSON.stringify({
+        message: "Failed to update budget",
+        errors: [{
+          type: "ServerError",
+          path: [],
+          message: err instanceof Error ? err.message : "An unexpected error occurred"
+        }]
+      }));
     }
   }
 

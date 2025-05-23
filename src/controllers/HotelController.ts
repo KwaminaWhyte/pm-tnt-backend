@@ -32,9 +32,14 @@ export default class HotelController {
     sortOrder?: "asc" | "desc";
     isAvailable?: boolean;
   }) {
+    console.log("getting hotels");
+
     try {
       if (page < 1 || limit < 1) {
-        throw new ValidationError("Page and limit must be positive numbers", "pagination");
+        throw new ValidationError(
+          "Page and limit must be positive numbers",
+          "pagination"
+        );
       }
 
       const filter: Record<string, any> = {};
@@ -84,13 +89,17 @@ export default class HotelController {
         },
       };
     } catch (err: unknown) {
+      console.log(err);
+
       // Re-throw custom errors directly
       if (err instanceof ValidationError) {
         throw err;
       }
-      
+
       // Convert other errors to ServerError
-      throw new ServerError(err instanceof Error ? err.message : "Failed to fetch hotels");
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to fetch hotels"
+      );
     }
   }
 
@@ -100,10 +109,11 @@ export default class HotelController {
    * @throws {ServerError} When an unexpected error occurs
    */
   async getHotelById(id: string) {
+    console.log("getting hotel by id");
     try {
       const hotel = await Hotel.findById(id);
       if (!hotel) {
-        throw new NotFoundError('Hotel', id);
+        throw new NotFoundError("Hotel", id);
       }
 
       const rooms = await Room.find({ hotel: id });
@@ -117,9 +127,11 @@ export default class HotelController {
       if (err instanceof NotFoundError) {
         throw err;
       }
-      
+
       // Convert other errors to ServerError
-      throw new ServerError(err instanceof Error ? err.message : "Failed to fetch hotel");
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to fetch hotel"
+      );
     }
   }
 
