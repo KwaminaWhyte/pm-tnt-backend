@@ -1,5 +1,5 @@
 import { NotFoundError } from "elysia";
-import Slider from "../models/Slider";
+import Slider from "~/models/Slider";
 
 // Get all active sliders
 export const getActiveSliders = async () => {

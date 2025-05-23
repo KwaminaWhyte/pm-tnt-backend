@@ -9,10 +9,8 @@ import { jwtConfig } from "./utils/jwt.config";
 
 import adminsRoutes from "./routes/admins";
 import adminAuthRoutes from "./routes/admin/auth";
-import adminHotelRoutes from "./routes/admin/hotels";
 
 import userAuthRoutes from "./routes/users/auth";
-import hotelPublicRoutes from "./routes/users/hotels";
 import tripperRoutes from "./routes/users/trippers";
 
 import roomRoutes from "./routes/rooms";
@@ -27,6 +25,7 @@ import notificationRoutes from "./routes/notifications";
 import activitiesRoutes from "./routes/activities";
 import adminUserRoutes from "./routes/admin/users";
 import vehiclesRoutes from "./routes/vehicles";
+import hotelsRoutes from "./routes/hotels";
 
 // Connect to MongoDB
 mongoose
@@ -125,13 +124,11 @@ const app = new Elysia()
   // admin routes
   .use(adminAuthRoutes)
   .use(adminUserRoutes)
-  .use(adminHotelRoutes)
   .use(adminsRoutes)
 
   // user routes
   .use(userAuthRoutes)
 
-  .use(hotelPublicRoutes)
   .use(roomRoutes)
   .use(packageRoutes)
   .use(bookingRoutes)
@@ -142,6 +139,8 @@ const app = new Elysia()
   .use(sliderRoutes)
   .use(notificationRoutes)
   .use(tripperRoutes)
+
+  .use(hotelsRoutes)
   .use(activitiesRoutes)
   .use(vehiclesRoutes);
 app.onError(({ error, code }) => {
@@ -194,28 +193,10 @@ app.onError(({ error, code }) => {
 
 app.get("/", () => {
   return {
-    name: "PM Travel and Tourism API",
-    version: "0.0.1",
+    name: "PM Travel and Tour API",
+    version: "0.3.1",
     description:
       "Backend API for PM Travel and Tourism vehicle management system",
-    endpoints: {
-      auth: "/api/v1/user-auth",
-      users: "/api/v1/users",
-      vehicles: "/api/v1/vehicles",
-      admin: "/api/v1/admins",
-      settings: "/api/v1/settings",
-      reviews: "/api/v1/reviews",
-      sliders: "/api/v1/sliders",
-      trippers: "/api/v1/trippers",
-      hotels: {
-        public: "/api/v1/hotels/public",
-        admin: "/api/v1/hotels/admin",
-      },
-      activities: {
-        public: "/api/v1/activities/public",
-        admin: "/api/v1/activities/admin",
-      },
-    },
   };
 });
 

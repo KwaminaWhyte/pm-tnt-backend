@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import Admin, { AdminInterface } from "../models/Admin";
+import Admin, { AdminInterface } from "~/models/Admin";
 import { error } from "elysia";
 
 interface CreateAdminDTO {

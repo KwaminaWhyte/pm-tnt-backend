@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import TripperPost from "../models/TripperPost";
+import TripperPost from "~/models/TripperPost";
 
 export const seedTripperPosts = async () => {
   try {

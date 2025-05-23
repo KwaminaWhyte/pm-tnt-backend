@@ -1,5 +1,5 @@
-import Activity, { ActivityInterface } from "../models/Activity";
-import Destination from "../models/Destination";
+import Activity, { ActivityInterface } from "~/models/Activity";
+import Destination from "~/models/Destination";
 import { error } from "elysia";
 
 export default class ActivityController {

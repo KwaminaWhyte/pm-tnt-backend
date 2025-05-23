@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
-import PackageController from "../controllers/PackageController";
-import PackageTemplateController from "../controllers/PackageTemplateController";
+import PackageController from "~/controllers/PackageController";
+import PackageTemplateController from "~/controllers/PackageTemplateController";
 
 const packageController = new PackageController();
 

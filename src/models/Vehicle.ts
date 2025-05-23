@@ -1,31 +1,31 @@
 import mongoose, { type Model, Schema, Document } from "mongoose";
-import { VehicleInterface } from "../utils/types";
+import { VehicleInterface } from "~/utils/types";
 
 /**
  * Location Schema - Represents a physical location with coordinates
  */
 const locationSchema = new Schema(
   {
-    city: { 
-      type: String, 
-      required: [true, 'City is required'],
-      trim: true 
+    city: {
+      type: String,
+      required: [true, "City is required"],
+      trim: true,
     },
-    country: { 
-      type: String, 
-      required: [true, 'Country is required'],
-      trim: true 
+    country: {
+      type: String,
+      required: [true, "Country is required"],
+      trim: true,
     },
     coordinates: {
-      latitude: { 
+      latitude: {
         type: Number,
-        min: [-90, 'Latitude must be between -90 and 90'],
-        max: [90, 'Latitude must be between -90 and 90']
+        min: [-90, "Latitude must be between -90 and 90"],
+        max: [90, "Latitude must be between -90 and 90"],
       },
-      longitude: { 
+      longitude: {
         type: Number,
-        min: [-180, 'Longitude must be between -180 and 180'],
-        max: [180, 'Longitude must be between -180 and 180']
+        min: [-180, "Longitude must be between -180 and 180"],
+        max: [180, "Longitude must be between -180 and 180"],
       },
     },
   },
@@ -37,24 +37,24 @@ const locationSchema = new Schema(
  */
 const ratingSchema = new Schema(
   {
-    userId: { 
-      type: Schema.Types.ObjectId, 
-      ref: "User", 
-      required: [true, 'User ID is required'] 
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "User ID is required"],
     },
-    rating: { 
-      type: Number, 
-      required: [true, 'Rating is required'], 
-      min: [1, 'Rating must be at least 1'], 
-      max: [5, 'Rating cannot exceed 5'] 
+    rating: {
+      type: Number,
+      required: [true, "Rating is required"],
+      min: [1, "Rating must be at least 1"],
+      max: [5, "Rating cannot exceed 5"],
     },
-    comment: { 
+    comment: {
       type: String,
-      trim: true 
+      trim: true,
     },
-    createdAt: { 
-      type: Date, 
-      default: Date.now 
+    createdAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   { _id: true }
@@ -65,24 +65,24 @@ const ratingSchema = new Schema(
  */
 const insuranceSchema = new Schema(
   {
-    provider: { 
-      type: String, 
-      required: [true, 'Insurance provider is required'],
-      trim: true 
+    provider: {
+      type: String,
+      required: [true, "Insurance provider is required"],
+      trim: true,
     },
-    policyNumber: { 
-      type: String, 
-      required: [true, 'Policy number is required'],
-      trim: true 
+    policyNumber: {
+      type: String,
+      required: [true, "Policy number is required"],
+      trim: true,
     },
-    expiryDate: { 
-      type: Date, 
-      required: [true, 'Expiry date is required'] 
+    expiryDate: {
+      type: Date,
+      required: [true, "Expiry date is required"],
     },
-    coverage: { 
-      type: String, 
-      required: [true, 'Coverage details are required'],
-      trim: true 
+    coverage: {
+      type: String,
+      required: [true, "Coverage details are required"],
+      trim: true,
     },
   },
   { _id: false }
@@ -93,24 +93,24 @@ const insuranceSchema = new Schema(
  */
 const maintenanceHistorySchema = new Schema(
   {
-    date: { 
-      type: Date, 
-      required: [true, 'Maintenance date is required'] 
+    date: {
+      type: Date,
+      required: [true, "Maintenance date is required"],
     },
-    type: { 
-      type: String, 
-      required: [true, 'Maintenance type is required'],
-      trim: true 
+    type: {
+      type: String,
+      required: [true, "Maintenance type is required"],
+      trim: true,
     },
-    description: { 
-      type: String, 
-      required: [true, 'Maintenance description is required'],
-      trim: true 
+    description: {
+      type: String,
+      required: [true, "Maintenance description is required"],
+      trim: true,
     },
-    cost: { 
-      type: Number, 
-      required: [true, 'Maintenance cost is required'],
-      min: [0, 'Cost must be non-negative'] 
+    cost: {
+      type: Number,
+      required: [true, "Maintenance cost is required"],
+      min: [0, "Cost must be non-negative"],
     },
   },
   { _id: true, timestamps: true }
@@ -121,20 +121,20 @@ const maintenanceHistorySchema = new Schema(
  */
 const insuranceOptionSchema = new Schema(
   {
-    type: { 
-      type: String, 
-      required: [true, 'Insurance type is required'],
-      trim: true 
+    type: {
+      type: String,
+      required: [true, "Insurance type is required"],
+      trim: true,
     },
-    coverage: { 
-      type: String, 
-      required: [true, 'Coverage details are required'],
-      trim: true 
+    coverage: {
+      type: String,
+      required: [true, "Coverage details are required"],
+      trim: true,
     },
-    pricePerDay: { 
-      type: Number, 
-      required: [true, 'Price per day is required'],
-      min: [0, 'Price must be non-negative'] 
+    pricePerDay: {
+      type: Number,
+      required: [true, "Price per day is required"],
+      min: [0, "Price must be non-negative"],
     },
   },
   { _id: false }
@@ -142,7 +142,7 @@ const insuranceOptionSchema = new Schema(
 
 /**
  * Vehicle Schema - Represents a vehicle in the system
- * 
+ *
  * @remarks
  * Vehicles have details, availability status, maintenance records, and rental terms
  */
@@ -150,84 +150,86 @@ const vehicleSchema = new Schema<VehicleInterface & Document>(
   {
     vehicleType: {
       type: String,
-      required: [true, 'Vehicle type is required'],
+      required: [true, "Vehicle type is required"],
       trim: true,
       index: true,
     },
     make: {
       type: String,
-      required: [true, 'Make is required'],
+      required: [true, "Make is required"],
       trim: true,
       index: true,
     },
     model: {
       type: String,
-      required: [true, 'Model is required'],
+      required: [true, "Model is required"],
       trim: true,
       index: true,
     },
     year: {
       type: Number,
-      required: [true, 'Year is required'],
-      min: [1900, 'Year must be 1900 or later'],
-      max: [new Date().getFullYear() + 1, 'Year cannot be in the future']
+      required: [true, "Year is required"],
+      min: [1900, "Year must be 1900 or later"],
+      max: [new Date().getFullYear() + 1, "Year cannot be in the future"],
     },
     details: {
-      color: { 
-        type: String, 
-        required: [true, 'Color is required'],
-        trim: true 
+      color: {
+        type: String,
+        required: [true, "Color is required"],
+        trim: true,
       },
       licensePlate: {
         type: String,
-        required: [true, 'License plate is required'],
+        required: [true, "License plate is required"],
         unique: true,
         trim: true,
-        uppercase: true
+        uppercase: true,
       },
       transmission: {
         type: String,
         enum: {
           values: ["Automatic", "Manual"],
-          message: '{VALUE} is not a valid transmission type'
+          message: "{VALUE} is not a valid transmission type",
         },
-        required: [true, 'Transmission type is required'],
+        required: [true, "Transmission type is required"],
       },
       fuelType: {
         type: String,
         enum: {
           values: ["Petrol", "Diesel", "Electric", "Hybrid"],
-          message: '{VALUE} is not a valid fuel type'
+          message: "{VALUE} is not a valid fuel type",
         },
-        required: [true, 'Fuel type is required'],
+        required: [true, "Fuel type is required"],
       },
-      mileage: { 
-        type: Number, 
-        required: [true, 'Mileage is required'],
-        min: [0, 'Mileage must be non-negative'] 
+      mileage: {
+        type: Number,
+        required: [true, "Mileage is required"],
+        min: [0, "Mileage must be non-negative"],
       },
       vin: {
         type: String,
-        required: [true, 'VIN is required'],
+        required: [true, "VIN is required"],
         unique: true,
         trim: true,
-        uppercase: true
+        uppercase: true,
       },
       insurance: insuranceSchema,
     },
-    features: [{ 
-      type: String,
-      trim: true 
-    }],
+    features: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
     capacity: {
       type: Number,
-      required: [true, 'Capacity is required'],
-      min: [1, 'Capacity must be at least 1'],
+      required: [true, "Capacity is required"],
+      min: [1, "Capacity must be at least 1"],
     },
     pricePerDay: {
       type: Number,
-      required: [true, 'Price per day is required'],
-      min: [0, 'Price must be non-negative'],
+      required: [true, "Price per day is required"],
+      min: [0, "Price must be non-negative"],
     },
     availability: {
       isAvailable: {
@@ -238,19 +240,19 @@ const vehicleSchema = new Schema<VehicleInterface & Document>(
       location: locationSchema,
     },
     maintenance: {
-      lastService: { 
-        type: Date, 
-        required: [true, 'Last service date is required'] 
+      lastService: {
+        type: Date,
+        required: [true, "Last service date is required"],
       },
-      nextService: { 
-        type: Date, 
-        required: [true, 'Next service date is required'] 
+      nextService: {
+        type: Date,
+        required: [true, "Next service date is required"],
       },
       status: {
         type: String,
         enum: {
           values: ["Available", "In Service", "Repairs Needed"],
-          message: '{VALUE} is not a valid maintenance status'
+          message: "{VALUE} is not a valid maintenance status",
         },
         default: "Available",
         index: true,
@@ -260,22 +262,24 @@ const vehicleSchema = new Schema<VehicleInterface & Document>(
     rentalTerms: {
       minimumAge: {
         type: Number,
-        required: [true, 'Minimum age is required'],
-        min: [18, 'Minimum age must be at least 18'],
+        required: [true, "Minimum age is required"],
+        min: [18, "Minimum age must be at least 18"],
       },
-      requiredDocuments: [{ 
-        type: String,
-        trim: true 
-      }],
+      requiredDocuments: [
+        {
+          type: String,
+          trim: true,
+        },
+      ],
       securityDeposit: {
         type: Number,
-        required: [true, 'Security deposit is required'],
-        min: [0, 'Security deposit must be non-negative'],
+        required: [true, "Security deposit is required"],
+        min: [0, "Security deposit must be non-negative"],
       },
       mileageLimit: {
         type: Number,
-        required: [true, 'Mileage limit is required'],
-        min: [0, 'Mileage limit must be non-negative'],
+        required: [true, "Mileage limit is required"],
+        min: [0, "Mileage limit must be non-negative"],
       },
       additionalDrivers: {
         type: Boolean,
@@ -284,14 +288,16 @@ const vehicleSchema = new Schema<VehicleInterface & Document>(
       insuranceOptions: [insuranceOptionSchema],
     },
     ratings: [ratingSchema],
-    images: [{ 
+    images: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    policies: {
       type: String,
-      trim: true 
-    }],
-    policies: { 
-      type: String, 
-      required: [true, 'Policies are required'],
-      trim: true 
+      required: [true, "Policies are required"],
+      trim: true,
     },
   },
   {
@@ -332,7 +338,8 @@ vehicleSchema.virtual("maintenanceStatus").get(function () {
 });
 
 vehicleSchema.virtual("totalMaintenanceCost").get(function () {
-  if (!this.maintenance.history || this.maintenance.history.length === 0) return 0;
+  if (!this.maintenance.history || this.maintenance.history.length === 0)
+    return 0;
   return this.maintenance.history.reduce((acc, curr) => acc + curr.cost, 0);
 });
 
@@ -406,7 +413,10 @@ let Vehicle: Model<VehicleInterface & Document>;
 try {
   Vehicle = mongoose.model<VehicleInterface & Document>("Vehicle");
 } catch (error) {
-  Vehicle = mongoose.model<VehicleInterface & Document>("Vehicle", vehicleSchema);
+  Vehicle = mongoose.model<VehicleInterface & Document>(
+    "Vehicle",
+    vehicleSchema
+  );
 }
 
 export default Vehicle;

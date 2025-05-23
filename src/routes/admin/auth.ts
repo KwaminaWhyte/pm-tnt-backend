@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import AdminController from "../../controllers/AdminController";
+import AdminController from "~/controllers/AdminController";
 
 const controller = new AdminController();
 

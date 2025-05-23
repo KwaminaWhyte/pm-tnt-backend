@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { cron } from "@elysiajs/cron";
-import Email from "../models/Email";
-import Sms from "../models/Sms";
+import Email from "~/models/Email";
+import Sms from "~/models/Sms";
 import sendEmail from "./sendEmail";
 import sendSMS from "./sendSMS";
 

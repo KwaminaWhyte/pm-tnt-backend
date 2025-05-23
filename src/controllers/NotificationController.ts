@@ -1,5 +1,5 @@
 import { ApiResponse, error } from "~/utils/apiResponse";
-import Notification from "../models/Notification";
+import Notification from "~/models/Notification";
 
 export interface NotificationData {
   userId: string;

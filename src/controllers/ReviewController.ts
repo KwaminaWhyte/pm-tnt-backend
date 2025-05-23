@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Review, { ReviewInterface } from "../models/Review";
+import Review, { ReviewInterface } from "~/models/Review";
 
 interface ReviewQuery {
   page?: number;

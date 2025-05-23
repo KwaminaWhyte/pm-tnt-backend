@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import DestinationController from "../controllers/DestinationController";
+import DestinationController from "~/controllers/DestinationController";
 
 const destinationController = new DestinationController();
 

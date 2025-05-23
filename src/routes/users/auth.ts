@@ -1,6 +1,5 @@
 import { Elysia, t } from "elysia";
-import UserController from "../../controllers/UserController";
-import { jwtConfig } from "../../utils/jwt.config";
+import UserController from "~/controllers/UserController";
 
 const userController = new UserController();
 
@@ -21,7 +20,7 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
   })
 
   .post(
-    "/login/email",
+    "/login",
     async ({ body, jwt_auth }) =>
       await userController.loginWithEmail(body, jwt_auth),
     {

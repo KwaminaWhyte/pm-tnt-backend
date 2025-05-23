@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import FavoriteController from "../controllers/FavoriteController";
+import FavoriteController from "~/controllers/FavoriteController";
 
 const favoriteController = new FavoriteController();
 

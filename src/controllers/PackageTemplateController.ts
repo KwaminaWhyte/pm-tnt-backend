@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { ApiResponse, error } from "~/utils/apiResponse";
-import PackageTemplate from "../models/PackageTemplate";
-import Package from "../models/Package";
+import PackageTemplate from "~/models/PackageTemplate";
+import Package from "~/models/Package";
 
 class PackageTemplateController {
   // Create a new package template

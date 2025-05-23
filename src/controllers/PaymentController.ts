@@ -1,5 +1,5 @@
 import { createResponse } from "~/utils/helpers";
-import Payment from "../models/Payment";
+import Payment from "~/models/Payment";
 import UserController from "./UserController";
 
 export default class PaymentController {

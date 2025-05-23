@@ -1,7 +1,7 @@
-import User from "../models/User";
-import Email from "../models/Email";
-import generateOTP from "../utils/generateOtp";
-import sendSMS from "../utils/sendSMS";
+import User from "~/models/User";
+import Email from "~/models/Email";
+import generateOTP from "~/utils/generateOtp";
+import sendSMS from "~/utils/sendSMS";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import {
@@ -11,7 +11,7 @@ import {
   UserSearchParams,
   UpdateUserDTO,
   RegisterDTO,
-} from "../utils/types";
+} from "~/utils/types";
 import { error } from "elysia";
 
 export default class UserController {
@@ -709,18 +709,16 @@ export default class UserController {
     try {
       const user = await User.findById(id);
       if (!user) {
-        throw new Error(
-          JSON.stringify({
-            message: "User not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "User not found",
-              },
-            ],
-          })
-        );
+        throw error(404, {
+          message: "User not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "User not found",
+            },
+          ],
+        });
       }
 
       const errors = [];
@@ -927,62 +925,5 @@ export default class UserController {
         ],
       });
     }
-  }
-
-  async updateUser(id: string, updateData: UpdateUserDTO) {
-    const user = await User.findById(id);
-
-    if (!user) {
-      throw new Error(
-        JSON.stringify({
-          message: "User not found",
-        })
-      );
-    }
-
-    const errors = [];
-
-    if (updateData.phone && updateData.phone !== user.phone) {
-      const phoneExists = await User.findOne({
-        phone: updateData.phone,
-        _id: { $ne: id },
-      });
-      if (phoneExists) {
-        errors.push({
-          type: "DuplicateError",
-          path: ["phone"],
-          message: "Phone number already in use",
-        });
-      }
-    }
-
-    if (updateData.email && updateData.email !== user.email) {
-      const emailExists = await User.findOne({
-        email: updateData.email,
-        _id: { $ne: id },
-      });
-      if (emailExists) {
-        errors.push({
-          type: "DuplicateError",
-          path: ["email"],
-          message: "Email already in use",
-        });
-      }
-    }
-
-    if (errors.length > 0) {
-      throw new Error(JSON.stringify({ message: "Validation failed", errors }));
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      { ...updateData, updatedAt: new Date() },
-      { new: true }
-    ).select("-password -otp");
-
-    return {
-      message: "User updated successfully",
-      user: updatedUser,
-    };
   }
 }

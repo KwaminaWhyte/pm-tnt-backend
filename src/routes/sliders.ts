@@ -6,7 +6,7 @@ import {
   updateSlider,
   deleteSlider,
   getSliderById,
-} from "../controllers/slider";
+} from "~/controllers/slider";
 
 const sliderRoutes = new Elysia({ prefix: "/api/v1/sliders" })
   .guard({

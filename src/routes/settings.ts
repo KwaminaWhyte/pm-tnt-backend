@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { requireAdmin, requireAuth } from "../middleware/auth";
+import { requireAdmin, requireAuth } from "~/middleware/auth";
 
 // Placeholder for a future SettingsController
 // This would be properly implemented with database storage

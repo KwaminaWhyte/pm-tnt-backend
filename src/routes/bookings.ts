@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import BookingController from "../controllers/BookingController";
+import BookingController from "~/controllers/BookingController";
 
 const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
   .derive(async ({ headers, jwt_auth }) => {
@@ -339,7 +339,7 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
 
       try {
         // Calculate pricing before creating the booking
-        const Package = require("../models/Package").default;
+        const Package = require("~/models/Package").default;
         const pkg = await Package.findById(body.packageId);
 
         if (pkg) {
@@ -364,7 +364,7 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
         if (result.success && result.data) {
           try {
             const NotificationController =
-              require("../controllers/NotificationController").default;
+              require("~/controllers/NotificationController").default;
             const notificationController = new NotificationController();
 
             // Get package name or use a default

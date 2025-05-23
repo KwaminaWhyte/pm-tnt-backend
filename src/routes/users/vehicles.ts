@@ -1,11 +1,10 @@
 import { Elysia, t } from "elysia";
-import { jwtConfig } from "../../utils/jwt.config";
-import VehicleController from "../../controllers/VehicleController";
-import BookingController from "../../controllers/BookingController";
+import VehicleController from "~/controllers/VehicleController";
+import BookingController from "~/controllers/BookingController";
 
 const vehicleController = new VehicleController();
 
-const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
+const vehicleRoutes = new Elysia()
   .get(
     "/",
     async ({ query }) => {
@@ -103,7 +102,6 @@ const vehicleRoutes = new Elysia({ prefix: "/api/v1/vehicles" })
       }),
     }
   )
-  .use(jwtConfig)
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;

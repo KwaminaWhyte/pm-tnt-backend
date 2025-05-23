@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
-import { UserInterface } from "../utils/types";
+import { UserInterface } from "~/utils/types";
 
 /**
  * Review Interface - Represents a user review for various items in the system
@@ -32,25 +32,25 @@ const responseSchema = new Schema(
   {
     text: {
       type: String,
-      required: [true, 'Response text is required'],
-      trim: true
+      required: [true, "Response text is required"],
+      trim: true,
     },
     respondedAt: {
       type: Date,
-      default: Date.now
+      default: Date.now,
     },
     respondedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: [true, 'Responder reference is required']
-    }
+      required: [true, "Responder reference is required"],
+    },
   },
   { _id: false }
 );
 
 /**
  * Review Schema - Represents a review in the system
- * 
+ *
  * @remarks
  * Reviews can be for hotels, destinations, packages, or vehicles
  */
@@ -59,39 +59,39 @@ const reviewSchema = new Schema<ReviewInterface & Document>(
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: [true, 'User reference is required'],
+      required: [true, "User reference is required"],
       index: true,
     },
     itemId: {
       type: Schema.Types.ObjectId,
-      required: [true, 'Item ID is required'],
+      required: [true, "Item ID is required"],
       index: true,
     },
     itemType: {
       type: String,
       enum: {
         values: ["hotel", "destination", "package", "vehicle"],
-        message: '{VALUE} is not a valid item type'
+        message: "{VALUE} is not a valid item type",
       },
-      required: [true, 'Item type is required'],
+      required: [true, "Item type is required"],
       index: true,
     },
     rating: {
       type: Number,
-      required: [true, 'Rating is required'],
-      min: [1, 'Rating must be at least 1'],
-      max: [5, 'Rating cannot exceed 5'],
+      required: [true, "Rating is required"],
+      min: [1, "Rating must be at least 1"],
+      max: [5, "Rating cannot exceed 5"],
       index: true,
     },
     title: {
       type: String,
       trim: true,
-      maxlength: [100, 'Title cannot exceed 100 characters']
+      maxlength: [100, "Title cannot exceed 100 characters"],
     },
     comment: {
       type: String,
       trim: true,
-      maxlength: [1000, 'Comment cannot exceed 1000 characters']
+      maxlength: [1000, "Comment cannot exceed 1000 characters"],
     },
     images: [
       {
@@ -118,18 +118,18 @@ const reviewSchema = new Schema<ReviewInterface & Document>(
     visitDate: {
       type: Date,
       validate: {
-        validator: function(value: Date) {
+        validator: function (value: Date) {
           return value <= new Date();
         },
-        message: 'Visit date cannot be in the future'
-      }
+        message: "Visit date cannot be in the future",
+      },
     },
     response: responseSchema,
     status: {
       type: String,
       enum: {
         values: ["pending", "approved", "rejected"],
-        message: '{VALUE} is not a valid review status'
+        message: "{VALUE} is not a valid review status",
       },
       default: "pending",
       index: true,
@@ -163,11 +163,11 @@ reviewSchema.index(
 );
 
 // Virtuals
-reviewSchema.virtual('helpfulCount').get(function() {
+reviewSchema.virtual("helpfulCount").get(function () {
   return this.helpful ? this.helpful.length : 0;
 });
 
-reviewSchema.virtual('hasResponse').get(function() {
+reviewSchema.virtual("hasResponse").get(function () {
   return !!this.response && !!this.response.text;
 });
 
@@ -177,12 +177,15 @@ reviewSchema.virtual('hasResponse').get(function() {
 reviewSchema.pre("save", async function (next) {
   try {
     // Convert itemType to model name (capitalize first letter and add 's' if needed)
-    const modelName = this.itemType.charAt(0).toUpperCase() + this.itemType.slice(1);
+    const modelName =
+      this.itemType.charAt(0).toUpperCase() + this.itemType.slice(1);
     const Model = mongoose.model(modelName);
     const item = await Model.findById(this.itemId);
-    
+
     if (!item) {
-      return next(new Error(`${this.itemType} with id ${this.itemId} does not exist`));
+      return next(
+        new Error(`${this.itemType} with id ${this.itemId} does not exist`)
+      );
     }
     next();
   } catch (error) {
@@ -193,30 +196,37 @@ reviewSchema.pre("save", async function (next) {
 /**
  * Methods
  */
-reviewSchema.methods.markAsVerified = function() {
+reviewSchema.methods.markAsVerified = function () {
   this.verified = true;
   return this.save();
 };
 
-reviewSchema.methods.addHelpful = function(userId: string | Schema.Types.ObjectId) {
+reviewSchema.methods.addHelpful = function (
+  userId: string | Schema.Types.ObjectId
+) {
   if (!this.helpful.includes(userId)) {
     this.helpful.push(userId);
   }
   return this.save();
 };
 
-reviewSchema.methods.removeHelpful = function(userId: string | Schema.Types.ObjectId) {
+reviewSchema.methods.removeHelpful = function (
+  userId: string | Schema.Types.ObjectId
+) {
   this.helpful = this.helpful.filter(
     (id: Schema.Types.ObjectId) => id.toString() !== userId.toString()
   );
   return this.save();
 };
 
-reviewSchema.methods.addResponse = function(text: string, respondedBy: string | Schema.Types.ObjectId) {
+reviewSchema.methods.addResponse = function (
+  text: string,
+  respondedBy: string | Schema.Types.ObjectId
+) {
   this.response = {
     text,
     respondedAt: new Date(),
-    respondedBy: respondedBy
+    respondedBy: respondedBy,
   };
   return this.save();
 };

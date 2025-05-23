@@ -1,15 +1,15 @@
 import { error } from "elysia";
-import { type ApiResponse } from "../utils/types";
-import Booking from "../models/Booking";
-import Hotel from "../models/Hotel";
-import Vehicle from "../models/Vehicle";
-import Package from "../models/Package";
+import { type ApiResponse } from "~/utils/types";
+import Booking from "~/models/Booking";
+import Hotel from "~/models/Hotel";
+import Vehicle from "~/models/Vehicle";
+import Package from "~/models/Package";
 import {
   BookingInterface,
   BookingSearchParams,
   CreateBookingDTO,
   UpdateBookingDTO,
-} from "../utils/types";
+} from "~/utils/types";
 import mongoose from "mongoose";
 import { ElysiaCustomStatusResponse } from "elysia/dist/error";
 

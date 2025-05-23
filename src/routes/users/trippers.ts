@@ -1,6 +1,5 @@
 import { Elysia, t } from "elysia";
 import { TripperController } from "~/controllers/TripperController";
-import { jwtConfig } from "~/utils/jwt.config";
 import * as fs from "fs";
 import * as path from "path";
 import crypto from "crypto";
@@ -8,7 +7,6 @@ import crypto from "crypto";
 const tripperController = new TripperController();
 
 const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
-  .use(jwtConfig)
 
   .derive(async ({ headers, jwt_auth }) => {
     const auth = headers["authorization"];

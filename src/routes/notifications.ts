@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import NotificationController from "../controllers/NotificationController";
+import NotificationController from "~/controllers/NotificationController";
 
 const notificationController = new NotificationController();
 

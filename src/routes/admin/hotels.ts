@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import HotelController from "../../controllers/HotelController";
+import HotelController from "~/controllers/HotelController";
 
 const hotelController = new HotelController();
 
@@ -7,7 +7,7 @@ const hotelController = new HotelController();
  * Hotel routes for admin operations
  * Base path: /api/v1/hotels/admin
  */
-const adminHotelRoutes = new Elysia({ prefix: "/api/v1/hotels/admin" })
+const adminHotelRoutes = new Elysia({ prefix: "/admin" })
 
   .guard({
     detail: {

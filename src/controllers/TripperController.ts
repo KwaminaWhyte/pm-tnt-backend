@@ -1,5 +1,5 @@
-import TripperPost, { ITripperPost } from "../models/TripperPost";
-import User from "../models/User";
+import TripperPost, { ITripperPost } from "~/models/TripperPost";
+import User from "~/models/User";
 import mongoose from "mongoose";
 import { Context } from "elysia";
 

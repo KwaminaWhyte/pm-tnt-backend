@@ -1,9 +1,9 @@
 import { error } from "elysia";
-import Package from "../models/Package";
-import { PackageInterface } from "../utils/types";
-import PackageTemplate from "../models/PackageTemplate";
-import Hotel from "../models/Hotel";
-import Activity from "../models/Activity";
+import Package from "~/models/Package";
+import { PackageInterface } from "~/utils/types";
+import PackageTemplate from "~/models/PackageTemplate";
+import Hotel from "~/models/Hotel";
+import Activity from "~/models/Activity";
 
 export default class PackageController {
   /**

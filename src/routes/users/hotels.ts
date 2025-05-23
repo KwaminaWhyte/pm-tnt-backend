@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import HotelController from "../../controllers/HotelController";
+import HotelController from "~/controllers/HotelController";
 
 const hotelController = new HotelController();
 
@@ -7,7 +7,7 @@ const hotelController = new HotelController();
  * Hotel routes for managing hotel-related operations
  * Base path: /api/v1/hotels
  */
-const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
+const hotelRoutes = new Elysia()
 
   .get(
     "/",
@@ -96,28 +96,5 @@ const hotelPublicRoutes = new Elysia({ prefix: "/api/v1/hotels/public" })
         tags: ["Hotels - Public", "Search"],
       },
     }
-  )
-
-  .get("/", async ({ query }) => hotelController.getHotels(query), {
-    detail: {
-      summary: "Get all hotels with pagination and filtering",
-      tags: ["Hotels - Public"],
-    },
-    query: t.Object({
-      page: t.Optional(t.Number()),
-      limit: t.Optional(t.Number()),
-      searchTerm: t.Optional(t.String()),
-      city: t.Optional(t.String()),
-      country: t.Optional(t.String()),
-      sortBy: t.Optional(
-        t.Union([
-          t.Literal("pricePerNight"),
-          t.Literal("capacity"),
-          t.Literal("rating"),
-        ])
-      ),
-      sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
-    }),
-  });
-
-export default hotelPublicRoutes;
+  );
+export default hotelRoutes;

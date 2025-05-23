@@ -1,8 +1,8 @@
 import { Types } from "mongoose";
-import Favorite from "../models/Favorite";
-import Hotel from "../models/Hotel";
-import Vehicle from "../models/Vehicle";
-import Package from "../models/Package";
+import Favorite from "~/models/Favorite";
+import Hotel from "~/models/Hotel";
+import Vehicle from "~/models/Vehicle";
+import Package from "~/models/Package";
 
 export default class FavoriteController {
   async toggleFavorite(
@@ -85,13 +85,17 @@ export default class FavoriteController {
     return result;
   }
 
-  async isFavorited(userId: string, itemId: string, itemType: "hotel" | "vehicle" | "package") {
+  async isFavorited(
+    userId: string,
+    itemId: string,
+    itemType: "hotel" | "vehicle" | "package"
+  ) {
     const favorite = await Favorite.findOne({
       userId,
       itemId,
       itemType,
     });
-    
+
     return { isFavorite: !!favorite };
   }
 

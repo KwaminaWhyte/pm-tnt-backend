@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
-import User from "../models/User";
-import Hotel from "../models/Hotel";
-import Activity from "../models/Activity";
-import Package from "../models/Package";
-import PackageTemplate from "../models/PackageTemplate";
-import Booking from "../models/Booking";
-import Review from "../models/Review";
-import Destination from "../models/Destination";
-import TripperPost from "../models/TripperPost";
+import User from "~/models/User";
+import Hotel from "~/models/Hotel";
+import Activity from "~/models/Activity";
+import Package from "~/models/Package";
+import PackageTemplate from "~/models/PackageTemplate";
+import Booking from "~/models/Booking";
+import Review from "~/models/Review";
+import Destination from "~/models/Destination";
+import TripperPost from "~/models/TripperPost";
 import { seedTripperPosts } from "./tripperPosts.seeder";
 
 export async function seedSampleData() {

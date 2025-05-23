@@ -3,8 +3,8 @@ import {
   CreateVehicleDTO,
   UpdateVehicleDTO,
   VehicleRatingDTO,
-} from "../utils/types";
-import Vehicle from "../models/Vehicle";
+} from "~/utils/types";
+import Vehicle from "~/models/Vehicle";
 import { error } from "elysia";
 
 export default class VehicleController {
@@ -234,13 +234,16 @@ export default class VehicleController {
   async createVehicle(data: CreateVehicleDTO) {
     try {
       // Log incoming data for debugging
-      console.log('Create vehicle data received:', JSON.stringify(data, null, 2));
-      
+      console.log(
+        "Create vehicle data received:",
+        JSON.stringify(data, null, 2)
+      );
+
       // Set default dates for maintenance if not provided
       const currentDate = new Date();
       const nextServiceDate = new Date();
       nextServiceDate.setMonth(nextServiceDate.getMonth() + 3); // Default next service in 3 months
-      
+
       // Prepare vehicle data with proper structure
       const vehicleData = {
         // Basic information
@@ -253,7 +256,7 @@ export default class VehicleController {
         features: Array.isArray(data.features) ? data.features : [],
         images: Array.isArray(data.images) ? data.images : [],
         policies: data.policies || "Standard rental policies apply.",
-        
+
         // Availability with location
         availability: {
           isAvailable: true,
@@ -266,7 +269,7 @@ export default class VehicleController {
             },
           },
         },
-        
+
         // Details with nested structure
         details: {
           licensePlate: data.licensePlate || "TBD",
@@ -278,36 +281,51 @@ export default class VehicleController {
           insurance: {
             provider: data.insuranceProvider || "TBD",
             policyNumber: data.insurancePolicyNumber || "TBD",
-            expiryDate: data.insuranceExpiryDate ? new Date(data.insuranceExpiryDate) : new Date(currentDate.setFullYear(currentDate.getFullYear() + 1)),
-            coverage: data.insuranceCoverage || "Basic"
-          }
+            expiryDate: data.insuranceExpiryDate
+              ? new Date(data.insuranceExpiryDate)
+              : new Date(
+                  currentDate.setFullYear(currentDate.getFullYear() + 1)
+                ),
+            coverage: data.insuranceCoverage || "Basic",
+          },
         },
-        
+
         // Maintenance information
         maintenance: {
-          lastService: data.lastService ? new Date(data.lastService) : currentDate,
-          nextService: data.nextService ? new Date(data.nextService) : nextServiceDate,
+          lastService: data.lastService
+            ? new Date(data.lastService)
+            : currentDate,
+          nextService: data.nextService
+            ? new Date(data.nextService)
+            : nextServiceDate,
           status: "Available",
           history: [],
         },
-        
+
         // Rental terms
         rentalTerms: {
           minimumAge: data.minimumAge || 18,
           securityDeposit: data.securityDeposit || 0,
           mileageLimit: data.mileageLimit || 0,
           additionalDrivers: data.additionalDrivers || false,
-          requiredDocuments: Array.isArray(data.requiredDocuments) ? data.requiredDocuments : ["Driver's License", "Credit Card"],
-          insuranceOptions: [{
-            type: "Basic",
-            coverage: "Collision Damage Waiver",
-            pricePerDay: 10,
-          }],
+          requiredDocuments: Array.isArray(data.requiredDocuments)
+            ? data.requiredDocuments
+            : ["Driver's License", "Credit Card"],
+          insuranceOptions: [
+            {
+              type: "Basic",
+              coverage: "Collision Damage Waiver",
+              pricePerDay: 10,
+            },
+          ],
         },
       };
-      
-      console.log('Processed vehicle data:', JSON.stringify(vehicleData, null, 2));
-      
+
+      console.log(
+        "Processed vehicle data:",
+        JSON.stringify(vehicleData, null, 2)
+      );
+
       const vehicle = new Vehicle(vehicleData);
 
       const savedVehicle = await vehicle.save();
@@ -343,8 +361,11 @@ export default class VehicleController {
   async updateVehicle(id: string, data: UpdateVehicleDTO) {
     try {
       // Log incoming update data for debugging
-      console.log('Update vehicle data received:', JSON.stringify(data, null, 2));
-      
+      console.log(
+        "Update vehicle data received:",
+        JSON.stringify(data, null, 2)
+      );
+
       const vehicle = await Vehicle.findById(id);
 
       if (!vehicle) {
@@ -359,10 +380,10 @@ export default class VehicleController {
           ],
         });
       }
-      
+
       // Prepare update data with proper structure
       const updateData: Record<string, any> = {};
-      
+
       // Basic information
       if (data.make) updateData.make = data.make;
       if (data.model) updateData.model = data.model;
@@ -373,38 +394,58 @@ export default class VehicleController {
       if (data.features) updateData.features = data.features;
       if (data.images) updateData.images = data.images;
       if (data.policies) updateData.policies = data.policies;
-      
+
       // Location data - update properly in the nested structure
       if (data.city) updateData["availability.location.city"] = data.city;
-      if (data.country) updateData["availability.location.country"] = data.country;
-      
+      if (data.country)
+        updateData["availability.location.country"] = data.country;
+
       // Details data
-      if (data.licensePlate) updateData["details.licensePlate"] = data.licensePlate;
+      if (data.licensePlate)
+        updateData["details.licensePlate"] = data.licensePlate;
       if (data.color) updateData["details.color"] = data.color;
-      if (data.transmission) updateData["details.transmission"] = data.transmission;
+      if (data.transmission)
+        updateData["details.transmission"] = data.transmission;
       if (data.fuelType) updateData["details.fuelType"] = data.fuelType;
       if (data.mileage) updateData["details.mileage"] = data.mileage;
       if (data.vin) updateData["details.vin"] = data.vin;
-      
+
       // Insurance data
-      if (data.insuranceProvider) updateData["details.insurance.provider"] = data.insuranceProvider;
-      if (data.insurancePolicyNumber) updateData["details.insurance.policyNumber"] = data.insurancePolicyNumber;
-      if (data.insuranceExpiryDate) updateData["details.insurance.expiryDate"] = new Date(data.insuranceExpiryDate);
-      if (data.insuranceCoverage) updateData["details.insurance.coverage"] = data.insuranceCoverage;
-      
+      if (data.insuranceProvider)
+        updateData["details.insurance.provider"] = data.insuranceProvider;
+      if (data.insurancePolicyNumber)
+        updateData["details.insurance.policyNumber"] =
+          data.insurancePolicyNumber;
+      if (data.insuranceExpiryDate)
+        updateData["details.insurance.expiryDate"] = new Date(
+          data.insuranceExpiryDate
+        );
+      if (data.insuranceCoverage)
+        updateData["details.insurance.coverage"] = data.insuranceCoverage;
+
       // Maintenance data
-      if (data.lastService) updateData["maintenance.lastService"] = new Date(data.lastService);
-      if (data.nextService) updateData["maintenance.nextService"] = new Date(data.nextService);
-      
+      if (data.lastService)
+        updateData["maintenance.lastService"] = new Date(data.lastService);
+      if (data.nextService)
+        updateData["maintenance.nextService"] = new Date(data.nextService);
+
       // Rental terms
-      if (data.minimumAge) updateData["rentalTerms.minimumAge"] = data.minimumAge;
-      if (data.securityDeposit) updateData["rentalTerms.securityDeposit"] = data.securityDeposit;
-      if (data.mileageLimit) updateData["rentalTerms.mileageLimit"] = data.mileageLimit;
-      if (data.additionalDrivers !== undefined) updateData["rentalTerms.additionalDrivers"] = data.additionalDrivers;
-      if (data.requiredDocuments) updateData["rentalTerms.requiredDocuments"] = data.requiredDocuments;
-      
-      console.log('Processed update data:', JSON.stringify(updateData, null, 2));
-      
+      if (data.minimumAge)
+        updateData["rentalTerms.minimumAge"] = data.minimumAge;
+      if (data.securityDeposit)
+        updateData["rentalTerms.securityDeposit"] = data.securityDeposit;
+      if (data.mileageLimit)
+        updateData["rentalTerms.mileageLimit"] = data.mileageLimit;
+      if (data.additionalDrivers !== undefined)
+        updateData["rentalTerms.additionalDrivers"] = data.additionalDrivers;
+      if (data.requiredDocuments)
+        updateData["rentalTerms.requiredDocuments"] = data.requiredDocuments;
+
+      console.log(
+        "Processed update data:",
+        JSON.stringify(updateData, null, 2)
+      );
+
       const updatedVehicle = await Vehicle.findByIdAndUpdate(
         id,
         { $set: updateData },

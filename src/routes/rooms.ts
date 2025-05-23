@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import RoomController from "../controllers/RoomController";
+import RoomController from "~/controllers/RoomController";
 
 const roomController = new RoomController();
 

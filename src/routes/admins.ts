@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
-import AdminController from "../controllers/AdminController";
-import { requireAdmin, requireSuperAdmin } from "../middleware/auth";
+import AdminController from "~/controllers/AdminController";
+import { requireAdmin, requireSuperAdmin } from "~/middleware/auth";
 
 const adminController = new AdminController();
 

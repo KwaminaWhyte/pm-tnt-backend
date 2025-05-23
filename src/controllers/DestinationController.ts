@@ -1,5 +1,5 @@
 import { error } from "elysia";
-import Destination, { DestinationInterface } from "../models/Destination";
+import Destination, { DestinationInterface } from "~/models/Destination";
 
 export default class DestinationController {
   /**

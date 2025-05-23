@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import ActivityController from "../../controllers/ActivityController";
+import ActivityController from "~/controllers/ActivityController";
 
 const activityController = new ActivityController();
 

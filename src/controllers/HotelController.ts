@@ -1,11 +1,11 @@
-import { HotelInterface } from "../utils/types";
-import Hotel from "../models/Hotel";
-import Booking from "../models/Booking"; // Assuming you have a Booking model
-import Favorite from "../models/Favorite";
+import { HotelInterface } from "~/utils/types";
+import Hotel from "~/models/Hotel";
+import Booking from "~/models/Booking"; // Assuming you have a Booking model
+import Favorite from "~/models/Favorite";
 import { error } from "elysia";
 import FavoriteController from "./FavoriteController";
-import Room from "../models/Room";
-import User from "../models/User";
+import Room from "~/models/Room";
+import User from "~/models/User";
 
 export default class HotelController {
   /**

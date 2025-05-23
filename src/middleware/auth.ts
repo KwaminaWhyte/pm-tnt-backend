@@ -1,6 +1,6 @@
 import { JWT } from "@elysiajs/jwt";
-import Admin from "../models/Admin";
-import User from "../models/User";
+import Admin from "~/models/Admin";
+import User from "~/models/User";
 
 export interface AuthUser {
   id: string;

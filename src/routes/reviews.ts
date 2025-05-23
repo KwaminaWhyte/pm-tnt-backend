@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import ReviewController from "../controllers/ReviewController";
+import ReviewController from "~/controllers/ReviewController";
 
 const reviewController = new ReviewController();
 
