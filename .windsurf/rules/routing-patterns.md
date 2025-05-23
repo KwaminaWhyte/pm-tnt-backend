@@ -1,8 +1,8 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+trigger: glob
+globs: src/routes/**/*.ts
 ---
+
 # Routing Patterns
 
 The PM-TNT backend uses Elysia.js for routing with consistent patterns.
@@ -12,6 +12,7 @@ The PM-TNT backend uses Elysia.js for routing with consistent patterns.
 Routes are defined in [src/routes/](mdc:pmtnt/src/routes) with separate files for each resource.
 
 Example structure:
+
 ```typescript
 const resourceRoutes = new Elysia({ prefix: "/api/v1/resource" })
   .get("/", handler, options)
@@ -26,11 +27,13 @@ export default resourceRoutes;
 ## Route Definition
 
 ### Handler Structure
+
 - Route handlers typically call controller methods
 - Query parameters are properly parsed and validated
 - Path parameters are extracted and validated
 
 Example:
+
 ```typescript
 .get(
   "/",
@@ -54,12 +57,14 @@ Example:
 ```
 
 ### API Documentation
+
 - Each route includes OpenAPI documentation
 - Documentation includes summaries, descriptions, and tags
 - Response schemas are documented
 - Response codes are documented
 
 Example:
+
 ```typescript
 detail: {
   summary: "Get all resources",
@@ -77,6 +82,7 @@ detail: {
 ```
 
 ### Validation
+
 - Input validation using Elysia's schema validation
 - Type checking for path and query parameters
 - Schema definition for request bodies

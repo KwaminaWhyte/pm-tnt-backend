@@ -1,8 +1,7 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+trigger: model_decision
 ---
+
 # Authentication Patterns
 
 The PM-TNT backend uses JWT for authentication with multiple user roles.
@@ -17,7 +16,6 @@ The PM-TNT backend uses JWT for authentication with multiple user roles.
 
 - Regular users (customers/clients)
 - Admin users (standard administrative access)
-- Super admin users (elevated privileges)
 
 ## Authentication Flow
 
@@ -32,14 +30,13 @@ The PM-TNT backend uses JWT for authentication with multiple user roles.
 - `verifyToken`: Base token verification
 - `requireAuth`: Ensures a valid user is authenticated
 - `requireAdmin`: Restricts access to admins
-- `requireSuperAdmin`: Restricts access to super admins
 
 ## Token Format
 
 ```typescript
 {
-  id: string;   // User or admin ID
-  role: "user" | "admin" | "super_admin";
+  id: string; // User or admin ID
+  role: "user" | "admin";
 }
 ```
 
@@ -47,7 +44,7 @@ The PM-TNT backend uses JWT for authentication with multiple user roles.
 
 ```typescript
 .get(
-  "/admin-only",
+  "/admin",
   async ({ jwt_auth, headers }) => {
     const user = await requireAdmin({ jwt_auth, headers });
     // Route implementation
@@ -63,6 +60,7 @@ The PM-TNT backend uses JWT for authentication with multiple user roles.
 ## Authorization Headers
 
 All authenticated requests must include:
+
 ```
 Authorization: Bearer <jwt_token>
 ```

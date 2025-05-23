@@ -1,8 +1,7 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+trigger: model_decision
 ---
+
 # PM-TNT Backend Overview
 
 This is the backend service for PM Travel and Tourism, a tourism management platform.

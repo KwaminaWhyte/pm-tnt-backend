@@ -1,8 +1,7 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+trigger: always_on
 ---
+
 # API Patterns
 
 The PM-TNT backend follows RESTful API design principles with consistent patterns.
