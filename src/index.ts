@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import cors from "@elysiajs/cors";
 import swagger from "@elysiajs/swagger";
 import mongoose from "mongoose";
@@ -6,6 +6,15 @@ import fs from "fs";
 
 import { cronJobs } from "./utils/cron";
 import { jwtConfig } from "./utils/jwt.config";
+import { 
+  NotFoundError, 
+  ValidationError, 
+  AuthenticationError, 
+  AuthorizationError, 
+  ServerError,
+  DuplicateError,
+  BadRequestError
+} from "./utils/errors";
 
 import adminsRoutes from "./routes/admins";
 import adminAuthRoutes from "./routes/admin/auth";
@@ -98,6 +107,15 @@ const app = new Elysia()
     const method = request.method;
     const url = request.url;
     console.log(`[${timestamp}] ${method} ${url}`);
+  })
+  .error({
+    NotFoundError,
+    ValidationError,
+    AuthenticationError,
+    AuthorizationError,
+    ServerError,
+    DuplicateError,
+    BadRequestError
   })
   .use(
     swagger({

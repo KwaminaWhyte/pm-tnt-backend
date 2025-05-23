@@ -1,11 +1,12 @@
 import Activity, { ActivityInterface } from "~/models/Activity";
 import Destination from "~/models/Destination";
-import { error } from "elysia";
+import { NotFoundError, ValidationError, ServerError } from "~/utils/errors";
 
 export default class ActivityController {
   /**
    * Retrieve all activities with pagination and filtering
-   * @throws {Error} 400 - Invalid search parameters
+   * @throws {ValidationError} When pagination parameters are invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async getActivities({
     page = 1,
@@ -34,16 +35,7 @@ export default class ActivityController {
   }) {
     try {
       if (page < 1 || limit < 1) {
-        return error(404, {
-          message: "Invalid pagination parameters",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["page", "limit"],
-              message: "Page and limit must be positive numbers",
-            },
-          ],
-        });
+        throw new ValidationError("Page and limit must be positive numbers", "pagination");
       }
 
       const filter: Record<string, any> = {};
@@ -106,28 +98,21 @@ export default class ActivityController {
           itemsPerPage: limit,
         },
       };
-    } catch (error: any) {
-      if (error.message.startsWith("{")) {
-        throw error;
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof ValidationError) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to fetch activities",
-          errors: [
-            {
-              type: "ServerError",
-              path: [],
-              message: error.message,
-            },
-          ],
-        })
-      );
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Failed to fetch activities");
     }
   }
 
   /**
    * Get activity by ID
-   * @throws {Error} 404 - Activity not found
+   * @throws {NotFoundError} When activity is not found
+   * @throws {ServerError} When an unexpected error occurs
    */
   async getActivityById(id: string) {
     try {
@@ -136,65 +121,38 @@ export default class ActivityController {
         "name location"
       );
       if (!activity) {
-        throw new Error(
-          JSON.stringify({
-            message: "Activity not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Activity with the specified ID does not exist",
-              },
-            ],
-          })
-        );
+        throw new NotFoundError('Activity', id);
       }
 
       return {
         status: "success",
         data: { activity },
       };
-    } catch (error: any) {
-      if (error.message.startsWith("{")) {
-        throw error;
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to fetch activity",
-          errors: [
-            {
-              type: "ServerError",
-              path: [],
-              message: error.message,
-            },
-          ],
-        })
-      );
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Failed to fetch activity");
     }
   }
 
   /**
    * Create a new activity
-   * @throws {Error} 400 - Invalid activity data
+   * @throws {ValidationError} When activity data is invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async createActivity(activityData: Partial<ActivityInterface>) {
     try {
-      // Check if destination exists
+      // Check if destination exists if provided
       if (activityData.destination) {
         const destinationExists = await Destination.exists({
           _id: activityData.destination,
         });
         if (!destinationExists) {
-          return error(400, {
-            message: "Invalid destination",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["destination"],
-                message: "Destination does not exist",
-              },
-            ],
-          });
+          throw new ValidationError("Destination does not exist", "destination");
         }
       }
 
@@ -203,26 +161,32 @@ export default class ActivityController {
 
       return {
         status: "success",
-        data: activity,
+        data: { activity },
       };
-    } catch (err: any) {
-      return error(400, {
-        message: "Failed to create activity",
-        errors: [
-          {
-            type: "ValidationError",
-            path: [],
-            message: err.message,
-          },
-        ],
-      });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof ValidationError) {
+        throw err;
+      }
+      
+      // Handle Mongoose validation errors
+      if (typeof err === 'object' && err !== null && 'name' in err && err.name === 'ValidationError') {
+        const mongooseErr = err as any;
+        const fieldName = Object.keys(mongooseErr.errors)[0] || 'unknown';
+        const message = mongooseErr.errors[fieldName]?.message || 'Validation failed';
+        throw new ValidationError(message, fieldName);
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Failed to create activity");
     }
   }
 
   /**
    * Update activity by ID
-   * @throws {Error} 404 - Activity not found
-   * @throws {Error} 400 - Invalid update data
+   * @throws {NotFoundError} When activity is not found
+   * @throws {ValidationError} When update data is invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async updateActivity(id: string, updateData: Partial<ActivityInterface>) {
     try {
@@ -232,16 +196,7 @@ export default class ActivityController {
           _id: updateData.destination,
         });
         if (!destinationExists) {
-          return error(400, {
-            message: "Invalid destination",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["destination"],
-                message: "Destination does not exist",
-              },
-            ],
-          });
+          throw new ValidationError("Destination does not exist", "destination");
         }
       }
 
@@ -252,90 +207,64 @@ export default class ActivityController {
       );
 
       if (!activity) {
-        throw new Error(
-          JSON.stringify({
-            message: "Activity not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Activity with the specified ID does not exist",
-              },
-            ],
-          })
-        );
+        throw new NotFoundError('Activity', id);
       }
 
       return {
         status: "success",
         data: { activity },
       };
-    } catch (error: any) {
-      if (error.message.startsWith("{")) {
-        throw error;
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError || 
+          err instanceof ValidationError) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to update activity",
-          errors: [
-            {
-              type: "ServerError",
-              path: [],
-              message: error.message,
-            },
-          ],
-        })
-      );
+      
+      // Handle Mongoose validation errors
+      if (typeof err === 'object' && err !== null && 'name' in err && err.name === 'ValidationError') {
+        const mongooseErr = err as any;
+        const fieldName = Object.keys(mongooseErr.errors)[0] || 'unknown';
+        const message = mongooseErr.errors[fieldName]?.message || 'Validation failed';
+        throw new ValidationError(message, fieldName);
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Failed to update activity");
     }
   }
 
   /**
    * Delete activity by ID
-   * @throws {Error} 404 - Activity not found
+   * @throws {NotFoundError} When activity is not found
+   * @throws {ServerError} When an unexpected error occurs
    */
   async deleteActivity(id: string) {
     try {
       const activity = await Activity.findByIdAndDelete(id);
       if (!activity) {
-        throw new Error(
-          JSON.stringify({
-            message: "Activity not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Activity with the specified ID does not exist",
-              },
-            ],
-          })
-        );
+        throw new NotFoundError('Activity', id);
       }
 
       return {
         status: "success",
         data: null,
       };
-    } catch (error: any) {
-      if (error.message.startsWith("{")) {
-        throw error;
+    } catch (err: unknown) {
+      // Re-throw NotFoundError directly
+      if (err instanceof NotFoundError) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to delete activity",
-          errors: [
-            {
-              type: "ServerError",
-              path: [],
-              message: error.message,
-            },
-          ],
-        })
-      );
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Failed to delete activity");
     }
   }
 
   /**
    * Get activities by destination
+   * @throws {ValidationError} When pagination parameters are invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async getActivitiesByDestination(
     destinationId: string,
@@ -350,6 +279,10 @@ export default class ActivityController {
     }
   ) {
     try {
+      if (page < 1 || limit < 1) {
+        throw new ValidationError("Page and limit must be positive numbers", "pagination");
+      }
+
       const filter: Record<string, any> = {
         destination: destinationId,
       };
@@ -374,22 +307,14 @@ export default class ActivityController {
           itemsPerPage: limit,
         },
       };
-    } catch (error: any) {
-      if (error.message.startsWith("{")) {
-        throw error;
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof ValidationError) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to fetch destination activities",
-          errors: [
-            {
-              type: "ServerError",
-              path: [],
-              message: error.message,
-            },
-          ],
-        })
-      );
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Failed to fetch destination activities");
     }
   }
 }

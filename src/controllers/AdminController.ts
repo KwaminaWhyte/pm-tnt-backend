@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import Admin, { AdminInterface } from "~/models/Admin";
-import { error } from "elysia";
+import { NotFoundError, ValidationError, AuthenticationError, ServerError, DuplicateError } from "~/utils/errors";
 
 interface CreateAdminDTO {
   fullName: string;
@@ -30,47 +30,38 @@ export default class AdminController {
     { email, password }: { email: string; password: string },
     jwt_auth: any
   ) {
-    const admin = await Admin.findOne({
-      email,
-    });
-
-    if (!admin) {
-      return error(404, {
-        message: "Admin not found",
-        errors: [
-          {
-            type: "NotFoundError",
-            path: ["email"],
-            message: "Admin not found",
-          },
-        ],
+    try {
+      const admin = await Admin.findOne({
+        email,
       });
+
+      if (!admin) {
+        throw new NotFoundError('Admin', 'with this email');
+      }
+
+      const valid = await bcrypt.compare(password, admin.password);
+
+      if (!valid) {
+        throw new AuthenticationError('Invalid credentials');
+      }
+
+      const token = await jwt_auth.sign({ id: admin.id });
+      const userData = await Admin.findById(admin.id).select("-password -otp");
+
+      return {
+        token,
+        user: userData,
+      };
+    } catch (err) {
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError || 
+          err instanceof AuthenticationError) {
+        throw err;
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : 'Unknown error occurred');
     }
-
-    const valid = await bcrypt.compare(password, admin.password);
-
-    if (!valid) {
-      return error(401, {
-        message: "Invalid Credentials",
-        errors: [
-          {
-            type: "ValidationError",
-            path: ["password"],
-            message: "Invalid Credentials",
-          },
-        ],
-      });
-    }
-
-    // const token = await this.generateToken(admin._id);
-
-    const token = await jwt_auth.sign({ id: admin.id });
-    const userData = await Admin.findById(admin.id).select("-password -otp");
-
-    return {
-      token,
-      user: userData,
-    };
   }
 
   /**
@@ -87,16 +78,7 @@ export default class AdminController {
   }) {
     try {
       if (page < 1 || limit < 1) {
-        return error(400, {
-          message: "Invalid pagination parameters",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["page", "limit"],
-              message: "Page and limit must be positive numbers",
-            },
-          ],
-        });
+        throw new ValidationError("Page and limit must be positive numbers");
       }
 
       const filter: Record<string, any> = {};
@@ -119,16 +101,7 @@ export default class AdminController {
       const totalPages = Math.ceil(totalCount / limit);
 
       if (page > totalPages && totalCount > 0) {
-        return error(400, {
-          message: "Page number exceeds available pages",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["page"],
-              message: `Page should be between 1 and ${totalPages}`,
-            },
-          ],
-        });
+        throw new ValidationError(`Page should be between 1 and ${totalPages}`, "page");
       }
 
       return {
@@ -142,228 +115,184 @@ export default class AdminController {
         },
       };
     } catch (err) {
-      return error(500, {
-        message: "Failed to retrieve admins",
-        errors: [
-          {
-            type: "ServerError",
-            path: ["server"],
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
-          },
-        ],
-      });
+      // Re-throw custom errors directly
+      if (err instanceof ValidationError) {
+        throw err;
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Unknown error occurred");
     }
   }
 
   /**
    * Get admin by ID
-   * @throws {Error} 404 - Admin not found
+   * @throws {NotFoundError} When admin is not found
+   * @throws {ServerError} When an unexpected error occurs
    */
   async getAdmin(id: string) {
     try {
       const user = await Admin.findById(id).select("-password");
 
       if (!user) {
-        return error(404, {
-          message: "Admin not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["id"],
-              message: "Admin not found",
-            },
-          ],
-        });
+        throw new NotFoundError('Admin', id);
       }
 
       return { user };
     } catch (err) {
-      return error(500, {
-        message: "Failed to retrieve admin",
-        errors: [
-          {
-            type: "ServerError",
-            path: ["id"],
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
-          },
-        ],
-      });
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Unknown error occurred");
     }
   }
 
   /**
    * Create new admin
-   * @throws {Error} 400 - Validation error
+   * @throws {DuplicateError} When email already exists
+   * @throws {ValidationError} When validation fails
+   * @throws {ServerError} When an unexpected error occurs
    */
   async createAdmin(data: CreateAdminDTO) {
     try {
+      // Check if email already exists
       const existingAdmin = await Admin.findOne({ email: data.email });
       if (existingAdmin) {
-        return error(400, {
-          message: "Email already exists",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["email"],
-              message: "An admin with this email already exists",
-            },
-          ],
-        });
+        throw new DuplicateError('Admin', 'email');
       }
 
+      // Hash password
       const hashedPassword = await bcrypt.hash(data.password, 10);
-      const admin = new Admin({
+
+      // Create admin
+      const admin = await Admin.create({
         ...data,
         password: hashedPassword,
       });
 
-      const savedAdmin = await admin.save();
-      const { password, ...adminWithoutPassword } = savedAdmin.toObject();
+      // Remove password from response
+      const adminData = admin.toObject() as Record<string, any>;
+      delete adminData.password;
 
       return {
         message: "Admin created successfully",
-        admin: adminWithoutPassword,
+        admin: adminData,
       };
-    } catch (err) {
-      return error(500, {
-        message: "Failed to create admin",
-        errors: [
-          {
-            type: "ServerError",
-            path: ["server"],
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
-          },
-        ],
-      });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof DuplicateError || 
+          err instanceof ValidationError) {
+        throw err;
+      }
+      
+      // MongoDB duplicate key error
+      if (typeof err === 'object' && err !== null && 'code' in err && err.code === 11000) {
+        throw new DuplicateError('Admin', 'email');
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Unknown error occurred");
     }
   }
 
   /**
    * Update admin
-   * @throws {Error} 404 - Admin not found
-   * @throws {Error} 400 - Validation error
+   * @throws {NotFoundError} When admin is not found
+   * @throws {DuplicateError} When email already exists
+   * @throws {ValidationError} When validation fails
+   * @throws {ServerError} When an unexpected error occurs
    */
   async updateAdmin(id: string, data: UpdateAdminDTO) {
     try {
-      if (data.email) {
-        const existingAdmin = await Admin.findOne({
-          email: data.email,
-          _id: { $ne: id },
-        });
-        if (existingAdmin) {
-          return error(400, {
-            message: "Email already exists",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["email"],
-                message: "An admin with this email already exists",
-              },
-            ],
-          });
+      // Check if admin exists
+      const existingAdmin = await Admin.findById(id);
+      if (!existingAdmin) {
+        throw new NotFoundError('Admin', id);
+      }
+
+      // Check if email is being updated and if it already exists
+      if (data.email && data.email !== existingAdmin.email) {
+        const emailExists = await Admin.findOne({ email: data.email });
+        if (emailExists) {
+          throw new DuplicateError('Admin', 'email');
         }
       }
 
+      // Update admin
       const admin = await Admin.findByIdAndUpdate(
         id,
-        { $set: data },
+        { ...data },
         { new: true }
       ).select("-password");
 
       if (!admin) {
-        return error(404, {
-          message: "Admin not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["id"],
-              message: "Admin not found",
-            },
-          ],
-        });
+        throw new NotFoundError('Admin', id);
       }
 
       return {
         message: "Admin updated successfully",
         admin,
       };
-    } catch (err) {
-      return error(500, {
-        message: "Failed to update admin",
-        errors: [
-          {
-            type: "ServerError",
-            path: ["server"],
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
-          },
-        ],
-      });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError || 
+          err instanceof DuplicateError || 
+          err instanceof ValidationError) {
+        throw err;
+      }
+      
+      // MongoDB duplicate key error
+      if (typeof err === 'object' && err !== null && 'code' in err && err.code === 11000) {
+        throw new DuplicateError('Admin', 'email');
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Unknown error occurred");
     }
   }
 
   /**
    * Delete admin
-   * @throws {Error} 404 - Admin not found
+   * @throws {NotFoundError} When admin is not found
+   * @throws {ServerError} When an unexpected error occurs
    */
   async deleteAdmin(id: string) {
     try {
       const admin = await Admin.findByIdAndDelete(id);
 
       if (!admin) {
-        return error(404, {
-          message: "Admin not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["id"],
-              message: "Admin not found",
-            },
-          ],
-        });
+        throw new NotFoundError('Admin', id);
       }
 
       return {
         message: "Admin deleted successfully",
       };
-    } catch (err) {
-      return error(500, {
-        message: "Failed to delete admin",
-        errors: [
-          {
-            type: "ServerError",
-            path: ["server"],
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
-          },
-        ],
-      });
+    } catch (err: unknown) {
+      // Re-throw NotFoundError directly
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Unknown error occurred");
     }
   }
 
   /**
    * Change admin password
-   * @throws {Error} 404 - Admin not found
-   * @throws {Error} 400 - Invalid current password
+   * @throws {NotFoundError} When admin is not found
+   * @throws {ValidationError} When current password is invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async changePassword(id: string, data: ChangePasswordDTO) {
     try {
       const admin = await Admin.findById(id);
 
       if (!admin) {
-        return error(404, {
-          message: "Admin not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["id"],
-              message: "Admin not found",
-            },
-          ],
-        });
+        throw new NotFoundError('Admin', id);
       }
 
       const isValidPassword = await bcrypt.compare(
@@ -372,16 +301,7 @@ export default class AdminController {
       );
 
       if (!isValidPassword) {
-        return error(400, {
-          message: "Invalid current password",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["currentPassword"],
-              message: "Current password is incorrect",
-            },
-          ],
-        });
+        throw new ValidationError("Current password is incorrect", "currentPassword");
       }
 
       const hashedPassword = await bcrypt.hash(data.newPassword, 10);
@@ -392,40 +312,30 @@ export default class AdminController {
       return {
         message: "Password changed successfully",
       };
-    } catch (err) {
-      return error(500, {
-        message: "Failed to change password",
-        errors: [
-          {
-            type: "ServerError",
-            path: ["server"],
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
-          },
-        ],
-      });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError || 
+          err instanceof ValidationError) {
+        throw err;
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Unknown error occurred");
     }
   }
 
   /**
    * Reset admin password (super admin only)
-   * @param id
-   * @param data { password: string }
+   * @param id - Admin ID
+   * @param data - Password data
+   * @throws {NotFoundError} When admin is not found
+   * @throws {ServerError} When an unexpected error occurs
    */
   async resetPassword(id: string, data: { password: string }) {
     try {
       const admin = await Admin.findById(id);
       if (!admin) {
-        return error(404, {
-          message: "Admin not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["id"],
-              message: "Admin not found",
-            },
-          ],
-        });
+        throw new NotFoundError('Admin', id);
       }
       const hashedPassword = await bcrypt.hash(data.password, 10);
       await Admin.findByIdAndUpdate(id, {
@@ -434,18 +344,14 @@ export default class AdminController {
       return {
         message: "Password reset successfully",
       };
-    } catch (err) {
-      return error(500, {
-        message: "Failed to reset password",
-        errors: [
-          {
-            type: "ServerError",
-            path: ["server"],
-            message:
-              err instanceof Error ? err.message : "Unknown error occurred",
-          },
-        ],
-      });
+    } catch (err: unknown) {
+      // Re-throw NotFoundError directly
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Unknown error occurred");
     }
   }
 }
