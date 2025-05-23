@@ -1,14 +1,15 @@
-import { error } from "elysia";
 import Package from "~/models/Package";
 import { PackageInterface } from "~/utils/types";
 import PackageTemplate from "~/models/PackageTemplate";
 import Hotel from "~/models/Hotel";
 import Activity from "~/models/Activity";
+import { NotFoundError, ValidationError, ServerError } from "~/utils/errors";
 
 export default class PackageController {
   /**
    * Retrieve all packages with pagination and filtering
-   * @throws {Error} 400 - Invalid search parameters
+   * @throws {ValidationError} When pagination parameters are invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async getPackages({
     page = 1,
@@ -25,16 +26,10 @@ export default class PackageController {
   }) {
     try {
       if (page < 1 || limit < 1) {
-        return error(400, {
-          message: "Invalid pagination parameters",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["page", "limit"],
-              message: "Page and limit must be positive numbers",
-            },
-          ],
-        });
+        throw new ValidationError(
+          "Page and limit must be positive numbers",
+          "pagination"
+        );
       }
 
       const filter: Record<string, any> = {};
@@ -69,61 +64,52 @@ export default class PackageController {
           itemsPerPage: limit,
         },
       };
-    } catch (err: any) {
-      return error(500, {
-        message: "Failed to fetch packages",
-        errors: [
-          {
-            type: "ServerError",
-            path: [],
-            message: err.message,
-          },
-        ],
-      });
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof ValidationError) {
+        throw err;
+      }
+
+      // Convert other errors to ServerError
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to fetch packages"
+      );
     }
   }
 
   /**
    * Get package by ID
-   * @throws {Error} 404 - Package not found
+   * @throws {NotFoundError} When package is not found
+   * @throws {ServerError} When an unexpected error occurs
    */
   async getPackageById(id: string) {
     try {
       const packageItem = await Package.findById(id);
       if (!packageItem) {
-        return error(404, {
-          message: "Package not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["id"],
-              message: "Package with the specified ID does not exist",
-            },
-          ],
-        });
+        throw new NotFoundError("Package", id);
       }
 
       return {
         success: true,
         data: packageItem,
       };
-    } catch (err: any) {
-      return error(500, {
-        message: "Failed to fetch package",
-        errors: [
-          {
-            type: "ServerError",
-            path: [],
-            message: err.message,
-          },
-        ],
-      });
+    } catch (err: unknown) {
+      // Re-throw NotFoundError directly
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+
+      // Convert other errors to ServerError
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to fetch package"
+      );
     }
   }
 
   /**
    * Create a new package
-   * @throws {Error} 400 - Invalid package data
+   * @throws {ValidationError} When package data is invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async createPackage(packageData: Partial<PackageInterface>) {
     try {
@@ -133,29 +119,17 @@ export default class PackageController {
         const endDate = new Date(packageData.availability.endDate);
 
         if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-          return error(400, {
-            message: "Invalid date format",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["availability"],
-                message: "Start date and end date must be valid dates",
-              },
-            ],
-          });
+          throw new ValidationError(
+            "Start date and end date must be valid dates",
+            "availability"
+          );
         }
 
         if (startDate > endDate) {
-          return error(400, {
-            message: "Invalid date range",
-            errors: [
-              {
-                type: "ValidationError",
-                path: ["availability"],
-                message: "Start date must be before end date",
-              },
-            ],
-          });
+          throw new ValidationError(
+            "Start date must be before end date",
+            "availability"
+          );
         }
       }
 
@@ -287,103 +261,6 @@ export default class PackageController {
         errors: [
           {
             type: "ServerError",
-            path: [],
-            message: err.message,
-          },
-        ],
-      });
-    }
-  }
-
-  /**
-   * Create a customized version of an existing package
-   * @throws {Error} 404 - Package not found
-   * @throws {Error} 400 - Invalid customization data
-   */
-  async customizePackage(
-    packageId: string,
-    customizations: {
-      accommodations?: string[];
-      transportation?: "Flight" | "Train" | "Bus" | "Private Car" | "None";
-      activities?: string[];
-      meals?: {
-        breakfast?: boolean;
-        lunch?: boolean;
-        dinner?: boolean;
-      };
-      itinerary?: Array<{
-        day: number;
-        title: string;
-        description: string;
-        activities?: string[];
-      }>;
-    }
-  ) {
-    try {
-      const originalPackage = await Package.findById(packageId);
-
-      if (!originalPackage) {
-        return error(404, {
-          message: "Package not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["packageId"],
-              message: "Package with the specified ID does not exist",
-            },
-          ],
-        });
-      }
-
-      // Create a new customized package based on the original
-      const customizedPackage = {
-        name: `${originalPackage.name} (Customized)`,
-        price: originalPackage.price,
-        description: originalPackage.description,
-        images: originalPackage.images,
-        videos: originalPackage.videos,
-        duration: originalPackage.duration,
-        // Merge original and custom accommodations, removing duplicates
-        accommodations:
-          customizations.accommodations || originalPackage.accommodations,
-        // Use custom transportation or keep original
-        transportation:
-          customizations.transportation || originalPackage.transportation,
-        // Merge original and custom activities, removing duplicates
-        activities: customizations.activities
-          ? [
-              ...new Set([
-                ...originalPackage.activities,
-                ...customizations.activities,
-              ]),
-            ]
-          : originalPackage.activities,
-        // Merge meals preferences
-        meals: {
-          ...originalPackage.meals,
-          ...(customizations.meals || {}),
-        },
-        // Use custom itinerary or keep original
-        itinerary: customizations.itinerary || originalPackage.itinerary,
-        termsAndConditions: originalPackage.termsAndConditions,
-        availability: originalPackage.availability,
-        rating: originalPackage.rating,
-      };
-
-      // Create and save the new customized package
-      const newPackage = new Package(customizedPackage);
-      await newPackage.save();
-
-      return {
-        success: true,
-        data: newPackage,
-      };
-    } catch (err: any) {
-      return error(400, {
-        message: "Failed to customize package",
-        errors: [
-          {
-            type: "ValidationError",
             path: [],
             message: err.message,
           },

@@ -1,16 +1,17 @@
 import { HotelInterface } from "~/utils/types";
 import Hotel from "~/models/Hotel";
-import Booking from "~/models/Booking"; // Assuming you have a Booking model
+import Booking from "~/models/Booking";
 import Favorite from "~/models/Favorite";
-import { error } from "elysia";
 import FavoriteController from "./FavoriteController";
 import Room from "~/models/Room";
 import User from "~/models/User";
+import { NotFoundError, ValidationError, ServerError } from "~/utils/errors";
 
 export default class HotelController {
   /**
    * Retrieve all hotels with pagination and filtering
-   * @throws {Error} 400 - Invalid search parameters
+   * @throws {ValidationError} When pagination parameters are invalid
+   * @throws {ServerError} When an unexpected error occurs
    */
   async getHotels({
     page = 1,
@@ -33,16 +34,7 @@ export default class HotelController {
   }) {
     try {
       if (page < 1 || limit < 1) {
-        return error(404, {
-          message: "Invalid pagination parameters",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["page", "limit"],
-              message: "Page and limit must be positive numbers",
-            },
-          ],
-        });
+        throw new ValidationError("Page and limit must be positive numbers", "pagination");
       }
 
       const filter: Record<string, any> = {};
@@ -91,45 +83,27 @@ export default class HotelController {
           itemsPerPage: limit,
         },
       };
-    } catch (error: any) {
-      if (error.message.startsWith("{")) {
-        throw error;
+    } catch (err: unknown) {
+      // Re-throw custom errors directly
+      if (err instanceof ValidationError) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to fetch hotels",
-          errors: [
-            {
-              type: "ServerError",
-              path: [],
-              message: error.message,
-            },
-          ],
-        })
-      );
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Failed to fetch hotels");
     }
   }
 
   /**
    * Get hotel by ID
-   * @throws {Error} 404 - Hotel not found
+   * @throws {NotFoundError} When hotel is not found
+   * @throws {ServerError} When an unexpected error occurs
    */
   async getHotelById(id: string) {
     try {
       const hotel = await Hotel.findById(id);
       if (!hotel) {
-        throw new Error(
-          JSON.stringify({
-            message: "Hotel not found",
-            errors: [
-              {
-                type: "NotFoundError",
-                path: ["id"],
-                message: "Hotel with the specified ID does not exist",
-              },
-            ],
-          })
-        );
+        throw new NotFoundError('Hotel', id);
       }
 
       const rooms = await Room.find({ hotel: id });
@@ -138,22 +112,14 @@ export default class HotelController {
         status: "success",
         data: { hotel, rooms },
       };
-    } catch (error: any) {
-      if (error.message.startsWith("{")) {
-        throw error;
+    } catch (err: unknown) {
+      // Re-throw NotFoundError directly
+      if (err instanceof NotFoundError) {
+        throw err;
       }
-      throw new Error(
-        JSON.stringify({
-          message: "Failed to fetch hotel",
-          errors: [
-            {
-              type: "ServerError",
-              path: [],
-              message: error.message,
-            },
-          ],
-        })
-      );
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Failed to fetch hotel");
     }
   }
 

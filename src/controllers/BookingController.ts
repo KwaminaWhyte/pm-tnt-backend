@@ -1,4 +1,3 @@
-import { error } from "elysia";
 import { type ApiResponse } from "~/utils/types";
 import Booking from "~/models/Booking";
 import Hotel from "~/models/Hotel";
@@ -12,6 +11,7 @@ import {
 } from "~/utils/types";
 import mongoose from "mongoose";
 import { ElysiaCustomStatusResponse } from "elysia/dist/error";
+import { NotFoundError, ValidationError, ServerError, AuthorizationError } from "~/utils/errors";
 
 // Define the booking type interfaces to clarify typings
 interface HotelBookingType {
@@ -265,6 +265,10 @@ export default class BookingController {
 
   /**
    * Get a single booking by ID
+   * @throws {NotFoundError} When booking is not found
+   * @throws {ValidationError} When booking validation fails
+   * @throws {AuthorizationError} When user is not authorized to access the booking
+   * @throws {ServerError} When an unexpected error occurs
    */
   public async getBookingById(
     bookingId: string,
@@ -314,25 +318,18 @@ export default class BookingController {
         .populate("cancellation.cancelledBy", "firstName lastName email");
 
       if (!booking) {
-        return {
-          success: false,
-          statusCode: 404,
-          message: "Booking not found",
-          timestamp: new Date().toISOString(),
-          data: undefined,
-        };
+        throw new NotFoundError('Booking', bookingId);
+      }
+
+      // If userId is provided, ensure the booking belongs to this user
+      if (userId && booking.user.toString() !== userId) {
+        throw new AuthorizationError('You are not authorized to access this booking');
       }
 
       // Add additional booking validation and status checks
       const validationResult = this.validateBookingStatus(booking);
       if (!validationResult.isValid) {
-        return {
-          success: false,
-          statusCode: 400,
-          message: validationResult.message,
-          timestamp: new Date().toISOString(),
-          data: booking,
-        };
+        throw new ValidationError(validationResult.message, 'status');
       }
 
       return {
@@ -342,17 +339,18 @@ export default class BookingController {
         timestamp: new Date().toISOString(),
         data: booking,
       };
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error retrieving booking:", err);
 
-      return {
-        success: false,
-        statusCode: 500,
-        message: "Error retrieving booking",
-        timestamp: new Date().toISOString(),
-        error: err instanceof Error ? err.message : "Unknown error",
-        data: undefined,
-      };
+      // Re-throw custom errors directly
+      if (err instanceof NotFoundError || 
+          err instanceof ValidationError || 
+          err instanceof AuthorizationError) {
+        throw err;
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Error retrieving booking");
     }
   }
 
@@ -411,12 +409,18 @@ export default class BookingController {
 
   /**
    * Create a new booking
+   * @throws {ValidationError} When booking data is invalid or required fields are missing
+   * @throws {ServerError} When an unexpected error occurs
    */
   public async createBooking(
     bookingData: ExtendedCreateBookingDTO
   ): Promise<ApiResponse<BookingInterface>> {
     try {
-      await this.validateAvailability(bookingData);
+      // Validate availability first
+      const isAvailable = await this.validateAvailability(bookingData);
+      if (isAvailable === false) {
+        throw new ValidationError('The requested booking is not available for the selected dates', 'availability');
+      }
 
       const totalAmount = await this.calculateTotalAmount(bookingData);
       const bookingReference = this.generateBookingReference();
@@ -431,7 +435,7 @@ export default class BookingController {
         } else if (bookingData.vehicleBooking) {
           bookingData.bookingType = "vehicle";
         } else {
-          return error(400, { message: "Booking type is required" });
+          throw new ValidationError("Booking type is required", "bookingType");
         }
       }
 
@@ -510,12 +514,29 @@ export default class BookingController {
         timestamp: new Date(),
         data: savedBooking,
       };
-    } catch (err) {
-      console.log(err);
-      return error(500, {
-        message: "Error creating booking",
-        error: err,
-      });
+    } catch (err: unknown) {
+      console.log("Error creating booking:", err);
+      
+      // Re-throw ValidationError directly
+      if (err instanceof ValidationError) {
+        throw err;
+      }
+      
+      // Handle Mongoose validation errors
+      if (typeof err === 'object' && err !== null && 'name' in err && err.name === 'ValidationError') {
+        const mongooseErr = err as any;
+        const fieldName = Object.keys(mongooseErr.errors)[0] || 'unknown';
+        const message = mongooseErr.errors[fieldName]?.message || 'Validation failed';
+        throw new ValidationError(message, fieldName);
+      }
+      
+      // Handle duplicate key errors
+      if (typeof err === 'object' && err !== null && 'code' in err && err.code === 11000) {
+        throw new ValidationError('A booking with this reference already exists', 'bookingReference');
+      }
+      
+      // Convert other errors to ServerError
+      throw new ServerError(err instanceof Error ? err.message : "Error creating booking");
     }
   }
 
@@ -789,44 +810,45 @@ export default class BookingController {
 
   private async validateAvailability(
     bookingData: ExtendedCreateBookingDTO | ExtendedUpdateBookingDTO
-  ): Promise<void> {
-    if (bookingData.hotelBooking) {
-      const isHotelAvailable = await this.checkHotelAvailability(
-        bookingData.hotelBooking.hotelId,
-        bookingData.hotelBooking.checkIn,
-        bookingData.hotelBooking.checkOut
-      );
-      if (!isHotelAvailable) {
-        throw new Error(
-          "Selected hotel rooms are not available for the specified dates"
+  ): Promise<boolean> {
+    try {
+      if (bookingData.hotelBooking) {
+        const isHotelAvailable = await this.checkHotelAvailability(
+          bookingData.hotelBooking.hotelId,
+          bookingData.hotelBooking.checkIn,
+          bookingData.hotelBooking.checkOut
         );
+        if (!isHotelAvailable) {
+          return false;
+        }
       }
-    }
 
-    if (bookingData.vehicleBooking) {
-      const isVehicleAvailable = await this.checkVehicleAvailability(
-        bookingData.vehicleBooking.vehicleId,
-        bookingData.vehicleBooking.pickupDate,
-        bookingData.vehicleBooking.returnDate
-      );
-      if (!isVehicleAvailable) {
-        throw new Error(
-          "Selected vehicle is not available for the specified dates"
+      if (bookingData.vehicleBooking) {
+        const isVehicleAvailable = await this.checkVehicleAvailability(
+          bookingData.vehicleBooking.vehicleId,
+          bookingData.vehicleBooking.pickupDate,
+          bookingData.vehicleBooking.returnDate
         );
+        if (!isVehicleAvailable) {
+          return false;
+        }
       }
-    }
 
-    if (bookingData.packageBooking) {
-      const isPackageAvailable = await this.checkPackageAvailability(
-        bookingData.packageBooking.package,
-        bookingData.packageBooking.startDate as string,
-        bookingData.packageBooking.participants
-      );
-      if (!isPackageAvailable) {
-        throw new Error(
-          "Selected package is not available for the specified dates and participants"
+      if (bookingData.packageBooking) {
+        const isPackageAvailable = await this.checkPackageAvailability(
+          bookingData.packageBooking.package,
+          bookingData.packageBooking.startDate as string,
+          bookingData.packageBooking.participants
         );
+        if (!isPackageAvailable) {
+          return false;
+        }
       }
+      
+      return true;
+    } catch (err) {
+      console.error("Error validating availability:", err);
+      return false;
     }
   }
 
