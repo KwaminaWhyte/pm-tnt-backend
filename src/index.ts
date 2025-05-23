@@ -119,6 +119,53 @@ const app = new Elysia()
       },
     })
   )
+  .onError(({ error, code }) => {
+    if (code === "NOT_FOUND") return;
+
+    let errorMessage;
+
+    try {
+      // Check if error message is a string (for custom JSON errors)
+      if (typeof error === "object" && error !== null && "message" in error) {
+        try {
+          // Attempt to parse the error if it's in JSON format
+          const parsedError = JSON.parse(error.message as string);
+          errorMessage = {
+            message: parsedError.message || "Validation failed",
+            data: parsedError.errors
+              ? parsedError.errors.map((err: any) => ({
+                  type: err.type,
+                  schema: err.schema,
+                  path: err.path,
+                  value: err.value,
+                  message: err.message,
+                  summary: err.summary,
+                }))
+              : null,
+          };
+        } catch (e) {
+          // Fallback in case parsing fails
+          errorMessage = {
+            message: error.message || "An unknown error occurred",
+            data: null,
+          };
+        }
+      } else {
+        errorMessage = {
+          message: "An unknown error occurred",
+          data: null,
+        };
+      }
+    } catch (e) {
+      errorMessage = {
+        message: "Error processing the request",
+        data: null,
+      };
+    }
+
+    console.log(errorMessage);
+    return errorMessage;
+  })
   .use(jwtConfig)
 
   // admin routes
@@ -143,53 +190,6 @@ const app = new Elysia()
   .use(hotelsRoutes)
   .use(activitiesRoutes)
   .use(vehiclesRoutes);
-app.onError(({ error, code }) => {
-  if (code === "NOT_FOUND") return;
-
-  let errorMessage;
-
-  try {
-    // Check if error message is a string (for custom JSON errors)
-    if (typeof error === "object" && error !== null && "message" in error) {
-      try {
-        // Attempt to parse the error if it's in JSON format
-        const parsedError = JSON.parse(error.message as string);
-        errorMessage = {
-          message: parsedError.message || "Validation failed",
-          data: parsedError.errors
-            ? parsedError.errors.map((err: any) => ({
-                type: err.type,
-                schema: err.schema,
-                path: err.path,
-                value: err.value,
-                message: err.message,
-                summary: err.summary,
-              }))
-            : null,
-        };
-      } catch (e) {
-        // Fallback in case parsing fails
-        errorMessage = {
-          message: error.message || "An unknown error occurred",
-          data: null,
-        };
-      }
-    } else {
-      errorMessage = {
-        message: "An unknown error occurred",
-        data: null,
-      };
-    }
-  } catch (e) {
-    errorMessage = {
-      message: "Error processing the request",
-      data: null,
-    };
-  }
-
-  console.log(errorMessage);
-  return errorMessage;
-});
 
 app.get("/", () => {
   return {
