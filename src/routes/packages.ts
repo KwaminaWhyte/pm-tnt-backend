@@ -508,7 +508,7 @@ const templateRoutes = new Elysia()
   })
   // Public routes
   .get(
-    "/templates/public",
+    "/templates",
     async () => {
       const response = await PackageTemplateController.getPublicTemplates();
       return response;

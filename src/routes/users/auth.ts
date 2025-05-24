@@ -87,6 +87,23 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
     }
   )
 
+  .get(
+    "/verify-email",
+    ({ query }) => userAuthController.verifyEmail(query.token, query.email),
+    {
+      query: t.Object({
+        token: t.String(),
+        email: t.String(),
+        // email: t.String({ format: "email" }),
+      }),
+      detail: {
+        tags: ["Authentication - User"],
+        summary: "Verify email address",
+        description: "Verify user's email address using the verification token",
+      },
+    }
+  )
+
   .post(
     "/resend-verification-email",
     ({ body }) => userAuthController.resendVerificationEmail(body.email),

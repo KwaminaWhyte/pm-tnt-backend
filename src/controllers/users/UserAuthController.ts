@@ -80,7 +80,9 @@ export default class UserAuthController {
     await user.save();
 
     // Create verification email
-    const verificationUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/verify-email?token=${verificationToken}&email=${email}`;
+    const verificationUrl = `${
+      process.env.FRONTEND_URL || "http://localhost:3000"
+    }/verify-email?token=${verificationToken}&email=${email}`;
 
     const emailBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -117,7 +119,8 @@ export default class UserAuthController {
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified,
       },
-      message: "Registration successful. Please check your email to verify your account.",
+      message:
+        "Registration successful. Please check your email to verify your account.",
     };
   }
 
@@ -201,7 +204,7 @@ export default class UserAuthController {
     }
 
     // Generate JWT
-    const token = jwt_auth?.sign({
+    const token = await jwt_auth?.sign({
       userId: user._id,
       role: user.role,
     });
@@ -451,7 +454,9 @@ export default class UserAuthController {
       await user.save();
 
       // Create verification email
-      const verificationUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/verify-email?token=${verificationToken}&email=${email}`;
+      const verificationUrl = `${
+        process.env.FRONTEND_URL || "http://localhost:3000"
+      }/verify-email?token=${verificationToken}&email=${email}`;
 
       const emailBody = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

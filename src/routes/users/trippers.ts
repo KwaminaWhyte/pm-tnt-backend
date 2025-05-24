@@ -36,7 +36,9 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
 
       // Safely extract the ID from the JWT payload as a string
       const payload = data as Record<string, any>;
-      const userId = payload.id || payload._id;
+      console.log("JWT payload:", payload);
+
+      const userId = payload.userId;
 
       if (!userId) {
         console.error("No ID found in token payload:", payload);
@@ -74,7 +76,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
           if (data) {
             // Safely extract the ID from the JWT payload as a string
             const payload = data as Record<string, any>;
-            const userId = payload.id || payload._id;
+            const userId = payload.userId;
 
             if (userId) {
               // Add userId to query params
@@ -117,7 +119,7 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
           if (data) {
             // Safely extract the ID from the JWT payload as a string
             const payload = data as Record<string, any>;
-            const userId = payload.id || payload._id;
+            const userId = payload.userId;
 
             if (userId) {
               // Add userId to query params
