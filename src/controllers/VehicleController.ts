@@ -239,94 +239,9 @@ export default class VehicleController {
         JSON.stringify(data, null, 2)
       );
 
-      // Set default dates for maintenance if not provided
-      const currentDate = new Date();
-      const nextServiceDate = new Date();
-      nextServiceDate.setMonth(nextServiceDate.getMonth() + 3); // Default next service in 3 months
-
-      // Prepare vehicle data with proper structure
-      const vehicleData = {
-        // Basic information
-        vehicleType: data.vehicleType,
-        make: data.make,
-        model: data.model,
-        year: data.year || new Date().getFullYear(),
-        capacity: data.capacity || 1,
-        pricePerDay: data.pricePerDay || 0,
-        features: Array.isArray(data.features) ? data.features : [],
-        images: Array.isArray(data.images) ? data.images : [],
-        policies: data.policies || "Standard rental policies apply.",
-
-        // Availability with location
-        availability: {
-          isAvailable: true,
-          location: {
-            city: data.city, // Use top-level city as required by validation
-            country: data.country, // Use top-level country as required by validation
-            coordinates: data.coordinates || {
-              latitude: 0,
-              longitude: 0,
-            },
-          },
-        },
-
-        // Details with nested structure
-        details: {
-          licensePlate: data.licensePlate || "TBD",
-          color: data.color || "Unknown",
-          transmission: data.transmission || "Automatic",
-          fuelType: data.fuelType || "Petrol",
-          mileage: data.mileage || 0,
-          vin: data.vin || "TBD",
-          insurance: {
-            provider: data.insuranceProvider || "TBD",
-            policyNumber: data.insurancePolicyNumber || "TBD",
-            expiryDate: data.insuranceExpiryDate
-              ? new Date(data.insuranceExpiryDate)
-              : new Date(
-                  currentDate.setFullYear(currentDate.getFullYear() + 1)
-                ),
-            coverage: data.insuranceCoverage || "Basic",
-          },
-        },
-
-        // Maintenance information
-        maintenance: {
-          lastService: data.lastService
-            ? new Date(data.lastService)
-            : currentDate,
-          nextService: data.nextService
-            ? new Date(data.nextService)
-            : nextServiceDate,
-          status: "Available",
-          history: [],
-        },
-
-        // Rental terms
-        rentalTerms: {
-          minimumAge: data.minimumAge || 18,
-          securityDeposit: data.securityDeposit || 0,
-          mileageLimit: data.mileageLimit || 0,
-          additionalDrivers: data.additionalDrivers || false,
-          requiredDocuments: Array.isArray(data.requiredDocuments)
-            ? data.requiredDocuments
-            : ["Driver's License", "Credit Card"],
-          insuranceOptions: [
-            {
-              type: "Basic",
-              coverage: "Collision Damage Waiver",
-              pricePerDay: 10,
-            },
-          ],
-        },
-      };
-
-      console.log(
-        "Processed vehicle data:",
-        JSON.stringify(vehicleData, null, 2)
-      );
-
-      const vehicle = new Vehicle(vehicleData);
+      // No need to restructure the data as it's already properly structured from the form
+      // Just create the vehicle directly with the data
+      const vehicle = new Vehicle(data);
 
       const savedVehicle = await vehicle.save();
       return {
