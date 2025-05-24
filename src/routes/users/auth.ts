@@ -1,10 +1,12 @@
 import { Elysia, t } from "elysia";
 import UserController from "~/controllers/UserController";
+import UserAuthController from "~/controllers/users/UserAuthController";
 
 const userController = new UserController();
+const userAuthController = new UserAuthController();
 
 const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
-  .post("/register", ({ body }) => userController.register(body), {
+  .post("/register", ({ body }) => userAuthController.register(body), {
     body: t.Object({
       email: t.String({ format: "email" }),
       password: t.String({ minLength: 6 }),
@@ -22,7 +24,7 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
   .post(
     "/login",
     async ({ body, jwt_auth }) =>
-      await userController.loginWithEmail(body, jwt_auth),
+      await userAuthController.loginWithEmail(body, jwt_auth),
     {
       body: t.Object({
         email: t.String({ format: "email" }),
@@ -38,7 +40,7 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
 
   .post(
     "/login/phone",
-    async ({ body: { phone } }) => await userController.requestOTP(phone),
+    async ({ body: { phone } }) => await userAuthController.requestOTP(phone),
     {
       body: t.Object({
         phone: t.String({ pattern: "^\\+?[0-9]\\d{1,14}$" }),
@@ -53,7 +55,7 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
 
   .post(
     "/verify-otp",
-    ({ body, jwt_auth }) => userController.verifyOtp(body, jwt_auth),
+    ({ body, jwt_auth }) => userAuthController.verifyOtp(body, jwt_auth),
     {
       body: t.Object({
         phone: t.String({ pattern: "^\\+?[0-9]\\d{1,14}$" }),
@@ -70,7 +72,7 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
 
   .post(
     "/verify-email",
-    ({ body }) => userController.verifyEmail(body.token, body.email),
+    ({ body }) => userAuthController.verifyEmail(body.token, body.email),
     {
       body: t.Object({
         token: t.String(),
@@ -87,7 +89,7 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
 
   .post(
     "/resend-verification-email",
-    ({ body }) => userController.resendVerificationEmail(body.email),
+    ({ body }) => userAuthController.resendVerificationEmail(body.email),
     {
       body: t.Object({
         email: t.String({ format: "email" }),
@@ -170,7 +172,11 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
   .put(
     "/me/password",
     async ({ userId, body: { currentPassword, newPassword } }) =>
-      userController.changePassword({ userId, currentPassword, newPassword }),
+      userAuthController.changePassword({
+        userId,
+        currentPassword,
+        newPassword,
+      }),
     {
       body: t.Object({
         currentPassword: t.String({ minLength: 6 }),

@@ -1,561 +1,9 @@
 import User from "~/models/User";
-import Email from "~/models/Email";
-import generateOTP from "~/utils/generateOtp";
-import sendSMS from "~/utils/sendSMS";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
-import {
-  LoginWithEmailDTO,
-  LoginWithPhoneDTO,
-  VerifyOtpDTO,
-  UserSearchParams,
-  UpdateUserDTO,
-  RegisterDTO,
-} from "~/utils/types";
+import { UserSearchParams, UpdateUserDTO } from "~/utils/types";
 import { error } from "elysia";
 
 export default class UserController {
-  /**
-   * Register a new user
-   * @throws {Error} 400 - Invalid input data
-   *
-   */
-  async register(data: RegisterDTO) {
-    const { email, password, firstName, lastName, phone } = data;
-
-    if (!email || !password) {
-      return error(404, {
-        message: "Invalid input data",
-        errors: [
-          {
-            type: "ValidationError",
-            path: ["email", "password"],
-            message: "Email and password are required",
-          },
-        ],
-      });
-    }
-
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return error(404, {
-        message: "Email already exists",
-        errors: [
-          {
-            type: "ValidationError",
-            path: ["email"],
-            message: "An account with this email already exists",
-          },
-        ],
-      });
-    }
-
-    const existingPhone = await User.findOne({ phone });
-    if (existingPhone) {
-      return error(404, {
-        message: "Phone already exists",
-        errors: [
-          {
-            type: "ValidationError",
-            path: ["phone"],
-            message: "An account with this phone number already exists",
-          },
-        ],
-      });
-    }
-
-    // Generate verification token
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const tokenExpiry = new Date();
-    tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Token valid for 24 hours
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({
-      firstName,
-      lastName,
-      phone,
-      email,
-      password: hashedPassword,
-      emailVerificationToken: verificationToken,
-      emailVerificationExpires: tokenExpiry,
-    });
-    await user.save();
-
-    // Create verification email
-    const verificationUrl = `${
-      process.env.FRONTEND_URL || "http://localhost:3000"
-    }/verify-email?token=${verificationToken}&email=${email}`;
-
-    const emailBody = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Welcome to PM Travel and Tour!</h2>
-        <p>Hello ${firstName},</p>
-        <p>Thank you for registering with PM Travel and Tour. Please verify your email address by clicking the button below:</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${verificationUrl}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Verify Email Address</a>
-        </div>
-        <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
-        <p><a href="${verificationUrl}">${verificationUrl}</a></p>
-        <p>This link will expire in 24 hours.</p>
-        <p>If you did not create an account, please ignore this email.</p>
-        <p>Best regards,<br>PM Travel and Tour Team</p>
-      </div>
-    `;
-
-    // Create email record for the cron job to pick up
-    const emailRecord = new Email({
-      email: user.email,
-      subject: "Verify Your Email - PM Travel and Tour",
-      body: emailBody,
-      isSent: false,
-    });
-    await emailRecord.save();
-
-    console.log({ verificationToken, hashedPassword });
-    return {
-      user: {
-        _id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone,
-        isEmailVerified: user.isEmailVerified,
-        isPhoneVerified: user.isPhoneVerified,
-      },
-      message:
-        "Registration successful. Please check your email to verify your account.",
-    };
-  }
-
-  /**
-   * Authenticate user with email and password
-   * @throws {Error} 401 - Invalid credentials
-   * @throws {Error} 400 - Invalid input data
-   * @throws {Error} 403 - Email not verified
-   */
-  async loginWithEmail(data: LoginWithEmailDTO, jwt_auth?: any) {
-    const { email, password } = data;
-
-    if (!email || !password) {
-      return error(400, {
-        message: "Invalid input data",
-        errors: [
-          {
-            type: "ValidationError",
-            message: "Email and password are required",
-          },
-        ],
-      });
-    }
-
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return error(401, {
-        message: "User not found",
-        errors: [
-          {
-            type: "AuthenticationError",
-            message: "Invalid credentials",
-          },
-        ],
-      });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordValid) {
-      return error(401, {
-        message: "Invalid credentials",
-        errors: [
-          {
-            type: "AuthenticationError",
-            message: "Incorrect password",
-          },
-        ],
-      });
-    }
-
-    // Check if email is verified
-    if (user.email && !user.isEmailVerified) {
-      return error(403, {
-        message: "Email not verified",
-        errors: [
-          {
-            type: "VerificationError",
-            message: "Please verify your email before logging in",
-          },
-        ],
-        user: {
-          _id: user._id,
-          email: user.email,
-        },
-      });
-    }
-
-    // Optional: Generate JWT token if jwt_auth is provided
-    let token = null;
-    if (jwt_auth) {
-      token = await jwt_auth.sign({
-        id: user.id,
-        email: user.email,
-      });
-    }
-
-    return {
-      user,
-      token,
-    };
-  }
-
-  /**
-   * Request OTP for phone authentication
-   * @throws {Error} 404 - User not found
-   * @throws {Error} 400 - Invalid phone number
-   * @throws {Error} 500 - SMS service error
-   */
-  async requestOTP(phone: string) {
-    if (!phone) {
-      return error(404, {
-        message: "Invalid input data",
-        errors: [
-          {
-            type: "ValidationError",
-            path: ["phone"],
-            message: "Phone number is required",
-          },
-        ],
-      });
-    }
-
-    const user = await User.findOne({ phone });
-    if (!user) {
-      return error(404, {
-        message: "User not found",
-        errors: [
-          {
-            type: "NotFoundError",
-            path: ["phone"],
-            message: "No account found with this phone number",
-          },
-        ],
-      });
-    }
-
-    const otp = generateOTP();
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 5);
-
-    await User.updateOne(
-      { _id: user._id },
-      {
-        otp: {
-          code: otp,
-          expiresAt,
-        },
-      }
-    );
-
-    try {
-      await sendSMS({
-        smsText: `Your verification code is ${otp} - PMTnT`,
-        recipient: phone,
-      });
-      return {
-        message: "OTP sent successfully",
-      };
-    } catch (error) {
-      return error(500, {
-        message: "SMS service error",
-        errors: [
-          {
-            type: "ServiceError",
-            path: ["sms"],
-            message: "Failed to send OTP",
-          },
-        ],
-      });
-    }
-  }
-
-  /**
-   * Verify OTP and complete phone authentication
-   * @throws {Error} 401 - Invalid or expired OTP
-   * @throws {Error} 404 - User not found
-   */
-  async verifyOtp(data: VerifyOtpDTO, jwt_auth?: any) {
-    const { phone, otp } = data;
-
-    if (!phone || !otp) {
-      return error(404, {
-        message: "Invalid input data",
-        errors: [
-          {
-            type: "ValidationError",
-            path: ["phone", "otp"],
-            message: "Phone and OTP are required",
-          },
-        ],
-      });
-    }
-
-    const user = await User.findOne({
-      phone,
-      "otp.code": otp,
-      "otp.expiresAt": { $gt: new Date() },
-    });
-
-    if (!user) {
-      return error(401, {
-        message: "Authentication failed",
-        errors: [
-          {
-            type: "AuthenticationError",
-            path: ["otp"],
-            message: "Invalid or expired OTP",
-          },
-        ],
-      });
-    }
-
-    await User.updateOne(
-      { _id: user._id },
-      {
-        $unset: { otp: "" },
-        isPhoneVerified: true,
-      }
-    );
-
-    const token = await jwt_auth.sign({ id: user.id });
-    const userData = await User.findById(user.id).select("-password -otp");
-
-    return {
-      token,
-      user: userData,
-    };
-  }
-
-  /**
-   * Get user by ID
-   * @throws {Error} 404 - User not found
-   */
-  async getUser(userId: string) {
-    try {
-      const user = await User.findById(userId).select("-password -otp");
-
-      if (!user) {
-        return error(404, {
-          message: "User not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["userId"],
-              message: "User not found",
-            },
-          ],
-        });
-      }
-
-      return {
-        user,
-      };
-    } catch (e) {
-      if (e instanceof Error && e.message.includes("User not found")) {
-        throw e;
-      }
-      return error(400, {
-        message: "Invalid user ID",
-        errors: [
-          {
-            type: "ValidationError",
-            path: ["userId"],
-            message: "Invalid user ID format",
-          },
-        ],
-      });
-    }
-  }
-
-  /**
-   * Get user by ID
-   * @throws {Error} 404 - User not found
-   */
-  async getUserById(id: string) {
-    try {
-      const user = await User.findById(id).select("-password -otp");
-
-      if (!user) {
-        return error(404, {
-          message: "User not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["id"],
-              message: "User not found",
-            },
-          ],
-        });
-      }
-
-      return { user };
-    } catch (error) {
-      if (error instanceof Error && error.message.includes("User not found")) {
-        throw error;
-      }
-      return error(400, {
-        message: "Invalid user ID",
-        errors: [
-          {
-            type: "ValidationError",
-            path: ["id"],
-            message: "Invalid user ID format",
-          },
-        ],
-      });
-    }
-  }
-
-  /**
-   * Change user password
-   * @throws {Error} 400 - Invalid input data
-   * @throws {Error} 401 - Invalid current password
-   * @throws {Error} 404 - User not found
-   */
-  async changePassword({
-    userId,
-    currentPassword,
-    newPassword,
-  }: {
-    userId: string;
-    currentPassword: string;
-    newPassword: string;
-  }) {
-    if (!currentPassword || !newPassword) {
-      return error(400, {
-        message: "Invalid input data",
-        errors: [
-          {
-            type: "ValidationError",
-            path: ["currentPassword", "newPassword"],
-            message: "Current password and new password are required",
-          },
-        ],
-      });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return error(404, {
-        message: "User not found",
-        errors: [
-          {
-            type: "NotFoundError",
-            path: ["userId"],
-            message: "User not found",
-          },
-        ],
-      });
-    }
-
-    const isValidPassword = await bcrypt.compare(
-      currentPassword,
-      user.password || ""
-    );
-    if (!isValidPassword) {
-      return error(401, {
-        message: "Invalid current password",
-        errors: [
-          {
-            type: "AuthenticationError",
-            path: ["currentPassword"],
-            message: "Current password is incorrect",
-          },
-        ],
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await User.findByIdAndUpdate(userId, {
-      password: hashedPassword,
-    });
-
-    return {
-      message: "Password changed successfully",
-    };
-  }
-
-  /**
-   * Create new user
-   * @throws {Error} 400 - Validation error or duplicate user
-   */
-  async createUser(userData: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    password?: string;
-  }) {
-    const errors = [];
-
-    // Validate required fields
-    if (!userData.firstName || !userData.phone) {
-      return error(400, {
-        message: "Missing required fields",
-        errors: [
-          {
-            type: "ValidationError",
-            path: ["firstName", "phone"],
-            message: "First name and phone are required",
-          },
-        ],
-      });
-    }
-
-    // Check for existing users
-    if (userData.phone) {
-      const phoneExists = await User.findOne({ phone: userData.phone });
-      if (phoneExists) {
-        errors.push({
-          type: "DuplicateError",
-          path: ["phone"],
-          message: "Phone number already in use",
-        });
-      }
-    }
-
-    if (userData.email) {
-      const emailExists = await User.findOne({ email: userData.email });
-      if (emailExists) {
-        errors.push({
-          type: "DuplicateError",
-          path: ["email"],
-          message: "Email already in use",
-        });
-      }
-    }
-
-    if (errors.length > 0) {
-      return error(400, {
-        message: "Validation error",
-        errors,
-      });
-    }
-
-    // Hash password if provided
-    if (userData.password) {
-      userData.password = await bcrypt.hash(userData.password, 10);
-    }
-
-    const user = await User.create(userData);
-    const userResponse = await User.findById(user._id).select("-password -otp");
-
-    return {
-      message: "User created successfully",
-      user: userResponse,
-    };
-  }
-
   /**
    * Get users with pagination and search
    * @throws {Error} 400 - Invalid search parameters
@@ -650,6 +98,157 @@ export default class UserController {
   }
 
   /**
+   * Get user by ID
+   * @throws {Error} 404 - User not found
+   */
+  async getUser(userId: string) {
+    try {
+      const user = await User.findById(userId).select("-password -otp");
+
+      if (!user) {
+        return error(404, {
+          message: "User not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["userId"],
+              message: "User not found",
+            },
+          ],
+        });
+      }
+
+      return {
+        user,
+      };
+    } catch (e) {
+      if (e instanceof Error && e.message.includes("User not found")) {
+        throw e;
+      }
+      return error(400, {
+        message: "Invalid user ID",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["userId"],
+            message: "Invalid user ID format",
+          },
+        ],
+      });
+    }
+  }
+
+  /**
+   * Get user by ID
+   * @throws {Error} 404 - User not found
+   */
+  async getUserById(id: string) {
+    try {
+      const user = await User.findById(id).select("-password -otp");
+
+      if (!user) {
+        return error(404, {
+          message: "User not found",
+          errors: [
+            {
+              type: "NotFoundError",
+              path: ["id"],
+              message: "User not found",
+            },
+          ],
+        });
+      }
+
+      return { user };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("User not found")) {
+        throw error;
+      }
+      return error(400, {
+        message: "Invalid user ID",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["id"],
+            message: "Invalid user ID format",
+          },
+        ],
+      });
+    }
+  }
+
+  /**
+   * Create new user
+   * @throws {Error} 400 - Validation error or duplicate user
+   */
+  async createUser(userData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    password?: string;
+  }) {
+    const errors = [];
+
+    // Validate required fields
+    if (!userData.firstName || !userData.phone) {
+      return error(400, {
+        message: "Missing required fields",
+        errors: [
+          {
+            type: "ValidationError",
+            path: ["firstName", "phone"],
+            message: "First name and phone are required",
+          },
+        ],
+      });
+    }
+
+    // Check for existing users
+    if (userData.phone) {
+      const phoneExists = await User.findOne({ phone: userData.phone });
+      if (phoneExists) {
+        errors.push({
+          type: "DuplicateError",
+          path: ["phone"],
+          message: "Phone number already in use",
+        });
+      }
+    }
+
+    if (userData.email) {
+      const emailExists = await User.findOne({ email: userData.email });
+      if (emailExists) {
+        errors.push({
+          type: "DuplicateError",
+          path: ["email"],
+          message: "Email already in use",
+        });
+      }
+    }
+
+    if (errors.length > 0) {
+      return error(400, {
+        message: "Validation error",
+        errors,
+      });
+    }
+
+    // Hash password if provided
+    if (userData.password) {
+      userData.password = await bcrypt.hash(userData.password, 10);
+    }
+
+    const user = await User.create(userData);
+    const userResponse = await User.findById(user._id).select("-password -otp");
+
+    return {
+      message: "User created successfully",
+      user: userResponse,
+    };
+  }
+
+  /**
    * Delete user (soft delete)
    * @throws {Error} 404 - User not found
    */
@@ -705,6 +304,8 @@ export default class UserController {
    * @throws {Error} 400 - Validation error or duplicate data
    */
   async updateUserProfile(id: string, updateData: UpdateUserDTO) {
+    console.log(updateData);
+
     try {
       const user = await User.findById(id);
       if (!user) {
@@ -786,143 +387,6 @@ export default class UserController {
           ],
         })
       );
-    }
-  }
-
-  /**
-   * Verify user email with verification token
-   * @throws {Error} 400 - Invalid or expired token
-   * @throws {Error} 404 - User not found
-   */
-  async verifyEmail(token: string, email: string) {
-    try {
-      const user = await User.findOne({
-        email,
-        emailVerificationToken: token,
-        emailVerificationExpires: { $gt: new Date() },
-      });
-
-      if (!user) {
-        return error(400, {
-          message: "Invalid or expired verification token",
-          errors: [
-            {
-              type: "ValidationError",
-              path: ["token"],
-              message: "The verification link is invalid or has expired",
-            },
-          ],
-        });
-      }
-
-      // Update user as verified
-      user.isEmailVerified = true;
-      user.emailVerificationToken = undefined;
-      user.emailVerificationExpires = undefined;
-      await user.save();
-
-      return {
-        message: "Email verified successfully",
-        user: {
-          _id: user._id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          isEmailVerified: user.isEmailVerified,
-        },
-      };
-    } catch (err) {
-      return error(500, {
-        message: "Server error",
-        errors: [
-          {
-            type: "ServerError",
-            message: "An error occurred while verifying email",
-          },
-        ],
-      });
-    }
-  }
-
-  /**
-   * Resend verification email
-   * @throws {Error} 404 - User not found
-   */
-  async resendVerificationEmail(email: string) {
-    try {
-      const user = await User.findOne({ email });
-
-      if (!user) {
-        return error(404, {
-          message: "User not found",
-          errors: [
-            {
-              type: "NotFoundError",
-              path: ["email"],
-              message: "No account found with this email address",
-            },
-          ],
-        });
-      }
-
-      if (user.isEmailVerified) {
-        return {
-          message: "Email is already verified",
-        };
-      }
-
-      // Generate new verification token
-      const verificationToken = crypto.randomBytes(32).toString("hex");
-      const tokenExpiry = new Date();
-      tokenExpiry.setHours(tokenExpiry.getHours() + 24);
-
-      user.emailVerificationToken = verificationToken;
-      user.emailVerificationExpires = tokenExpiry;
-      await user.save();
-
-      // Create verification email
-      const verificationUrl = `${
-        process.env.FRONTEND_URL || "http://localhost:3000"
-      }/verify-email?token=${verificationToken}&email=${email}`;
-
-      const emailBody = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Email Verification</h2>
-          <p>Hello ${user.firstName},</p>
-          <p>You requested a new verification email. Please verify your email address by clicking the button below:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Verify Email Address</a>
-          </div>
-          <p>If the button doesn't work, you can also copy and paste the following link into your browser:</p>
-          <p><a href="${verificationUrl}">${verificationUrl}</a></p>
-          <p>This link will expire in 24 hours.</p>
-          <p>If you did not request this email, please ignore it.</p>
-          <p>Best regards,<br>PM Travel and Tour Team</p>
-        </div>
-      `;
-
-      // Create email record for the cron job to pick up
-      const emailRecord = new Email({
-        email: user.email,
-        subject: "Verify Your Email - PM Travel and Tour",
-        body: emailBody,
-        isSent: false,
-      });
-      await emailRecord.save();
-
-      return {
-        message: "Verification email sent. Please check your inbox.",
-      };
-    } catch (err) {
-      return error(500, {
-        message: "Server error",
-        errors: [
-          {
-            type: "ServerError",
-            message: "An error occurred while sending verification email",
-          },
-        ],
-      });
     }
   }
 }

@@ -72,7 +72,7 @@ const adminUserRoutes = new Elysia({ prefix: "/api/v1/users" })
       firstName: t.String(),
       lastName: t.Optional(t.String()),
       email: t.String({ format: "email" }),
-      phone: t.String({ pattern: "^\\+?[1-9]\\d{1,14}$" }),
+      phone: t.String({ pattern: "^\\+?[0-9]\\d{1,14}$" }),
       password: t.Optional(t.String({ minLength: 6 })),
     }),
     detail: {
@@ -127,7 +127,8 @@ const adminUserRoutes = new Elysia({ prefix: "/api/v1/users" })
 
   .put(
     "/:id",
-    async ({ params: { id }, body }) => userController.updateUser(id, body),
+    async ({ params: { id }, body }) =>
+      userController.updateUserProfile(id, body),
     {
       detail: {
         summary: "Update an user",
@@ -136,12 +137,12 @@ const adminUserRoutes = new Elysia({ prefix: "/api/v1/users" })
       params: t.Object({
         id: t.String(),
       }),
-      body: t.Object({
-        fullName: t.Optional(t.String()),
-        email: t.Optional(t.String()),
-        phone: t.Optional(t.String()),
-        status: t.Optional(t.String()),
-      }),
+      // body: t.Object({
+      //   fullName: t.Optional(t.String()),
+      //   email: t.Optional(t.String()),
+      //   phone: t.Optional(t.String()),
+      //   status: t.Optional(t.String()),
+      // }),
     }
   );
 
