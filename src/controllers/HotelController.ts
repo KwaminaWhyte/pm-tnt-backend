@@ -6,6 +6,7 @@ import FavoriteController from "./FavoriteController";
 import Room from "~/models/Room";
 import User from "~/models/User";
 import { NotFoundError, ValidationError, ServerError } from "~/utils/errors";
+import { error } from "elysia";
 
 export default class HotelController {
   /**

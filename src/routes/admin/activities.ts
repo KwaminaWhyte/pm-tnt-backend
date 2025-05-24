@@ -62,32 +62,6 @@ const activityAdminRoutes = new Elysia({ prefix: "/admin" })
   })
 
   .post("/", ({ body }) => activityController.createActivity(body), {
-    body: t.Object({
-      name: t.String(),
-      description: t.Optional(t.String()),
-      destination: t.String(),
-      duration: t.Number({ minimum: 0 }),
-      price: t.Number({ minimum: 0 }),
-      category: t.Enum({
-        Adventure: "Adventure",
-        Cultural: "Cultural",
-        Nature: "Nature",
-        Entertainment: "Entertainment",
-      }),
-      availability: t.Array(
-        t.Object({
-          dayOfWeek: t.Number({ minimum: 0, maximum: 6 }),
-          startTime: t.String(),
-          endTime: t.String(),
-        })
-      ),
-      images: t.Optional(t.Array(t.String())),
-      maxParticipants: t.Optional(t.Number({ minimum: 1 })),
-      minParticipants: t.Optional(t.Number({ minimum: 1 })),
-      requirements: t.Optional(t.Array(t.String())),
-      included: t.Optional(t.Array(t.String())),
-      excluded: t.Optional(t.Array(t.String())),
-    }),
     detail: {
       summary: "Create activity (Admin)",
       description: "Create a new activity (Admin only)",
@@ -99,36 +73,6 @@ const activityAdminRoutes = new Elysia({ prefix: "/admin" })
     "/:id",
     ({ params: { id }, body }) => activityController.updateActivity(id, body),
     {
-      body: t.Object({
-        name: t.Optional(t.String()),
-        description: t.Optional(t.String()),
-        destination: t.Optional(t.String()),
-        duration: t.Optional(t.Number({ minimum: 0 })),
-        price: t.Optional(t.Number({ minimum: 0 })),
-        category: t.Optional(
-          t.Enum({
-            Adventure: "Adventure",
-            Cultural: "Cultural",
-            Nature: "Nature",
-            Entertainment: "Entertainment",
-          })
-        ),
-        availability: t.Optional(
-          t.Array(
-            t.Object({
-              dayOfWeek: t.Number({ minimum: 0, maximum: 6 }),
-              startTime: t.String(),
-              endTime: t.String(),
-            })
-          )
-        ),
-        images: t.Optional(t.Array(t.String())),
-        maxParticipants: t.Optional(t.Number({ minimum: 1 })),
-        minParticipants: t.Optional(t.Number({ minimum: 1 })),
-        requirements: t.Optional(t.Array(t.String())),
-        included: t.Optional(t.Array(t.String())),
-        excluded: t.Optional(t.Array(t.String())),
-      }),
       detail: {
         summary: "Update activity (Admin)",
         description: "Update an existing activity (Admin only)",

@@ -35,7 +35,10 @@ export default class ActivityController {
   }) {
     try {
       if (page < 1 || limit < 1) {
-        throw new ValidationError("Page and limit must be positive numbers", "pagination");
+        throw new ValidationError(
+          "Page and limit must be positive numbers",
+          "pagination"
+        );
       }
 
       const filter: Record<string, any> = {};
@@ -103,9 +106,11 @@ export default class ActivityController {
       if (err instanceof ValidationError) {
         throw err;
       }
-      
+
       // Convert other errors to ServerError
-      throw new ServerError(err instanceof Error ? err.message : "Failed to fetch activities");
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to fetch activities"
+      );
     }
   }
 
@@ -121,7 +126,7 @@ export default class ActivityController {
         "name location"
       );
       if (!activity) {
-        throw new NotFoundError('Activity', id);
+        throw new NotFoundError("Activity", id);
       }
 
       return {
@@ -133,9 +138,11 @@ export default class ActivityController {
       if (err instanceof NotFoundError) {
         throw err;
       }
-      
+
       // Convert other errors to ServerError
-      throw new ServerError(err instanceof Error ? err.message : "Failed to fetch activity");
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to fetch activity"
+      );
     }
   }
 
@@ -152,7 +159,10 @@ export default class ActivityController {
           _id: activityData.destination,
         });
         if (!destinationExists) {
-          throw new ValidationError("Destination does not exist", "destination");
+          throw new ValidationError(
+            "Destination does not exist",
+            "destination"
+          );
         }
       }
 
@@ -168,17 +178,25 @@ export default class ActivityController {
       if (err instanceof ValidationError) {
         throw err;
       }
-      
+
       // Handle Mongoose validation errors
-      if (typeof err === 'object' && err !== null && 'name' in err && err.name === 'ValidationError') {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "name" in err &&
+        err.name === "ValidationError"
+      ) {
         const mongooseErr = err as any;
-        const fieldName = Object.keys(mongooseErr.errors)[0] || 'unknown';
-        const message = mongooseErr.errors[fieldName]?.message || 'Validation failed';
+        const fieldName = Object.keys(mongooseErr.errors)[0] || "unknown";
+        const message =
+          mongooseErr.errors[fieldName]?.message || "Validation failed";
         throw new ValidationError(message, fieldName);
       }
-      
+
       // Convert other errors to ServerError
-      throw new ServerError(err instanceof Error ? err.message : "Failed to create activity");
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to create activity"
+      );
     }
   }
 
@@ -196,7 +214,10 @@ export default class ActivityController {
           _id: updateData.destination,
         });
         if (!destinationExists) {
-          throw new ValidationError("Destination does not exist", "destination");
+          throw new ValidationError(
+            "Destination does not exist",
+            "destination"
+          );
         }
       }
 
@@ -207,7 +228,7 @@ export default class ActivityController {
       );
 
       if (!activity) {
-        throw new NotFoundError('Activity', id);
+        throw new NotFoundError("Activity", id);
       }
 
       return {
@@ -216,21 +237,28 @@ export default class ActivityController {
       };
     } catch (err: unknown) {
       // Re-throw custom errors directly
-      if (err instanceof NotFoundError || 
-          err instanceof ValidationError) {
+      if (err instanceof NotFoundError || err instanceof ValidationError) {
         throw err;
       }
-      
+
       // Handle Mongoose validation errors
-      if (typeof err === 'object' && err !== null && 'name' in err && err.name === 'ValidationError') {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "name" in err &&
+        err.name === "ValidationError"
+      ) {
         const mongooseErr = err as any;
-        const fieldName = Object.keys(mongooseErr.errors)[0] || 'unknown';
-        const message = mongooseErr.errors[fieldName]?.message || 'Validation failed';
+        const fieldName = Object.keys(mongooseErr.errors)[0] || "unknown";
+        const message =
+          mongooseErr.errors[fieldName]?.message || "Validation failed";
         throw new ValidationError(message, fieldName);
       }
-      
+
       // Convert other errors to ServerError
-      throw new ServerError(err instanceof Error ? err.message : "Failed to update activity");
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to update activity"
+      );
     }
   }
 
@@ -243,7 +271,7 @@ export default class ActivityController {
     try {
       const activity = await Activity.findByIdAndDelete(id);
       if (!activity) {
-        throw new NotFoundError('Activity', id);
+        throw new NotFoundError("Activity", id);
       }
 
       return {
@@ -255,9 +283,11 @@ export default class ActivityController {
       if (err instanceof NotFoundError) {
         throw err;
       }
-      
+
       // Convert other errors to ServerError
-      throw new ServerError(err instanceof Error ? err.message : "Failed to delete activity");
+      throw new ServerError(
+        err instanceof Error ? err.message : "Failed to delete activity"
+      );
     }
   }
 
@@ -280,7 +310,10 @@ export default class ActivityController {
   ) {
     try {
       if (page < 1 || limit < 1) {
-        throw new ValidationError("Page and limit must be positive numbers", "pagination");
+        throw new ValidationError(
+          "Page and limit must be positive numbers",
+          "pagination"
+        );
       }
 
       const filter: Record<string, any> = {
@@ -312,9 +345,13 @@ export default class ActivityController {
       if (err instanceof ValidationError) {
         throw err;
       }
-      
+
       // Convert other errors to ServerError
-      throw new ServerError(err instanceof Error ? err.message : "Failed to fetch destination activities");
+      throw new ServerError(
+        err instanceof Error
+          ? err.message
+          : "Failed to fetch destination activities"
+      );
     }
   }
 }
