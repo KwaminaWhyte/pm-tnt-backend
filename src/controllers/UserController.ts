@@ -495,7 +495,6 @@ export default class UserController {
     email: string;
     phone: string;
     password?: string;
-    position?: string;
   }) {
     const errors = [];
 

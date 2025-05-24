@@ -74,7 +74,6 @@ const adminUserRoutes = new Elysia({ prefix: "/api/v1/users" })
       email: t.String({ format: "email" }),
       phone: t.String({ pattern: "^\\+?[1-9]\\d{1,14}$" }),
       password: t.Optional(t.String({ minLength: 6 })),
-      position: t.Optional(t.String()),
     }),
     detail: {
       summary: "Create a new user",
