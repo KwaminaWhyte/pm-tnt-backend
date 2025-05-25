@@ -304,7 +304,7 @@ export default class UserController {
    * @throws {Error} 400 - Validation error or duplicate data
    */
   async updateUserProfile(id: string, updateData: UpdateUserDTO) {
-    console.log(updateData);
+    console.log(updateData, id);
 
     try {
       const user = await User.findById(id);

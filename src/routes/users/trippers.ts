@@ -4,11 +4,23 @@ import * as fs from "fs";
 import * as path from "path";
 import crypto from "crypto";
 
+// Define the JWT auth interface
+interface JWTAuth {
+  verify: (token: string) => Promise<any>;
+}
+
+// Define the custom context type
+type CustomContext = {
+  headers: Record<string, string | undefined>;
+  jwt_auth: JWTAuth;
+};
+
 const tripperController = new TripperController();
 
 const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
 
-  .derive(async ({ headers, jwt_auth }) => {
+  .derive(async (context) => {
+    const { headers, jwt_auth } = context as unknown as CustomContext;
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
 
@@ -145,7 +157,12 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
             type: t.Union([t.Literal("image"), t.Literal("video")]),
           })
         ),
-        location: t.String(),
+        location: t.Object({
+          name: t.String(),
+          coordinates: t.Optional(t.Array(t.Number())),
+          city: t.Optional(t.String()),
+          country: t.Optional(t.String()),
+        }),
       }),
       detail: {
         summary: "Create a new post",

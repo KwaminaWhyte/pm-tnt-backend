@@ -182,12 +182,12 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
     "/me",
     async ({ userId, body }) => userController.updateUserProfile(userId, body),
     {
-      body: t.Object({
-        firstName: t.Optional(t.String()),
-        lastName: t.Optional(t.String()),
-        email: t.Optional(t.String({ format: "email" })),
-        phone: t.Optional(t.String({ pattern: "^\\+?[0-9]\\d{1,14}$" })),
-      }),
+      // body: t.Object({
+      //   firstName: t.Optional(t.String()),
+      //   lastName: t.Optional(t.String()),
+      //   email: t.Optional(t.String({ format: "email" })),
+      //   phone: t.Optional(t.String({ pattern: "^\\+?[0-9]\\d{1,14}$" })),
+      // }),
       detail: {
         tags: ["Users"],
         summary: "Update current user profile",
