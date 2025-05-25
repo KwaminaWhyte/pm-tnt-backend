@@ -33,7 +33,19 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
 
     try {
       const data = await jwt_auth.verify(token);
-      return { userId: data?.id };
+
+      if (!data) {
+        throw new Error("Invalid token");
+      }
+      const payload = data as Record<string, any>;
+
+      const userId = payload.userId;
+
+      if (!userId) {
+        throw new Error("User ID not found in token");
+      }
+
+      return { userId };
     } catch (error) {
       throw new Error(
         JSON.stringify({
@@ -55,6 +67,7 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
       if (!["hotel", "vehicle", "package"].includes(itemType)) {
         throw new Error("Invalid item type");
       }
+
       return favoriteController.toggleFavorite(
         id,
         itemType as "hotel" | "vehicle" | "package",

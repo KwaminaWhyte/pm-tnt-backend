@@ -7,7 +7,7 @@ export interface EmailInterface extends Document {
   email: string;
   recipient?: {
     name?: string;
-    userId?: mongoose.Types.ObjectId;
+    user?: mongoose.Types.ObjectId;
   };
   subject: string;
   body: string;
@@ -60,7 +60,7 @@ const emailSchema = new Schema<EmailInterface>(
         type: String,
         trim: true,
       },
-      userId: {
+      user: {
         type: Schema.Types.ObjectId,
         ref: "User",
         index: true,

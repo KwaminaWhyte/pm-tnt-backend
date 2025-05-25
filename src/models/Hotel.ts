@@ -17,7 +17,7 @@ interface LocationInterface {
  * Rating Schema Interface - Represents a user rating for a hotel
  */
 interface RatingInterface {
-  userId: mongoose.Types.ObjectId;
+  user: mongoose.Types.ObjectId;
   rating: number;
   comment?: string;
   createdAt: Date;
@@ -106,7 +106,7 @@ export interface HotelInterface extends Document {
   getCurrentPrice(date?: Date): number;
   getAvailableRooms(checkIn: Date, checkOut: Date): Promise<RoomInterface[]>;
   addRating(
-    userId: mongoose.Types.ObjectId,
+    user: mongoose.Types.ObjectId,
     rating: number,
     comment?: string
   ): Promise<HotelInterface>;
@@ -258,7 +258,7 @@ const roomSchema = new Schema(
  */
 const ratingSchema = new Schema(
   {
-    userId: {
+    user: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: [true, "User ID is required"],
@@ -596,19 +596,19 @@ hotelSchema.methods.getAvailableRooms = async function (
 
 /**
  * Add a rating to the hotel
- * @param userId - User ID of the reviewer
+ * @param user - User ID of the reviewer
  * @param rating - Rating value (1-5)
  * @param comment - Optional comment
  * @returns Updated hotel document
  */
 hotelSchema.methods.addRating = async function (
-  userId: mongoose.Types.ObjectId,
+  user: mongoose.Types.ObjectId,
   rating: number,
   comment?: string
 ): Promise<HotelInterface> {
   // Check if user has already rated this hotel
   const existingRatingIndex = this.ratings.findIndex(
-    (r: any) => r.userId.toString() === userId.toString()
+    (r: any) => r.user.toString() === user.toString()
   );
 
   if (existingRatingIndex >= 0) {
@@ -620,7 +620,7 @@ hotelSchema.methods.addRating = async function (
   } else {
     // Add new rating
     this.ratings.push({
-      userId,
+      user,
       rating,
       comment,
       createdAt: new Date(),

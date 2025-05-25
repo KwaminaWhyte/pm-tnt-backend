@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 
 export interface PackageTemplateInterface {
-  userId: Schema.Types.ObjectId;
+  user: Schema.Types.ObjectId;
   name: string;
   description?: string;
   basePackageId: Schema.Types.ObjectId;
@@ -103,7 +103,7 @@ export interface PackageTemplateInterface {
 
 const packageTemplateSchema = new Schema<PackageTemplateInterface>(
   {
-    userId: {
+    user: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
@@ -264,7 +264,7 @@ const packageTemplateSchema = new Schema<PackageTemplateInterface>(
 );
 
 // Indexes
-packageTemplateSchema.index({ userId: 1, name: 1 }, { unique: true });
+packageTemplateSchema.index({ user: 1, name: 1 }, { unique: true });
 packageTemplateSchema.index({ tags: 1 });
 packageTemplateSchema.index({ isPublic: 1 });
 packageTemplateSchema.index({ createdAt: -1 });

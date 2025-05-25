@@ -26,10 +26,19 @@ const adminVehicleRoutes = new Elysia({ prefix: "/admin" })
 
     try {
       const data = await jwt_auth.verify(token);
-      if (!data || typeof data === "boolean") {
-        throw new Error("Invalid token data");
+
+      if (!data) {
+        throw new Error("Invalid token");
       }
-      return { userId: data.id as string };
+      const payload = data as Record<string, any>;
+
+      const userId = payload.userId;
+
+      if (!userId) {
+        throw new Error("User ID not found in token");
+      }
+
+      return { userId };
     } catch (error) {
       throw new Error(
         JSON.stringify({

@@ -44,7 +44,7 @@ export interface ActivityInterface extends Document {
   included?: string[];
   excluded?: string[];
   ratings?: Array<{
-    userId: mongoose.Types.ObjectId;
+    user: mongoose.Types.ObjectId;
     rating: number;
     comment?: string;
     date: Date;
@@ -108,7 +108,7 @@ const timeSlotSchema = new Schema(
  */
 const ratingSchema = new Schema(
   {
-    userId: {
+    user: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: [true, "User ID is required"],

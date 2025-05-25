@@ -12,7 +12,7 @@ export default class FavoriteController {
   ) {
     // Validate that the item exists based on type
     const model = this.getModelByType(itemType);
-    const item = await model.findById(itemId);
+    const item = await model?.findById(itemId);
     if (!item) {
       throw new Error(`${itemType} not found`);
     }
@@ -27,7 +27,7 @@ export default class FavoriteController {
       await Favorite.deleteOne({ _id: existingFavorite._id });
       return { isFavorite: false };
     } else {
-      await Favorite.create({ userId, itemId, itemType });
+      await Favorite.create({ user: userId, itemId, itemType });
       return { isFavorite: true };
     }
   }

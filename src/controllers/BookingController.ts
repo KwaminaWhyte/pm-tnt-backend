@@ -11,7 +11,12 @@ import {
 } from "~/utils/types";
 import mongoose from "mongoose";
 import { ElysiaCustomStatusResponse } from "elysia/dist/error";
-import { NotFoundError, ValidationError, ServerError, AuthorizationError } from "~/utils/errors";
+import {
+  NotFoundError,
+  ValidationError,
+  ServerError,
+  AuthorizationError,
+} from "~/utils/errors";
 
 // Define the booking type interfaces to clarify typings
 interface HotelBookingType {
@@ -318,18 +323,20 @@ export default class BookingController {
         .populate("cancellation.cancelledBy", "firstName lastName email");
 
       if (!booking) {
-        throw new NotFoundError('Booking', bookingId);
+        throw new NotFoundError("Booking", bookingId);
       }
 
       // If userId is provided, ensure the booking belongs to this user
       if (userId && booking.user.toString() !== userId) {
-        throw new AuthorizationError('You are not authorized to access this booking');
+        throw new AuthorizationError(
+          "You are not authorized to access this booking"
+        );
       }
 
       // Add additional booking validation and status checks
       const validationResult = this.validateBookingStatus(booking);
       if (!validationResult.isValid) {
-        throw new ValidationError(validationResult.message, 'status');
+        throw new ValidationError(validationResult.message, "status");
       }
 
       return {
@@ -343,14 +350,18 @@ export default class BookingController {
       console.error("Error retrieving booking:", err);
 
       // Re-throw custom errors directly
-      if (err instanceof NotFoundError || 
-          err instanceof ValidationError || 
-          err instanceof AuthorizationError) {
+      if (
+        err instanceof NotFoundError ||
+        err instanceof ValidationError ||
+        err instanceof AuthorizationError
+      ) {
         throw err;
       }
-      
+
       // Convert other errors to ServerError
-      throw new ServerError(err instanceof Error ? err.message : "Error retrieving booking");
+      throw new ServerError(
+        err instanceof Error ? err.message : "Error retrieving booking"
+      );
     }
   }
 
@@ -419,7 +430,10 @@ export default class BookingController {
       // Validate availability first
       const isAvailable = await this.validateAvailability(bookingData);
       if (isAvailable === false) {
-        throw new ValidationError('The requested booking is not available for the selected dates', 'availability');
+        throw new ValidationError(
+          "The requested booking is not available for the selected dates",
+          "availability"
+        );
       }
 
       const totalAmount = await this.calculateTotalAmount(bookingData);
@@ -486,9 +500,10 @@ export default class BookingController {
           bookingData.pricing.totalPrice = totalAmount;
         }
       }
+      console.log(bookingData);
 
       const booking = new Booking({
-        userId: bookingData.userId,
+        user: bookingData.userId,
         bookingReference,
         status: "Pending",
         payment: {
@@ -516,27 +531,43 @@ export default class BookingController {
       };
     } catch (err: unknown) {
       console.log("Error creating booking:", err);
-      
+
       // Re-throw ValidationError directly
       if (err instanceof ValidationError) {
         throw err;
       }
-      
+
       // Handle Mongoose validation errors
-      if (typeof err === 'object' && err !== null && 'name' in err && err.name === 'ValidationError') {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "name" in err &&
+        err.name === "ValidationError"
+      ) {
         const mongooseErr = err as any;
-        const fieldName = Object.keys(mongooseErr.errors)[0] || 'unknown';
-        const message = mongooseErr.errors[fieldName]?.message || 'Validation failed';
+        const fieldName = Object.keys(mongooseErr.errors)[0] || "unknown";
+        const message =
+          mongooseErr.errors[fieldName]?.message || "Validation failed";
         throw new ValidationError(message, fieldName);
       }
-      
+
       // Handle duplicate key errors
-      if (typeof err === 'object' && err !== null && 'code' in err && err.code === 11000) {
-        throw new ValidationError('A booking with this reference already exists', 'bookingReference');
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        err.code === 11000
+      ) {
+        throw new ValidationError(
+          "A booking with this reference already exists",
+          "bookingReference"
+        );
       }
-      
+
       // Convert other errors to ServerError
-      throw new ServerError(err instanceof Error ? err.message : "Error creating booking");
+      throw new ServerError(
+        err instanceof Error ? err.message : "Error creating booking"
+      );
     }
   }
 
@@ -844,7 +875,7 @@ export default class BookingController {
           return false;
         }
       }
-      
+
       return true;
     } catch (err) {
       console.error("Error validating availability:", err);

@@ -33,15 +33,11 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
       if (!data) {
         throw new Error("Invalid token");
       }
-
-      // Safely extract the ID from the JWT payload as a string
       const payload = data as Record<string, any>;
-      console.log("JWT payload:", payload);
 
       const userId = payload.userId;
 
       if (!userId) {
-        console.error("No ID found in token payload:", payload);
         throw new Error("User ID not found in token");
       }
 
@@ -65,28 +61,10 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
 
   .get(
     "/posts",
-    async ({ query, headers, jwt_auth }) => {
-      // Try to extract userId from token if available
-      try {
-        const auth = headers["authorization"];
-        const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
-
-        if (token) {
-          const data = await jwt_auth.verify(token);
-          if (data) {
-            // Safely extract the ID from the JWT payload as a string
-            const payload = data as Record<string, any>;
-            const userId = payload.userId;
-
-            if (userId) {
-              // Add userId to query params
-              query.userId = userId;
-            }
-          }
-        }
-      } catch (error) {
-        // Silently fail - this just means we won't add hasLiked property
-        console.log("No valid auth token found for adding hasLiked property");
+    async ({ query, headers, userId }) => {
+      if (userId) {
+        // Add userId to query params
+        query.userId = userId;
       }
 
       return await tripperController.getAllPosts({ query } as any);
@@ -109,27 +87,10 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
   )
   .get(
     "/posts/:id",
-    async ({ params, headers, jwt_auth, query }) => {
-      try {
-        const auth = headers["authorization"];
-        const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
-
-        if (token) {
-          const data = await jwt_auth.verify(token);
-          if (data) {
-            // Safely extract the ID from the JWT payload as a string
-            const payload = data as Record<string, any>;
-            const userId = payload.userId;
-
-            if (userId) {
-              // Add userId to query params
-              query.userId = userId;
-            }
-          }
-        }
-      } catch (error) {
-        // Silently fail - this just means we won't add hasLiked property
-        console.log("No valid auth token found for adding hasLiked property");
+    async ({ params, headers, userId, query }) => {
+      if (userId) {
+        // Add userId to query params
+        query.userId = userId;
       }
       return await tripperController.getPostById({
         params,

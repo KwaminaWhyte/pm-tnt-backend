@@ -4,7 +4,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
  * Interface for the Notification document
  */
 export interface NotificationInterface extends Document {
-  userId: mongoose.Types.ObjectId;
+  user: mongoose.Types.ObjectId;
   type: string;
   title: string;
   message: string;
@@ -15,7 +15,7 @@ export interface NotificationInterface extends Document {
   expiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Methods
   markAsRead(): Promise<NotificationInterface>;
   markAsUnread(): Promise<NotificationInterface>;
@@ -27,15 +27,15 @@ export interface NotificationInterface extends Document {
  */
 const notificationSchema = new Schema<NotificationInterface>(
   {
-    userId: {
+    user: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: [true, 'User ID is required'],
-      index: true
+      required: [true, "User ID is required"],
+      index: true,
     },
     type: {
       type: String,
-      required: [true, 'Notification type is required'],
+      required: [true, "Notification type is required"],
       enum: {
         values: [
           "booking_confirmed",
@@ -47,71 +47,71 @@ const notificationSchema = new Schema<NotificationInterface>(
           "welcome",
           "review_reminder",
           "price_drop",
-          "system_alert"
+          "system_alert",
         ],
-        message: '{VALUE} is not a valid notification type'
+        message: "{VALUE} is not a valid notification type",
       },
-      index: true
+      index: true,
     },
     title: {
       type: String,
-      required: [true, 'Title is required'],
+      required: [true, "Title is required"],
       trim: true,
-      maxlength: [100, 'Title cannot exceed 100 characters']
+      maxlength: [100, "Title cannot exceed 100 characters"],
     },
     message: {
       type: String,
-      required: [true, 'Message is required'],
-      trim: true
+      required: [true, "Message is required"],
+      trim: true,
     },
     read: {
       type: Boolean,
       default: false,
-      index: true
+      index: true,
     },
     relatedId: {
       type: Schema.Types.ObjectId,
       required: false,
       index: true,
-      description: 'ID of the related entity (booking, payment, etc.)'
+      description: "ID of the related entity (booking, payment, etc.)",
     },
     relatedType: {
       type: String,
       required: false,
       enum: {
         values: ["booking", "payment", "vehicle", "hotel", "package", "review"],
-        message: '{VALUE} is not a valid related type'
+        message: "{VALUE} is not a valid related type",
       },
-      description: 'Type of the related entity'
+      description: "Type of the related entity",
     },
     priority: {
       type: String,
       enum: {
         values: ["low", "medium", "high"],
-        message: '{VALUE} is not a valid priority level'
+        message: "{VALUE} is not a valid priority level",
       },
-      default: "medium"
+      default: "medium",
     },
     expiresAt: {
       type: Date,
       required: false,
-      description: 'Date when the notification expires'
-    }
+      description: "Date when the notification expires",
+    },
   },
   {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    toObject: { virtuals: true },
   }
 );
 
 // Create indexes for performance optimization
-notificationSchema.index({ userId: 1, read: 1 });
+notificationSchema.index({ user: 1, read: 1 });
 notificationSchema.index({ createdAt: -1 });
 notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // TTL index for auto-deletion
 
 // Virtuals
-notificationSchema.virtual('isRecent').get(function() {
+notificationSchema.virtual("isRecent").get(function () {
   const RECENT_THRESHOLD_HOURS = 24;
   const hoursAgo = (Date.now() - this.createdAt.getTime()) / (1000 * 60 * 60);
   return hoursAgo < RECENT_THRESHOLD_HOURS;
@@ -122,23 +122,25 @@ notificationSchema.virtual('isRecent').get(function() {
 /**
  * Mark notification as read
  */
-notificationSchema.methods.markAsRead = async function(): Promise<NotificationInterface> {
-  this.read = true;
-  return this.save();
-};
+notificationSchema.methods.markAsRead =
+  async function (): Promise<NotificationInterface> {
+    this.read = true;
+    return this.save();
+  };
 
 /**
  * Mark notification as unread
  */
-notificationSchema.methods.markAsUnread = async function(): Promise<NotificationInterface> {
-  this.read = false;
-  return this.save();
-};
+notificationSchema.methods.markAsUnread =
+  async function (): Promise<NotificationInterface> {
+    this.read = false;
+    return this.save();
+  };
 
 /**
  * Check if notification is expired
  */
-notificationSchema.methods.isExpired = function(): boolean {
+notificationSchema.methods.isExpired = function (): boolean {
   if (!this.expiresAt) return false;
   return new Date() > this.expiresAt;
 };
@@ -148,9 +150,11 @@ notificationSchema.methods.isExpired = function(): boolean {
 /**
  * Mark all notifications as read for a user
  */
-notificationSchema.statics.markAllAsRead = async function(userId: mongoose.Types.ObjectId): Promise<number> {
+notificationSchema.statics.markAllAsRead = async function (
+  user: mongoose.Types.ObjectId
+): Promise<number> {
   const result = await this.updateMany(
-    { userId, read: false },
+    { user, read: false },
     { $set: { read: true } }
   );
   return result.modifiedCount;
@@ -159,8 +163,10 @@ notificationSchema.statics.markAllAsRead = async function(userId: mongoose.Types
 /**
  * Get unread count for a user
  */
-notificationSchema.statics.getUnreadCount = async function(userId: mongoose.Types.ObjectId): Promise<number> {
-  return this.countDocuments({ userId, read: false });
+notificationSchema.statics.getUnreadCount = async function (
+  user: mongoose.Types.ObjectId
+): Promise<number> {
+  return this.countDocuments({ user, read: false });
 };
 
 // Create or retrieve the model
@@ -168,7 +174,10 @@ let Notification: Model<NotificationInterface>;
 try {
   Notification = mongoose.model<NotificationInterface>("Notification");
 } catch (error) {
-  Notification = mongoose.model<NotificationInterface>("Notification", notificationSchema);
+  Notification = mongoose.model<NotificationInterface>(
+    "Notification",
+    notificationSchema
+  );
 }
 
 export default Notification;

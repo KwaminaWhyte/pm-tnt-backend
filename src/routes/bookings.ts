@@ -24,7 +24,18 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
     try {
       const data = await jwt_auth.verify(token);
 
-      return { userId: data?.id };
+      if (!data) {
+        throw new Error("Invalid token");
+      }
+      const payload = data as Record<string, any>;
+
+      const userId = payload.userId;
+
+      if (!userId) {
+        throw new Error("User ID not found in token");
+      }
+
+      return { userId };
     } catch (error) {
       throw new Error(
         JSON.stringify({
@@ -121,85 +132,85 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
         summary: "Create a new booking",
         description: "Create a new booking for hotel, vehicle, or package",
       },
-      body: t.Object({
-        hotelBooking: t.Optional(
-          t.Object({
-            hotelId: t.String(),
-            roomIds: t.Array(t.String()),
-            checkIn: t.String(),
-            checkOut: t.String(),
-            numberOfGuests: t.Number(),
-            numberOfNights: t.Number(),
-            specialRequests: t.Optional(t.String()),
-          })
-        ),
-        vehicleBooking: t.Optional(
-          t.Object({
-            vehicleId: t.String(),
-            pickupDate: t.String(),
-            returnDate: t.String(),
-            pickupLocation: t.Object({
-              address: t.String(),
-              city: t.String(),
-              country: t.String(),
-              coordinates: t.Optional(
-                t.Object({
-                  latitude: t.Number(),
-                  longitude: t.Number(),
-                })
-              ),
-            }),
-            dropoffLocation: t.Object({
-              address: t.String(),
-              city: t.String(),
-              country: t.String(),
-              coordinates: t.Optional(
-                t.Object({
-                  latitude: t.Number(),
-                  longitude: t.Number(),
-                })
-              ),
-            }),
-            numberOfDays: t.Number(),
-            driverDetails: t.Optional(
-              t.Object({
-                name: t.String(),
-                licenseNumber: t.String(),
-                contactNumber: t.String(),
-              })
-            ),
-          })
-        ),
-        packageBooking: t.Optional(
-          t.Object({
-            packageId: t.String(),
-            startDate: t.String(),
-            participants: t.Array(
-              t.Object({
-                type: t.Union([
-                  t.Literal("adult"),
-                  t.Literal("child"),
-                  t.Literal("infant"),
-                ]),
-                count: t.Number(),
-              })
-            ),
-            customizations: t.Optional(
-              t.Array(
-                t.Object({
-                  type: t.Union([
-                    t.Literal("hotel"),
-                    t.Literal("activity"),
-                    t.Literal("transportation"),
-                  ]),
-                  itemId: t.String(),
-                  details: t.Optional(t.String()),
-                })
-              )
-            ),
-          })
-        ),
-      }),
+      // body: t.Object({
+      //   hotelBooking: t.Optional(
+      //     t.Object({
+      //       hotelId: t.String(),
+      //       roomIds: t.Array(t.String()),
+      //       checkIn: t.String(),
+      //       checkOut: t.String(),
+      //       numberOfGuests: t.Number(),
+      //       numberOfNights: t.Number(),
+      //       specialRequests: t.Optional(t.String()),
+      //     })
+      //   ),
+      //   vehicleBooking: t.Optional(
+      //     t.Object({
+      //       vehicleId: t.String(),
+      //       pickupDate: t.String(),
+      //       returnDate: t.String(),
+      //       pickupLocation: t.Object({
+      //         address: t.String(),
+      //         city: t.String(),
+      //         country: t.String(),
+      //         coordinates: t.Optional(
+      //           t.Object({
+      //             latitude: t.Number(),
+      //             longitude: t.Number(),
+      //           })
+      //         ),
+      //       }),
+      //       dropoffLocation: t.Object({
+      //         address: t.String(),
+      //         city: t.String(),
+      //         country: t.String(),
+      //         coordinates: t.Optional(
+      //           t.Object({
+      //             latitude: t.Number(),
+      //             longitude: t.Number(),
+      //           })
+      //         ),
+      //       }),
+      //       numberOfDays: t.Number(),
+      //       driverDetails: t.Optional(
+      //         t.Object({
+      //           name: t.String(),
+      //           licenseNumber: t.String(),
+      //           contactNumber: t.String(),
+      //         })
+      //       ),
+      //     })
+      //   ),
+      //   packageBooking: t.Optional(
+      //     t.Object({
+      //       packageId: t.String(),
+      //       startDate: t.String(),
+      //       participants: t.Array(
+      //         t.Object({
+      //           type: t.Union([
+      //             t.Literal("adult"),
+      //             t.Literal("child"),
+      //             t.Literal("infant"),
+      //           ]),
+      //           count: t.Number(),
+      //         })
+      //       ),
+      //       customizations: t.Optional(
+      //         t.Array(
+      //           t.Object({
+      //             type: t.Union([
+      //               t.Literal("hotel"),
+      //               t.Literal("activity"),
+      //               t.Literal("transportation"),
+      //             ]),
+      //             itemId: t.String(),
+      //             details: t.Optional(t.String()),
+      //           })
+      //         )
+      //       ),
+      //     })
+      //   ),
+      // }),
     }
   )
   .put(
@@ -214,54 +225,54 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
         summary: "Update a booking",
         description: "Update an existing booking's details",
       },
-      body: t.Object({
-        status: t.Optional(t.String()),
-        hotelBooking: t.Optional(
-          t.Object({
-            checkIn: t.Optional(t.String()),
-            checkOut: t.Optional(t.String()),
-            numberOfGuests: t.Optional(t.Number()),
-            specialRequests: t.Optional(t.String()),
-          })
-        ),
-        vehicleBooking: t.Optional(
-          t.Object({
-            pickupDate: t.Optional(t.String()),
-            returnDate: t.Optional(t.String()),
-            pickupLocation: t.Optional(
-              t.Object({
-                address: t.String(),
-                city: t.String(),
-                country: t.String(),
-              })
-            ),
-            dropoffLocation: t.Optional(
-              t.Object({
-                address: t.String(),
-                city: t.String(),
-                country: t.String(),
-              })
-            ),
-          })
-        ),
-        packageBooking: t.Optional(
-          t.Object({
-            startDate: t.Optional(t.String()),
-            participants: t.Optional(
-              t.Array(
-                t.Object({
-                  type: t.Union([
-                    t.Literal("adult"),
-                    t.Literal("child"),
-                    t.Literal("infant"),
-                  ]),
-                  count: t.Number(),
-                })
-              )
-            ),
-          })
-        ),
-      }),
+      // body: t.Object({
+      //   status: t.Optional(t.String()),
+      //   hotelBooking: t.Optional(
+      //     t.Object({
+      //       checkIn: t.Optional(t.String()),
+      //       checkOut: t.Optional(t.String()),
+      //       numberOfGuests: t.Optional(t.Number()),
+      //       specialRequests: t.Optional(t.String()),
+      //     })
+      //   ),
+      //   vehicleBooking: t.Optional(
+      //     t.Object({
+      //       pickupDate: t.Optional(t.String()),
+      //       returnDate: t.Optional(t.String()),
+      //       pickupLocation: t.Optional(
+      //         t.Object({
+      //           address: t.String(),
+      //           city: t.String(),
+      //           country: t.String(),
+      //         })
+      //       ),
+      //       dropoffLocation: t.Optional(
+      //         t.Object({
+      //           address: t.String(),
+      //           city: t.String(),
+      //           country: t.String(),
+      //         })
+      //       ),
+      //     })
+      //   ),
+      //   packageBooking: t.Optional(
+      //     t.Object({
+      //       startDate: t.Optional(t.String()),
+      //       participants: t.Optional(
+      //         t.Array(
+      //           t.Object({
+      //             type: t.Union([
+      //               t.Literal("adult"),
+      //               t.Literal("child"),
+      //               t.Literal("infant"),
+      //             ]),
+      //             count: t.Number(),
+      //           })
+      //         )
+      //       ),
+      //     })
+      //   ),
+      // }),
     }
   )
   .post(

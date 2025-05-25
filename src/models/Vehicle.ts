@@ -37,7 +37,7 @@ const locationSchema = new Schema(
  */
 const ratingSchema = new Schema(
   {
-    userId: {
+    user: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: [true, "User ID is required"],

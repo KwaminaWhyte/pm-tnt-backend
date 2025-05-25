@@ -34,12 +34,19 @@ const notificationRoutes = new Elysia({ prefix: "/api/v1/notifications" })
 
     try {
       const data = await jwt_auth.verify(token);
+
       if (!data) {
         throw new Error("Invalid token");
       }
+      const payload = data as Record<string, any>;
 
-      // Cast data.id to string to ensure compatible types
-      return { userId: String(data.id) };
+      const userId = payload.userId;
+
+      if (!userId) {
+        throw new Error("User ID not found in token");
+      }
+
+      return { userId };
     } catch (error) {
       throw new Error(
         JSON.stringify({
