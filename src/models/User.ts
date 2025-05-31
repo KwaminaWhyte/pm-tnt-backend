@@ -51,6 +51,18 @@ interface UserSocialMediaInterface {
 }
 
 /**
+ * Interface for Emergency Contact
+ */
+interface EmergencyContactInterface {
+  name: string;
+  relationship: string;
+  phoneNumber: string;
+  email?: string;
+  priority: "high" | "medium" | "low";
+  isActive?: boolean;
+}
+
+/**
  * Interface for User OTP
  */
 interface UserOtpInterface {
@@ -89,6 +101,7 @@ export interface UserInterface extends Document {
   notificationSettings?: UserNotificationSettingsInterface;
   preferences?: UserPreferencesInterface;
   socialMedia?: UserSocialMediaInterface[];
+  emergencyContacts?: EmergencyContactInterface[];
   otp?: UserOtpInterface;
   isPhoneVerified: boolean;
   isEmailVerified: boolean;
@@ -306,6 +319,51 @@ const userSocialMediaSchema = new Schema(
 );
 
 /**
+ * Schema for Emergency Contact
+ */
+const emergencyContactSchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Emergency contact name is required"],
+      trim: true,
+      maxlength: [100, "Name cannot exceed 100 characters"],
+    },
+    relationship: {
+      type: String,
+      required: [true, "Relationship is required"],
+      trim: true,
+      maxlength: [50, "Relationship cannot exceed 50 characters"],
+    },
+    phoneNumber: {
+      type: String,
+      required: [true, "Phone number is required"],
+      trim: true,
+      match: [/^\+?[0-9]\d{1,14}$/, "Invalid phone number format"],
+    },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      match: [/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/, "Invalid email format"],
+    },
+    priority: {
+      type: String,
+      enum: {
+        values: ["high", "medium", "low"],
+        message: "{VALUE} is not a valid priority level",
+      },
+      default: "medium",
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  { _id: true }
+);
+
+/**
  * Schema for User OTP
  */
 const userOtpSchema = new Schema(
@@ -418,6 +476,7 @@ const userSchema = new Schema<UserInterface>(
       default: () => ({}),
     },
     socialMedia: [userSocialMediaSchema],
+    emergencyContacts: [emergencyContactSchema],
     otp: userOtpSchema,
     isPhoneVerified: {
       type: Boolean,
