@@ -23,7 +23,6 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
 
     try {
       const data = await jwt_auth.verify(token);
-
       if (!data) {
         throw new Error("Invalid token");
       }

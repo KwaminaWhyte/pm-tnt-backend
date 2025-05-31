@@ -326,17 +326,10 @@ export default class BookingController {
         throw new NotFoundError("Booking", bookingId);
       }
 
-      // If userId is provided, ensure the booking belongs to this user
-      if (userId && booking.user.toString() !== userId) {
+      if (!booking.user?._id?.equals(userId)) {
         throw new AuthorizationError(
           "You are not authorized to access this booking"
         );
-      }
-
-      // Add additional booking validation and status checks
-      const validationResult = this.validateBookingStatus(booking);
-      if (!validationResult.isValid) {
-        throw new ValidationError(validationResult.message, "status");
       }
 
       return {
@@ -363,47 +356,6 @@ export default class BookingController {
         err instanceof Error ? err.message : "Error retrieving booking"
       );
     }
-  }
-
-  /**
-   * Validate booking status and return validation result
-   */
-  private validateBookingStatus(booking: BookingInterface): {
-    isValid: boolean;
-    message: string;
-  } {
-    // Check if booking is cancelled
-    if (booking.status === "Cancelled") {
-      return {
-        isValid: false,
-        message: "This booking has been cancelled",
-      };
-    }
-
-    // Check if booking dates are valid
-    const now = new Date();
-    const startDate = new Date(booking.startDate);
-    const endDate = new Date(booking.endDate);
-
-    if (endDate < now) {
-      return {
-        isValid: false,
-        message: "This booking has expired",
-      };
-    }
-
-    // Check payment status
-    if (booking.payment && booking.payment.status === "Failed") {
-      return {
-        isValid: false,
-        message: "Payment for this booking has failed",
-      };
-    }
-
-    return {
-      isValid: true,
-      message: "Booking is valid",
-    };
   }
 
   /**
