@@ -21,6 +21,7 @@ import adminAuthRoutes from "./routes/admin/auth";
 
 import userAuthRoutes from "./routes/users/auth";
 import tripperRoutes from "./routes/users/trippers";
+import userSecurityRoutes from "./routes/users/security";
 
 import roomRoutes from "./routes/rooms";
 import packageRoutes from "./routes/packages";
@@ -107,6 +108,7 @@ const app = new Elysia()
 
   // user routes
   .use(userAuthRoutes)
+  .use(userSecurityRoutes)
 
   .use(roomRoutes)
   .use(packageRoutes)
