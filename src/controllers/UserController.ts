@@ -1,7 +1,7 @@
 import User from "~/models/User";
 import bcrypt from "bcryptjs";
 import { UserSearchParams, UpdateUserDTO } from "~/utils/types";
-import { error } from "elysia";
+import { error, type Context } from "elysia";
 
 export default class UserController {
   /**
@@ -119,9 +119,10 @@ export default class UserController {
       }
 
       return {
-        user,
+        message: "User profile retrieved successfully",
+        data: user,
       };
-    } catch (e) {
+    } catch (e: any) {
       if (e instanceof Error && e.message.includes("User not found")) {
         throw e;
       }
@@ -369,7 +370,7 @@ export default class UserController {
 
       return {
         message: "User updated successfully",
-        user: updatedUser,
+        data: updatedUser,
       };
     } catch (error) {
       if (error instanceof Error && error.message.includes("status")) {
