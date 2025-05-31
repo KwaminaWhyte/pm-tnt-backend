@@ -8,9 +8,6 @@ const vehicleRoutes = new Elysia()
   .get(
     "/",
     async ({ query }) => {
-      // Log raw query parameters for debugging
-      // console.log("Raw query parameters:", query);
-
       // Convert and parse parameters for controller
       const parsedQuery: Record<string, any> = {
         page: query.page ? parseInt(query.page) : 1,
@@ -37,13 +34,14 @@ const vehicleRoutes = new Elysia()
         parsedQuery.sortOrder = query.sortOrder;
       }
 
-      // Handle price range - only include if it has meaningful values
-      if (query.priceRange) {
-        const { min, max } = query.priceRange;
-        // Only add priceRange if min or max is greater than 0
-        if (min > 0 || max > 0) {
-          parsedQuery.priceRange = query.priceRange;
-        }
+      // Handle price range
+      if (query.minPrice || query.maxPrice) {
+        parsedQuery.priceRange = {
+          min: query.minPrice ? parseInt(query.minPrice) : 0,
+          max: query.maxPrice
+            ? parseInt(query.maxPrice)
+            : Number.MAX_SAFE_INTEGER,
+        };
       }
 
       // Handle location filters
@@ -55,47 +53,64 @@ const vehicleRoutes = new Elysia()
         parsedQuery.country = query.country;
       }
 
-      // Handle availability as a boolean - parse string representation
+      // Handle availability as a boolean
       if (query.isAvailable !== undefined) {
-        // Convert string 'true'/'false' to boolean
         parsedQuery.isAvailable = query.isAvailable === "true";
-        // console.log(
-        //   "Parsed isAvailable:",
-        //   parsedQuery.isAvailable,
-        //   typeof parsedQuery.isAvailable
-        // );
       }
 
-      // Log parsed parameters for debugging
-      // console.log("Parsed query parameters:", parsedQuery);
+      // Handle transmission filter
+      if (query.transmission) {
+        parsedQuery.transmission = query.transmission;
+      }
+
+      // Handle fuel type filter
+      if (query.fuelType) {
+        parsedQuery.fuelType = query.fuelType;
+      }
+
+      // Handle features filter
+      if (query.features) {
+        parsedQuery.features = Array.isArray(query.features)
+          ? query.features
+          : [query.features];
+      }
 
       return vehicleController.getVehicles(parsedQuery);
     },
     {
       detail: {
-        summary: "Get all vehicles with pagination and filtering",
+        summary: "Get all vehicles with advanced filtering",
         tags: ["Vehicles - Public"],
       },
       query: t.Object({
         page: t.Optional(t.String()),
         limit: t.Optional(t.String()),
         searchTerm: t.Optional(t.String()),
-        isAvailable: t.Optional(t.String()), // Change to string since query params come as strings
-        priceRange: t.Optional(
-          t.Object({
-            min: t.Number(),
-            max: t.Number(),
-          })
-        ),
+        isAvailable: t.Optional(t.String()),
+        minPrice: t.Optional(t.String()),
+        maxPrice: t.Optional(t.String()),
         vehicleType: t.Optional(t.String()),
         city: t.Optional(t.String()),
         country: t.Optional(t.String()),
         capacity: t.Optional(t.String()),
+        transmission: t.Optional(
+          t.Union([t.Literal("Automatic"), t.Literal("Manual")])
+        ),
+        fuelType: t.Optional(
+          t.Union([
+            t.Literal("Petrol"),
+            t.Literal("Diesel"),
+            t.Literal("Electric"),
+            t.Literal("Hybrid"),
+          ])
+        ),
+        features: t.Optional(t.Union([t.String(), t.Array(t.String())])),
         sortBy: t.Optional(
           t.Union([
             t.Literal("pricePerDay"),
             t.Literal("capacity"),
             t.Literal("rating"),
+            t.Literal("year"),
           ])
         ),
         sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
@@ -220,7 +235,7 @@ const vehicleRoutes = new Elysia()
   )
   .get("/:id", async ({ params: { id } }) => vehicleController.getVehicle(id), {
     detail: {
-      summary: "Get vehicle details",
+      summary: "Get vehicle by ID",
       tags: ["Vehicles - Public"],
     },
     params: t.Object({
@@ -249,9 +264,9 @@ const vehicleRoutes = new Elysia()
     "/:id/availability",
     async ({ params: { id }, query }) =>
       vehicleController.checkAvailability(id, {
-        startDate: new Date(query.startDate as string),
-        endDate: new Date(query.endDate as string),
-        insuranceOption: query.insuranceOption as string,
+        startDate: new Date(query.startDate),
+        endDate: new Date(query.endDate),
+        insuranceOption: query.insuranceOption,
       }),
     {
       detail: {
@@ -268,6 +283,57 @@ const vehicleRoutes = new Elysia()
       }),
     }
   )
+  .get(
+    "/:id/pricing",
+    async ({ params: { id }, query }) =>
+      vehicleController.calculatePricing(id, {
+        startDate: new Date(query.startDate),
+        endDate: new Date(query.endDate),
+        insuranceOption: query.insuranceOption,
+      }),
+    {
+      detail: {
+        summary: "Calculate vehicle rental pricing",
+        tags: ["Vehicles - Public"],
+      },
+      params: t.Object({
+        id: t.String(),
+      }),
+      query: t.Object({
+        startDate: t.String(),
+        endDate: t.String(),
+        insuranceOption: t.Optional(t.String()),
+      }),
+    }
+  )
+  .get(
+    "/nearby",
+    async ({ query }) =>
+      vehicleController.getNearbyVehicles({
+        latitude: parseFloat(query.latitude),
+        longitude: parseFloat(query.longitude),
+        radius: query.radius ? parseFloat(query.radius) : 50,
+        limit: query.limit ? parseInt(query.limit) : 20,
+      }),
+    {
+      detail: {
+        summary: "Get nearby vehicles",
+        tags: ["Vehicles - Public"],
+      },
+      query: t.Object({
+        latitude: t.String(),
+        longitude: t.String(),
+        radius: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
+      }),
+    }
+  )
+  .get("/filters", async () => vehicleController.getFilterOptions(), {
+    detail: {
+      summary: "Get available filter options",
+      tags: ["Vehicles - Public"],
+    },
+  })
   .get(
     "/bookings/history",
     async ({ userId }) => {
