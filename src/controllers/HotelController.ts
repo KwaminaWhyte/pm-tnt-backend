@@ -7,6 +7,7 @@ import Room from "~/models/Room";
 import User from "~/models/User";
 import { NotFoundError, ValidationError, ServerError } from "~/utils/errors";
 import { error } from "elysia";
+import mongoose from "mongoose";
 
 export default class HotelController {
   /**
@@ -288,8 +289,11 @@ export default class HotelController {
       }
 
       hotel.ratings.push({
-        ...ratingData,
+        user: new mongoose.Types.ObjectId(ratingData.userId),
+        rating: ratingData.rating,
+        comment: ratingData.comment,
         createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       await hotel.save();
@@ -367,27 +371,47 @@ export default class HotelController {
 
       // Get existing bookings for this period
       const existingBookings = await Booking.find({
-        hotelId: id,
+        "hotelBooking.hotelId": id,
+        bookingType: "hotel",
         $or: [
           {
-            checkIn: { $lte: checkOutDate },
-            checkOut: { $gte: checkInDate },
+            startDate: { $lte: checkOutDate },
+            endDate: { $gte: checkInDate },
           },
         ],
       });
 
-      // Get booked room IDs for this period
-      const bookedRoomIds = existingBookings.map((booking) =>
-        booking.roomId.toString()
-      );
+      // Get booked room IDs for this period - access roomIds correctly
+      const bookedRoomIds = existingBookings.flatMap((booking) => {
+        const hotelBooking = (booking as any).hotelBooking;
+        return hotelBooking?.roomIds || [];
+      });
 
       // Filter available rooms based on capacity, maintenance status and existing bookings
+      if (!hotel.rooms || hotel.rooms.length === 0) {
+        return {
+          status: "success",
+          data: {
+            availableRooms: [],
+            totalRooms: 0,
+            checkIn: checkInDate,
+            checkOut: checkOutDate,
+            nights: Math.ceil(
+              (checkOutDate.getTime() - checkInDate.getTime()) /
+                (1000 * 60 * 60 * 24)
+            ),
+          },
+        };
+      }
+
       const availableRooms = hotel.rooms.filter(
         (room) =>
           room.isAvailable &&
           room.maintenanceStatus === "Available" &&
           room.capacity >= params.guests &&
-          !bookedRoomIds.includes(room._id.toString())
+          !bookedRoomIds.some(
+            (bookedId) => bookedId.toString() === room.roomNumber
+          ) // Compare with roomNumber since RoomInterface doesn't have _id
       );
 
       // Calculate prices including seasonal adjustments
@@ -397,10 +421,10 @@ export default class HotelController {
           (checkOutDate.getTime() - checkInDate.getTime()) /
             (1000 * 60 * 60 * 24)
         );
-        const seasonalPrice = hotel.getCurrentPrice(room.roomType, checkInDate);
+        const seasonalPrice = hotel.getCurrentPrice(checkInDate);
 
         return {
-          ...room.toObject(),
+          ...room,
           calculatedPrice: {
             basePrice,
             seasonalPrice,
@@ -488,8 +512,11 @@ export default class HotelController {
       }
 
       hotel.ratings.push({
-        ...reviewData,
+        user: new mongoose.Types.ObjectId(reviewData.userId),
+        rating: reviewData.rating,
+        comment: reviewData.comment,
         createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       await hotel.save();

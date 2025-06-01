@@ -3,6 +3,14 @@ import HotelController from "~/controllers/HotelController";
 
 const hotelController = new HotelController();
 
+// Define custom context interface for JWT auth
+interface CustomContext {
+  headers: Record<string, string | undefined>;
+  jwt_auth: {
+    verify: (token: string) => Promise<any>;
+  };
+}
+
 /**
  * Hotel routes for admin operations
  * Base path: /api/v1/hotels/admin
@@ -15,7 +23,8 @@ const adminHotelRoutes = new Elysia({ prefix: "/admin" })
     },
   })
 
-  .derive(async ({ headers, jwt_auth }) => {
+  .derive(async (context) => {
+    const { headers, jwt_auth } = context as unknown as CustomContext;
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
 
@@ -105,56 +114,86 @@ const adminHotelRoutes = new Elysia({ prefix: "/admin" })
     },
   })
 
-  .post("/", ({ body }) => hotelController.createHotel(body), {
-    body: t.Object({
-      name: t.String(),
-      description: t.String(),
-      location: t.Object({
-        city: t.String(),
-        country: t.String(),
-        address: t.String(),
-        geo: t.Object({
-          type: t.Literal("Point"),
-          coordinates: t.Array(t.Number()),
-        }),
-      }),
-      contactInfo: t.Object({
-        phone: t.String(),
-        email: t.String(),
-        website: t.Optional(t.String()),
-      }),
-      starRating: t.Number({ minimum: 1, maximum: 5 }),
-      amenities: t.Array(t.String()),
-      checkInTime: t.String(),
-      checkOutTime: t.String(),
-      images: t.Array(t.String()),
-      policies: t.Object({
-        checkIn: t.String(),
-        checkOut: t.String(),
-        cancellation: t.String(),
-        payment: t.String(),
-        houseRules: t.Array(t.String()),
-      }),
-      seasonalPrices: t.Optional(
-        t.Array(
-          t.Object({
-            startDate: t.String(),
-            endDate: t.String(),
-            multiplier: t.Number({ minimum: 0 }),
-          })
-        )
-      ),
-    }),
-    detail: {
-      summary: "Create hotel (Admin)",
-      description: "Create a new hotel (Admin only)",
-      tags: ["Hotels - Admin"],
+  .post(
+    "/",
+    ({ body }) => {
+      // Transform and type assert to match Hotel model interface
+      const transformedBody = {
+        ...body,
+        location: {
+          address: body.location.address,
+          city: body.location.city,
+          country: body.location.country,
+          geo: body.location.geo,
+        },
+      } as any; // Type assertion to work around interface conflicts
+      return hotelController.createHotel(transformedBody);
     },
-  })
+    {
+      body: t.Object({
+        name: t.String(),
+        description: t.String(),
+        location: t.Object({
+          city: t.String(),
+          country: t.String(),
+          address: t.String(),
+          geo: t.Object({
+            type: t.Literal("Point"),
+            coordinates: t.Array(t.Number(), { minItems: 2, maxItems: 2 }),
+          }),
+        }),
+        contactInfo: t.Object({
+          phone: t.String(),
+          email: t.String(),
+          website: t.Optional(t.String()),
+        }),
+        starRating: t.Number({ minimum: 1, maximum: 5 }),
+        amenities: t.Array(t.String()),
+        checkInTime: t.String(),
+        checkOutTime: t.String(),
+        images: t.Array(t.String()),
+        policies: t.Object({
+          checkIn: t.String(),
+          checkOut: t.String(),
+          cancellation: t.String(),
+          payment: t.String(),
+          houseRules: t.Array(t.String()),
+        }),
+        seasonalPrices: t.Optional(
+          t.Array(
+            t.Object({
+              startDate: t.String(),
+              endDate: t.String(),
+              multiplier: t.Number({ minimum: 0 }),
+            })
+          )
+        ),
+      }),
+      detail: {
+        summary: "Create hotel (Admin)",
+        description: "Create a new hotel (Admin only)",
+        tags: ["Hotels - Admin"],
+      },
+    }
+  )
 
   .put(
     "/:id",
-    ({ params: { id }, body }) => hotelController.updateHotel(id, body),
+    ({ params: { id }, body }) => {
+      // Transform and type assert to match Hotel model interface
+      const transformedBody = body.location
+        ? {
+            ...body,
+            location: {
+              address: body.location.address,
+              city: body.location.city,
+              country: body.location.country,
+              geo: body.location.geo,
+            },
+          }
+        : body;
+      return hotelController.updateHotel(id, transformedBody as any);
+    },
     {
       body: t.Object({
         name: t.Optional(t.String()),
