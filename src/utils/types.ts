@@ -319,6 +319,9 @@ export interface CreateVehicleDTO {
       cost: number;
     }>;
   };
+  // Individual maintenance fields for form submission
+  lastService?: string | Date;
+  nextService?: string | Date;
 
   // Rental terms
   rentalTerms?: {

@@ -339,6 +339,9 @@ export default class VehicleController {
         });
       }
 
+      // Log incoming data for debugging
+      console.log("Incoming update data:", JSON.stringify(data, null, 2));
+
       // Prepare update data with proper structure
       const updateData: Record<string, any> = {};
 
@@ -349,8 +352,8 @@ export default class VehicleController {
       if (data.vehicleType) updateData.vehicleType = data.vehicleType;
       if (data.capacity) updateData.capacity = data.capacity;
       if (data.pricePerDay) updateData.pricePerDay = data.pricePerDay;
-      if (data.features) updateData.features = data.features;
-      if (data.images) updateData.images = data.images;
+      if (data.features !== undefined) updateData.features = data.features; // Allow empty arrays
+      if (data.images !== undefined) updateData.images = data.images; // Allow empty arrays
       if (data.policies) updateData.policies = data.policies;
 
       // Location data - update properly in the nested structure
@@ -365,7 +368,8 @@ export default class VehicleController {
       if (data.transmission)
         updateData["details.transmission"] = data.transmission;
       if (data.fuelType) updateData["details.fuelType"] = data.fuelType;
-      if (data.mileage) updateData["details.mileage"] = data.mileage;
+      if (data.mileage !== undefined)
+        updateData["details.mileage"] = data.mileage;
       if (data.vin) updateData["details.vin"] = data.vin;
 
       // Insurance data
@@ -388,16 +392,18 @@ export default class VehicleController {
         updateData["maintenance.nextService"] = new Date(data.nextService);
 
       // Rental terms
-      if (data.minimumAge)
+      if (data.minimumAge !== undefined)
         updateData["rentalTerms.minimumAge"] = data.minimumAge;
-      if (data.securityDeposit)
+      if (data.securityDeposit !== undefined)
         updateData["rentalTerms.securityDeposit"] = data.securityDeposit;
-      if (data.mileageLimit)
+      if (data.mileageLimit !== undefined)
         updateData["rentalTerms.mileageLimit"] = data.mileageLimit;
       if (data.additionalDrivers !== undefined)
         updateData["rentalTerms.additionalDrivers"] = data.additionalDrivers;
-      if (data.requiredDocuments)
+      if (data.requiredDocuments !== undefined)
         updateData["rentalTerms.requiredDocuments"] = data.requiredDocuments;
+
+      console.log("Final update data:", JSON.stringify(updateData, null, 2));
 
       const updatedVehicle = await Vehicle.findByIdAndUpdate(
         id,
