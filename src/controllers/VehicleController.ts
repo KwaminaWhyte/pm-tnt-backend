@@ -339,9 +339,6 @@ export default class VehicleController {
         });
       }
 
-      // Log incoming data for debugging
-      console.log("Incoming update data:", JSON.stringify(data, null, 2));
-
       // Prepare update data with proper structure
       const updateData: Record<string, any> = {};
 
@@ -402,8 +399,6 @@ export default class VehicleController {
         updateData["rentalTerms.additionalDrivers"] = data.additionalDrivers;
       if (data.requiredDocuments !== undefined)
         updateData["rentalTerms.requiredDocuments"] = data.requiredDocuments;
-
-      console.log("Final update data:", JSON.stringify(updateData, null, 2));
 
       const updatedVehicle = await Vehicle.findByIdAndUpdate(
         id,
