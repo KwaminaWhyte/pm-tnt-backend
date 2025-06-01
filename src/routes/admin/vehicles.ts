@@ -63,7 +63,6 @@ const adminVehicleRoutes = new Elysia({ prefix: "/admin" })
   .post(
     "/",
     async ({ body }: { body: any }) => {
-      console.log("Create vehicle request body:", body);
       return vehicleController.createVehicle(body);
     },
     {
@@ -71,27 +70,49 @@ const adminVehicleRoutes = new Elysia({ prefix: "/admin" })
         summary: "Create a new vehicle",
         tags: ["Vehicles - Admin"],
       },
+      body: t.Object({
+        vehicleType: t.String(),
+        make: t.String(),
+        model: t.String(),
+        year: t.Number(),
+        features: t.Optional(t.Array(t.String())),
+        capacity: t.Number(),
+        pricePerDay: t.Number(),
+        city: t.String(),
+        country: t.String(),
+        images: t.Optional(t.Array(t.String())),
+        policies: t.Optional(t.String()),
+        // Vehicle details
+        color: t.Optional(t.String()),
+        licensePlate: t.Optional(t.String()),
+        transmission: t.Optional(t.String()),
+        fuelType: t.Optional(t.String()),
+        mileage: t.Optional(t.Number()),
+        vin: t.Optional(t.String()),
+        // Insurance fields
+        insuranceProvider: t.Optional(t.String()),
+        insurancePolicyNumber: t.Optional(t.String()),
+        insuranceExpiryDate: t.Optional(t.String()),
+        insuranceCoverage: t.Optional(t.String()),
+        // Maintenance fields
+        lastService: t.Optional(t.String()),
+        nextService: t.Optional(t.String()),
+        // Rental terms
+        minimumAge: t.Optional(t.Number()),
+        securityDeposit: t.Optional(t.Number()),
+        mileageLimit: t.Optional(t.Number()),
+        additionalDrivers: t.Optional(t.Boolean()),
+        requiredDocuments: t.Optional(t.Array(t.String())),
+      }),
     }
   )
 
   .put(
     "/:id",
     async ({ params: { id }, body }) => {
-      console.log(`Update vehicle ${id} request:`, body);
-
-      // For update, we'll structure data to match the expected format
+      // For update, we'll pass the data directly to the controller
+      // The controller will handle the proper nested structure mapping
       const updateData: any = { ...body };
-
-      // Handle location data correctly
-      if (body.city || body.country) {
-        updateData.location = {
-          city: body.city,
-          country: body.country,
-        };
-        // Remove individual properties to avoid conflicts
-        delete updateData.city;
-        delete updateData.country;
-      }
 
       // Handle availability status if present
       if (body.isAvailable !== undefined) {
@@ -130,6 +151,25 @@ const adminVehicleRoutes = new Elysia({ prefix: "/admin" })
         status: t.Optional(t.String()),
         color: t.Optional(t.String()),
         licensePlate: t.Optional(t.String()),
+        // Vehicle details
+        transmission: t.Optional(t.String()),
+        fuelType: t.Optional(t.String()),
+        mileage: t.Optional(t.Number()),
+        vin: t.Optional(t.String()),
+        // Insurance fields
+        insuranceProvider: t.Optional(t.String()),
+        insurancePolicyNumber: t.Optional(t.String()),
+        insuranceExpiryDate: t.Optional(t.String()),
+        insuranceCoverage: t.Optional(t.String()),
+        // Maintenance fields
+        lastService: t.Optional(t.String()),
+        nextService: t.Optional(t.String()),
+        // Rental terms
+        minimumAge: t.Optional(t.Number()),
+        securityDeposit: t.Optional(t.Number()),
+        mileageLimit: t.Optional(t.Number()),
+        additionalDrivers: t.Optional(t.Boolean()),
+        requiredDocuments: t.Optional(t.Array(t.String())),
       }),
     }
   )

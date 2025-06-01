@@ -36,6 +36,7 @@ const adminHotelRoutes = new Elysia({ prefix: "/admin" })
 
     try {
       const data = await jwt_auth.verify(token);
+      console.log(data);
 
       if (!data) {
         throw new Error("Invalid token");

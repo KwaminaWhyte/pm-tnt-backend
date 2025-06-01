@@ -62,14 +62,6 @@ export default class VehicleController {
         ];
       }
 
-      // Debug: Log isAvailable value
-      console.log(
-        "isAvailable parameter:",
-        isAvailable,
-        "type:",
-        typeof isAvailable
-      );
-
       // Handle boolean conversion
       if (isAvailable !== undefined) {
         // Fix: Convert string 'true'/'false' to boolean if needed
@@ -118,15 +110,8 @@ export default class VehicleController {
         sortOptions.createdAt = -1;
       }
 
-      // Debug: Log the filter and sort options
-      console.log("MongoDB filter:", JSON.stringify(filter, null, 2));
-      console.log("MongoDB sort options:", sortOptions);
-
       // Temporary workaround: Get all vehicles first without filter to debug
       const allVehicles = await Vehicle.find({}).lean();
-      console.log(
-        `Debug: Total vehicles in DB without filter: ${allVehicles.length}`
-      );
 
       // If filter is empty (no search criteria), use empty object for find()
       const filterToUse = Object.keys(filter).length > 0 ? filter : {};
@@ -138,10 +123,6 @@ export default class VehicleController {
           .sort(sortOptions),
         Vehicle.countDocuments(filterToUse),
       ]);
-
-      console.log(
-        `Vehicles found with filter: ${vehicles.length} out of ${totalCount} total`
-      );
 
       const totalPages = Math.ceil(totalCount / limit);
 
@@ -233,17 +214,85 @@ export default class VehicleController {
    */
   async createVehicle(data: CreateVehicleDTO) {
     try {
-      // Log incoming data for debugging
-      console.log(
-        "Create vehicle data received:",
-        JSON.stringify(data, null, 2)
-      );
+      // Structure the data to match the Vehicle model schema
+      const vehicleData = {
+        // Basic information
+        vehicleType: data.vehicleType,
+        make: data.make,
+        model: data.model,
+        year: data.year,
+        capacity: data.capacity,
+        pricePerDay: data.pricePerDay,
+        features: data.features || [],
+        images: data.images || [],
+        policies: data.policies || "Standard rental policies apply.",
 
-      // No need to restructure the data as it's already properly structured from the form
-      // Just create the vehicle directly with the data
-      const vehicle = new Vehicle(data);
+        // Details with nested structure
+        details: {
+          color: data.color || "Unknown",
+          licensePlate: data.licensePlate || "TBD",
+          transmission: data.transmission || "Automatic",
+          fuelType: data.fuelType || "Petrol",
+          mileage: data.mileage || 0,
+          vin: data.vin || "TBD",
+          insurance: {
+            provider: data.insuranceProvider || "TBD",
+            policyNumber: data.insurancePolicyNumber || "TBD",
+            expiryDate: data.insuranceExpiryDate
+              ? new Date(data.insuranceExpiryDate)
+              : new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+            coverage: data.insuranceCoverage || "Basic",
+          },
+        },
 
+        // Availability with location
+        availability: {
+          isAvailable: true,
+          location: {
+            city: data.city,
+            country: data.country,
+            coordinates: {
+              latitude: 0,
+              longitude: 0,
+            },
+          },
+        },
+
+        // Maintenance information
+        maintenance: {
+          lastService: data.lastService
+            ? new Date(data.lastService)
+            : new Date(),
+          nextService: data.nextService
+            ? new Date(data.nextService)
+            : new Date(new Date().setMonth(new Date().getMonth() + 3)),
+          status: "Available",
+          history: [],
+        },
+
+        // Rental terms
+        rentalTerms: {
+          minimumAge: data.minimumAge || 18,
+          securityDeposit: data.securityDeposit || 0,
+          mileageLimit: data.mileageLimit || 0,
+          additionalDrivers: data.additionalDrivers || false,
+          requiredDocuments: data.requiredDocuments || [
+            "Driver's License",
+            "Credit Card",
+          ],
+          insuranceOptions: [
+            {
+              type: "Basic",
+              coverage: "Collision Damage Waiver",
+              pricePerDay: 10,
+            },
+          ],
+        },
+      };
+
+      const vehicle = new Vehicle(vehicleData);
       const savedVehicle = await vehicle.save();
+
       return {
         message: "Vehicle created successfully",
         vehicle: savedVehicle,
@@ -275,12 +324,6 @@ export default class VehicleController {
    */
   async updateVehicle(id: string, data: UpdateVehicleDTO) {
     try {
-      // Log incoming update data for debugging
-      console.log(
-        "Update vehicle data received:",
-        JSON.stringify(data, null, 2)
-      );
-
       const vehicle = await Vehicle.findById(id);
 
       if (!vehicle) {
@@ -355,11 +398,6 @@ export default class VehicleController {
         updateData["rentalTerms.additionalDrivers"] = data.additionalDrivers;
       if (data.requiredDocuments)
         updateData["rentalTerms.requiredDocuments"] = data.requiredDocuments;
-
-      console.log(
-        "Processed update data:",
-        JSON.stringify(updateData, null, 2)
-      );
 
       const updatedVehicle = await Vehicle.findByIdAndUpdate(
         id,

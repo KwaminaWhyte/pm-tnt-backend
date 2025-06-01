@@ -140,7 +140,6 @@ const sessionSchema = new Schema<SessionInterface>(
 // Indexes for performance optimization
 sessionSchema.index({ userId: 1, isActive: 1 });
 sessionSchema.index({ userId: 1, lastActivity: -1 });
-sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 // Virtuals
 sessionSchema.virtual("isExpiredVirtual").get(function () {

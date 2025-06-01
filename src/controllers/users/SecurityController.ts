@@ -69,10 +69,14 @@ export default class SecurityController {
       }
 
       // Get user from database
-      const user = (await User.findById(userId)) as UserWithSecurity | null;
+      const user = (await User.findById(userId).select(
+        "+password"
+      )) as UserWithSecurity | null;
+
       if (!user) {
         throw new NotFoundError("User", userId);
       }
+      console.log({ currentPassword, password: user.password });
 
       // Verify current password
       const isCurrentPasswordValid = await bcrypt.compare(

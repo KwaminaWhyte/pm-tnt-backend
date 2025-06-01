@@ -362,6 +362,9 @@ export interface UpdateVehicleDTO extends Partial<CreateVehicleDTO> {
   country?: string;
   "availability.isAvailable"?: boolean;
   "maintenance.status"?: "Available" | "In Service" | "Repairs Needed";
+  // Add all the flat fields for maintenance
+  lastService?: string | Date;
+  nextService?: string | Date;
 }
 
 export interface VehicleSearchParams {

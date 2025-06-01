@@ -53,7 +53,6 @@ const bookingRoutes = new Elysia({ prefix: "/api/v1/bookings" })
   .get(
     "/",
     async ({ request, query, userId }) => {
-      console.log(userId);
       const bookingController = new BookingController();
       return bookingController.getBookings({ ...query, userId });
     },

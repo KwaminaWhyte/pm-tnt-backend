@@ -74,7 +74,7 @@ export default class AdminController {
         );
       }
 
-      const token = await jwt_auth.sign({ id: admin.id });
+      const token = await jwt_auth.sign({ userId: admin.id });
       const userData = await Admin.findById(admin.id).select("-password -otp");
 
       return {

@@ -123,19 +123,12 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
   .post(
     "/posts",
     async ({ body, userId }) => {
-      // Pass the authenticated user's ID to the controller
-      console.log(
-        "POST /posts received with body:",
-        JSON.stringify(body, null, 2)
-      );
-      console.log("Authenticated userId:", userId);
-
       try {
         const result = await tripperController.createPost({
           body,
           userId,
         } as any);
-        console.log("Post creation result:", JSON.stringify(result, null, 2));
+
         return result;
       } catch (error) {
         console.error("Error in post creation route:", error);
@@ -239,12 +232,6 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
     async ({ body, userId }) => {
       // Handle the file upload
       try {
-        console.log("File upload request received:", {
-          fileType: body.file.type,
-          fileSize: `${(body.file.size / (1024 * 1024)).toFixed(2)}MB`,
-          fileName: body.file.name,
-        });
-
         // Create storage directory if it doesn't exist
         const baseDir = "storage/trippers";
         if (!fs.existsSync(baseDir)) {
@@ -284,15 +271,10 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
         const newFileName = `${uniqueId}.${finalExtension}`;
         const filePath = path.join(baseDir, newFileName);
 
-        console.log(`Processing file: ${body.file.name} -> ${newFileName}`);
-
         // Get the file content and write it to storage
         try {
           const fileContent = await body.file.arrayBuffer();
           await fs.promises.writeFile(filePath, new Uint8Array(fileContent));
-          console.log(
-            `File saved successfully (${fileContent.byteLength} bytes)`
-          );
         } catch (writeError) {
           console.error("Error writing file:", writeError);
           return {
@@ -310,8 +292,6 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
 
         // Use the new dynamic path format for file URLs
         const fileUrl = `${domain}/storage/trippers/${newFileName}`;
-
-        console.log(`File saved to ${filePath}, accessible at ${fileUrl}`);
 
         return {
           status: true,
@@ -382,8 +362,6 @@ const tripperRoutes = new Elysia({ prefix: "/api/v1/trippers" })
 
           // Use the new dynamic path format for file URLs
           const fileUrl = `${domain}/storage/trippers/${newFileName}`;
-
-          console.log(`File saved to ${filePath}, accessible at ${fileUrl}`);
 
           results.push({
             url: fileUrl,
