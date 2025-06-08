@@ -29,11 +29,13 @@ const authRoutes = new Elysia({ prefix: "/api/v1/user-auth" })
       body: t.Object({
         email: t.String({ format: "email" }),
         password: t.String({ minLength: 6 }),
+        twoFactorToken: t.Optional(t.String()),
       }),
       detail: {
         tags: ["Authentication - User"],
         summary: "Login with email and password",
-        description: "Authenticate user using email and password credentials",
+        description:
+          "Authenticate user using email and password credentials with optional 2FA",
       },
     }
   )

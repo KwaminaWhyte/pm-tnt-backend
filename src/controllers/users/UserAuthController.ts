@@ -68,14 +68,12 @@ export default class UserAuthController {
     const tokenExpiry = new Date();
     tokenExpiry.setHours(tokenExpiry.getHours() + 24); // Token valid for 24 hours
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const user = new User({
       firstName,
       lastName,
       phone,
       email,
-      password: hashedPassword,
+      password: password, // Let the pre-save hook handle hashing
       emailVerificationToken: verificationToken,
       emailVerificationExpires: tokenExpiry,
     });
@@ -137,6 +135,12 @@ export default class UserAuthController {
     jwt_auth?: any
   ) {
     const { email, password, twoFactorToken } = data;
+
+    console.log("Login request data:", {
+      email,
+      password: "***",
+      twoFactorToken,
+    });
 
     if (!email || !password) {
       return error(400, {
@@ -212,7 +216,7 @@ export default class UserAuthController {
 
     // Check if 2FA is enabled and verify token
     if (user.twoFactorEnabled && user.twoFactorSecret) {
-      if (!twoFactorToken) {
+      if (!twoFactorToken || twoFactorToken.trim() === "") {
         return error(200, {
           message: "Two-factor authentication required",
           requiresTwoFactor: true,
@@ -660,8 +664,7 @@ export default class UserAuthController {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
+    user.password = newPassword; // Let the pre-save hook handle hashing
     await user.save();
 
     return {

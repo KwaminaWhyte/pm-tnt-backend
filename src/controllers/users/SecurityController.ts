@@ -99,16 +99,12 @@ export default class SecurityController {
         );
       }
 
-      // Hash new password
-      const saltRounds = 12;
-      const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
-
-      // Update user password
+      // Update user password (let pre-save hook handle hashing)
       await User.findByIdAndUpdate(userId, {
-        password: hashedNewPassword,
+        password: newPassword,
         passwordChangedAt: new Date(),
         // Invalidate all sessions except current one
-        sessionVersion: user.sessionVersion + 1,
+        sessionVersion: (user.sessionVersion || 1) + 1,
       });
 
       // Update current session to maintain login
