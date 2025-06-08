@@ -3,6 +3,17 @@ import FavoriteController from "~/controllers/FavoriteController";
 
 const favoriteController = new FavoriteController();
 
+// Define the JWT auth interface
+interface JWTAuth {
+  verify: (token: string) => Promise<any>;
+}
+
+// Define the custom context type
+type CustomContext = {
+  headers: Record<string, string | undefined>;
+  jwt_auth: JWTAuth;
+};
+
 const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
   .guard({
     detail: {
@@ -12,7 +23,8 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
         "Routes for managing user favorites. Requires authentication.",
     },
   })
-  .derive(async ({ headers, jwt_auth }) => {
+  .derive(async (context) => {
+    const { headers, jwt_auth } = context as unknown as CustomContext;
     const auth = headers["authorization"];
     const token = auth && auth.startsWith("Bearer ") ? auth.slice(7) : null;
 
@@ -47,6 +59,7 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
 
       return { userId };
     } catch (error) {
+      console.error("JWT verification error:", error);
       throw new Error(
         JSON.stringify({
           message: "Unauthorized",
@@ -64,13 +77,13 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
   .post(
     "/:itemType/:id",
     ({ params: { id, itemType }, userId }) => {
-      if (!["hotel", "vehicle", "package"].includes(itemType)) {
+      if (!["hotel", "vehicle", "package", "destination"].includes(itemType)) {
         throw new Error("Invalid item type");
       }
 
       return favoriteController.toggleFavorite(
         id,
-        itemType as "hotel" | "vehicle" | "package",
+        itemType as "hotel" | "vehicle" | "package" | "destination",
         userId
       );
     },
@@ -78,13 +91,13 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
       detail: {
         summary: "Toggle Favorite Status",
         description:
-          "Toggle the favorite status of a hotel, vehicle, or travel package for the authenticated user",
+          "Toggle the favorite status of a hotel, vehicle, travel package, or destination for the authenticated user",
         tags: ["Favorites"],
       },
       params: t.Object({
         itemType: t.String({
           description: "Type of item to favorite",
-          enum: ["hotel", "vehicle", "package"],
+          enum: ["hotel", "vehicle", "package", "destination"],
         }),
         id: t.String({
           description: "ID of the item to favorite",
@@ -98,7 +111,7 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
     ({ query: { type }, userId }) =>
       favoriteController.getUserFavorites(
         userId,
-        type as "hotel" | "vehicle" | "package" | undefined
+        type as "hotel" | "vehicle" | "package" | "destination" | undefined
       ),
     {
       detail: {
@@ -111,7 +124,7 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
         type: t.Optional(
           t.String({
             description: "Filter favorites by item type",
-            enum: ["hotel", "vehicle", "package"],
+            enum: ["hotel", "vehicle", "package", "destination"],
           })
         ),
       }),
@@ -123,13 +136,13 @@ const favoritesRoutes = new Elysia({ prefix: "/api/v1/favorites" })
       return favoriteController.isFavorited(
         userId,
         id,
-        itemType as "hotel" | "vehicle" | "package"
+        itemType as "hotel" | "vehicle" | "package" | "destination"
       );
     },
     {
       params: t.Object({
         itemType: t.String({
-          enum: ["hotel", "vehicle", "package"],
+          enum: ["hotel", "vehicle", "package", "destination"],
         }),
         id: t.String(),
       }),
