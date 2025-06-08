@@ -1,5 +1,6 @@
 import User from "~/models/User";
 import Email from "~/models/Email";
+import Session from "~/models/Session";
 import generateOTP from "~/utils/generateOtp";
 import sendSMS from "~/utils/sendSMS";
 import bcrypt from "bcryptjs";
@@ -209,6 +210,24 @@ export default class UserAuthController {
       role: user.role,
     });
 
+    // Create session record
+    try {
+      const session = new Session({
+        userId: user._id,
+        token: token,
+        sessionVersion: user.sessionVersion || 1,
+        deviceInfo: Session.parseDeviceInfo(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      });
+      await session.save();
+    } catch (sessionError) {
+      console.error("Failed to create session:", sessionError);
+      // Continue even if session creation fails
+    }
+
+    // Update last login
+    await user.updateLastLogin();
+
     return {
       token,
       user: {
@@ -272,10 +291,10 @@ export default class UserAuthController {
 
     // Send OTP via SMS
     try {
-      await sendSMS(
-        phone,
-        `Your PM Travel and Tour verification code is: ${otp}. Valid for 10 minutes.`
-      );
+      await sendSMS({
+        recipient: phone,
+        smsText: `Your PM Travel and Tour verification code is: ${otp}. Valid for 10 minutes.`,
+      });
 
       return {
         message: "OTP sent successfully",
@@ -346,6 +365,24 @@ export default class UserAuthController {
       userId: user._id,
       role: user.role,
     });
+
+    // Create session record
+    try {
+      const session = new Session({
+        userId: user._id,
+        token: token,
+        sessionVersion: user.sessionVersion || 1,
+        deviceInfo: Session.parseDeviceInfo(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      });
+      await session.save();
+    } catch (sessionError) {
+      console.error("Failed to create session:", sessionError);
+      // Continue even if session creation fails
+    }
+
+    // Update last login
+    await user.updateLastLogin();
 
     return {
       token,

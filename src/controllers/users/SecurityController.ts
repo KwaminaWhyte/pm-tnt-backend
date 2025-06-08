@@ -202,18 +202,26 @@ export default class SecurityController {
         );
       }
 
-      const user = await User.findById(userId);
+      const user = await User.findById(userId).select("+tempTwoFactorSecret");
       if (!user || !user.tempTwoFactorSecret) {
         throw new ValidationError("Two-factor setup not initiated", "setup");
       }
 
-      // Verify token
+      // Sanitize token (remove spaces and ensure it's 6 digits)
+      const sanitizedToken = token.replace(/\s/g, "");
+
+      // Verify token with increased window for clock drift
       const verified = speakeasy.totp.verify({
         secret: user.tempTwoFactorSecret,
         encoding: "base32",
-        token: token,
-        window: 2,
+        token: sanitizedToken,
+        window: 4, // Increased window to account for clock drift
+        time: Math.floor(Date.now() / 1000), // Current Unix timestamp
       });
+
+      console.log(
+        `Token verification - Input: ${token}, Sanitized: ${sanitizedToken}, Result: ${verified}`
+      );
 
       if (!verified) {
         throw new ValidationError("Invalid verification token", "token");
@@ -231,6 +239,8 @@ export default class SecurityController {
         message: "Two-factor authentication enabled successfully",
       };
     } catch (err: unknown) {
+      console.log(err);
+
       // Re-throw custom errors directly
       if (err instanceof ValidationError || err instanceof NotFoundError) {
         throw err;
@@ -269,12 +279,17 @@ export default class SecurityController {
         );
       }
 
-      const user = await User.findById(userId);
+      const user = await User.findById(userId).select(
+        "+password +twoFactorSecret"
+      );
       if (!user) {
         throw new NotFoundError("User", userId);
       }
 
       // Verify password
+      if (!user.password) {
+        throw new AuthenticationError("Password not found");
+      }
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
         throw new AuthenticationError("Invalid password");
@@ -282,11 +297,15 @@ export default class SecurityController {
 
       // Verify 2FA token
       if (user.twoFactorEnabled && user.twoFactorSecret) {
+        // Sanitize token (remove spaces and ensure it's 6 digits)
+        const sanitizedToken = token.replace(/\s/g, "");
+
         const verified = speakeasy.totp.verify({
           secret: user.twoFactorSecret,
           encoding: "base32",
-          token: token,
-          window: 2,
+          token: sanitizedToken,
+          window: 4, // Increased window to account for clock drift
+          time: Math.floor(Date.now() / 1000), // Current Unix timestamp
         });
 
         if (!verified) {

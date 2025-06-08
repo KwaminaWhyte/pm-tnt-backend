@@ -118,6 +118,16 @@ export interface UserInterface extends Document {
   role?: "user" | "premium" | "vip";
   memberSince?: Date;
   loyaltyPoints?: number;
+  // Phone OTP fields
+  phoneOtp?: string;
+  phoneOtpExpires?: Date;
+  // Two-Factor Authentication
+  twoFactorSecret?: string;
+  twoFactorEnabled?: boolean;
+  tempTwoFactorSecret?: string;
+  sessionVersion?: number;
+  passwordChangedAt?: Date;
+  biometricEnabled?: boolean;
   createdAt: Date;
   updatedAt: Date;
 
@@ -503,6 +513,15 @@ const userSchema = new Schema<UserInterface>(
     emailVerificationExpires: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
+    // Phone OTP fields
+    phoneOtp: {
+      type: String,
+      select: false, // Don't include in query results by default
+    },
+    phoneOtpExpires: {
+      type: Date,
+      select: false, // Don't include in query results by default
+    },
     deviceTokens: [
       {
         type: String,
@@ -536,6 +555,32 @@ const userSchema = new Schema<UserInterface>(
       type: Number,
       default: 0,
       min: [0, "Loyalty points cannot be negative"],
+    },
+    // Two-Factor Authentication fields
+    twoFactorSecret: {
+      type: String,
+      select: false, // Don't include in query results by default
+    },
+    twoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    tempTwoFactorSecret: {
+      type: String,
+      select: false, // Don't include in query results by default
+    },
+    sessionVersion: {
+      type: Number,
+      default: 1,
+      min: [1, "Session version must be at least 1"],
+    },
+    passwordChangedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    biometricEnabled: {
+      type: Boolean,
+      default: false,
     },
   },
   {

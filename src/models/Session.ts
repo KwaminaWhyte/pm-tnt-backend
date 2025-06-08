@@ -1,6 +1,21 @@
 import mongoose, { Schema, Model, Document } from "mongoose";
 
 /**
+ * Interface for Session Model with static methods
+ */
+interface SessionModel extends Model<SessionInterface> {
+  parseDeviceInfo(userAgent?: string): string;
+  findActiveByUserId(
+    userId: mongoose.Types.ObjectId
+  ): Promise<SessionInterface[]>;
+  terminateAllExceptCurrent(
+    userId: mongoose.Types.ObjectId,
+    currentToken: string
+  ): Promise<any>;
+  cleanupExpired(): Promise<any>;
+}
+
+/**
  * Interface for the Session document
  */
 export interface SessionInterface extends Document {
@@ -267,11 +282,14 @@ sessionSchema.statics.terminateAllExceptCurrent = async function (
 };
 
 // Create or retrieve the model
-let Session: Model<SessionInterface>;
+let Session: SessionModel;
 try {
-  Session = mongoose.model<SessionInterface>("Session");
+  Session = mongoose.model<SessionInterface, SessionModel>("Session");
 } catch (error) {
-  Session = mongoose.model<SessionInterface>("Session", sessionSchema);
+  Session = mongoose.model<SessionInterface, SessionModel>(
+    "Session",
+    sessionSchema
+  );
 }
 
 export default Session;
