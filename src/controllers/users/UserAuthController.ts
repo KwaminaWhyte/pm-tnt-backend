@@ -5,6 +5,7 @@ import generateOTP from "~/utils/generateOtp";
 import sendSMS from "~/utils/sendSMS";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import speakeasy from "speakeasy";
 import {
   LoginWithEmailDTO,
   LoginWithPhoneDTO,
@@ -131,8 +132,11 @@ export default class UserAuthController {
    * @throws {Error} 400 - Invalid input data
    * @throws {Error} 403 - Email not verified
    */
-  async loginWithEmail(data: LoginWithEmailDTO, jwt_auth?: any) {
-    const { email, password } = data;
+  async loginWithEmail(
+    data: LoginWithEmailDTO & { twoFactorToken?: string },
+    jwt_auth?: any
+  ) {
+    const { email, password, twoFactorToken } = data;
 
     if (!email || !password) {
       return error(400, {
@@ -147,7 +151,9 @@ export default class UserAuthController {
       });
     }
 
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({ email }).select(
+      "+password +twoFactorSecret +twoFactorEnabled"
+    );
 
     if (!user) {
       return error(401, {
@@ -202,6 +208,40 @@ export default class UserAuthController {
           },
         ],
       });
+    }
+
+    // Check if 2FA is enabled and verify token
+    if (user.twoFactorEnabled && user.twoFactorSecret) {
+      if (!twoFactorToken) {
+        return error(200, {
+          message: "Two-factor authentication required",
+          requiresTwoFactor: true,
+          tempUserId: user._id, // Temporary identifier for the 2FA step
+        });
+      }
+
+      // Sanitize and verify 2FA token
+      const sanitizedToken = twoFactorToken.replace(/\s/g, "");
+      const verified = speakeasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: "base32",
+        token: sanitizedToken,
+        window: 4,
+        time: Math.floor(Date.now() / 1000),
+      });
+
+      if (!verified) {
+        return error(401, {
+          message: "Invalid two-factor authentication token",
+          errors: [
+            {
+              type: "AuthenticationError",
+              path: ["twoFactorToken"],
+              message: "The two-factor authentication token is invalid",
+            },
+          ],
+        });
+      }
     }
 
     // Generate JWT
